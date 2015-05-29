@@ -40,6 +40,11 @@
     var areaSelect = L.areaSelect({width: 200, height: 300});
     areaSelect.addTo(map);
 
+    function createEllipsis() {
+        var ellipsis = document.createElement('td');
+        ellipsis.textContent = '...';
+        return ellipsis;
+    }
     var updateChecklist = function () {
         var req = null;
         if (window.XMLHttpRequest) { // Mozilla, Safari, ...
@@ -79,6 +84,9 @@
                         var header = document.createElement('th');
                         header.textContent = 'taxon checklist';
                         headerRow.appendChild(header);
+                        header = document.createElement('th');
+                        header.textContent = '(lat,lng)';
+                        headerRow.appendChild(header);
                         checklist.appendChild(headerRow);
                         resp.results.forEach(function (occurrence) {
                             var row = document.createElement('tr');
@@ -93,8 +101,15 @@
                                     }, ''
                             );
                             row.appendChild(path);
+                            var latLng = document.createElement('td');
+                            latLng.textContent = '(' + occurrence.decimalLatitude + ',' + occurrence.decimalLongitude + ')';
+                            row.appendChild(latLng);
                             checklist.appendChild(row);
                         });
+                        var ellipsisRow = document.createElement('tr');
+                        ellipsisRow.appendChild(createEllipsis());
+                        ellipsisRow.appendChild(createEllipsis());
+                        checklist.appendChild(ellipsisRow);
                     }
                 } else {
                     setStatus('not ok. Received a [' + req.status + '] status with text [' + req.statusText + '] in response to [' + url + ']');

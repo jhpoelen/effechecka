@@ -128,11 +128,11 @@
     }
 
     var updateBBox = function (areaSelect) {
-        var wktPoints = areaSelect._northEast.lat + ' ' + areaSelect._northEast.lng
-                + ',' + areaSelect._northEast.lat + ' ' + areaSelect._southWest.lng
-                + ',' + areaSelect._southWest.lat + ' ' + areaSelect._southWest.lng
-                + ',' + areaSelect._southWest.lat + ' ' + areaSelect._northEast.lng
-                + ',' + areaSelect._northEast.lat + ' ' + areaSelect._northEast.lng;
+        var wktPoints = areaSelect._northEast.lng + ' ' + areaSelect._northEast.lat
+                + ',' + areaSelect._northEast.lng + ' ' + areaSelect._southWest.lat
+                + ',' + areaSelect._southWest.lng + ' ' + areaSelect._southWest.lat
+                + ',' + areaSelect._southWest.lng + ' ' + areaSelect._northEast.lat
+                + ',' + areaSelect._northEast.lng + ' ' + areaSelect._northEast.lat;
 
         var dataFilter = getDataFilter();
         dataFilter.geometry = 'POLYGON((' + wktPoints + '))';

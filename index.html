@@ -14,7 +14,7 @@
 
 <div id="map" style="width: 600px; height: 400px"></div>
 <div id="taxonFilter">Include only taxa related to <input id='scientificName' type="text"
-                                                          placeholder="enter taxon name" autocomplete="false"/>.
+                                                          placeholder="enter taxon name" autocomplete="off" value=""/>.
 </div>
 <div id="status"></div>
 <table id="checklist">
@@ -81,25 +81,23 @@
                         headerRow.appendChild(header);
                         checklist.appendChild(headerRow);
                         resp.results.forEach(function (occurrence) {
-                            if (occurrence.taxonRank === 'SPECIES') {
-                                var row = document.createElement('tr');
-                                var path = document.createElement('td');
-                                path.textContent = ['kingdom', 'phylum', 'order', 'family', 'genus', 'species'].reduce(function (pathFull, pathPart) {
-                                            var pathPartValue = occurrence[pathPart];
-                                            if (pathPartValue !== undefined) {
-                                                return pathFull + ' | ' + pathPartValue;
-                                            } else {
-                                                return pathFull;
-                                            }
-                                        }, ''
-                                );
-                                row.appendChild(path);
-                                checklist.appendChild(row);
-                            }
+                            var row = document.createElement('tr');
+                            var path = document.createElement('td');
+                            path.textContent = ['kingdom', 'phylum', 'order', 'family', 'genus', 'species'].reduce(function (pathFull, pathPart) {
+                                        var pathPartValue = occurrence[pathPart];
+                                        if (pathPartValue !== undefined) {
+                                            return pathFull + ' | ' + pathPartValue;
+                                        } else {
+                                            return pathFull;
+                                        }
+                                    }, ''
+                            );
+                            row.appendChild(path);
+                            checklist.appendChild(row);
                         });
                     }
                 } else {
-                    setStatus('not ok.');
+                    setStatus('not ok. Received a [' + req.status + '] status with text [' + req.statusText + ']');
                 }
             };
             var checklist = document.querySelector('#checklist');

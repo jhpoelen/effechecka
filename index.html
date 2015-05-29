@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Effechecka - Taxonomic Checklist Generator</title>
+    <meta charset="utf-8"/>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="http://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
+    <link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.css"/>
+    <link rel="stylesheet" href="https://rawgit.com/heyman/leaflet-areaselect/master/src/leaflet-areaselect.css"/>
+</head>
+<body onload="init()">
+<h1>Effechecka - Taxonomic Checklist Generator</h1>
+
+<div id="map" style="width: 600px; height: 400px"></div>
+<div id="taxonFilter">Include only taxa related to <input id='scientificName' type="text"
+                                                          placeholder="enter taxon name" autocomplete="false"/>.
+</div>
+<div id="status"></div>
+<table id="checklist">
+    <tr>
+        <th>name</th>
+        <th>hierarchy</th>
+    </tr>
+</table>
+<script src="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.js"></script>
+<script src="https://rawgit.com/heyman/leaflet-areaselect/master/src/leaflet-areaselect.js"></script>
+<script>
+
+    var map = L.map('map').setView([51.505, -0.09], 1);
+
+    L.tileLayer('https://{s}.tiles.mapbox.com/v3/{id}/{z}/{x}/{y}.png', {
+        maxZoom: 18,
+        attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, ' +
+                '<a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, ' +
+                'Imagery © <a href="http://mapbox.com">Mapbox</a>',
+        id: 'examples.map-i875mjb7'
+    }).addTo(map);
+
+    var areaSelect = L.areaSelect({width: 200, height: 300});
+    areaSelect.addTo(map);
+
+    var updateChecklist = function () {
+        var req = null;
+        if (window.XMLHttpRequest) { // Mozilla, Safari, ...
+            req = new XMLHttpRequest();
+        } else if ((typeof window !== 'undefined') && window.ActiveXObject) { //     IE
+            try {
+                req = new ActiveXObject('Msxml2.XMLHTTP');
+            } catch (e) {
+                try {
+                    req = new ActiveXObject('Microsoft.XMLHTTP');
+                } catch (e) {
+                }
+            }
+        }
+
+        if (req !== undefined) {
+            var baseUrl = 'http://api.gbif.org/v1/occurrence/search';
+            var dataFilter = getDataFilter();
+            var query = Object.keys(dataFilter).reduce(function (accum, key) {
+                if (dataFilter[key] !== null) {
+                    return accum + key + '=' + encodeURIComponent(dataFilter[key]) + '&';
+                } else {
+                    return accum;
+                }
+            }, '?');
+
+            var url = baseUrl + query;
+            req.open('GET', url, true);
+            req.onreadystatechange = function () {
+                setStatus('received response');
+                if (req.readyState === 4 && req.status === 200) {
+                    var resp = JSON.parse(req.responseText);
+                    setStatus('got [' + resp.count + '] matches from gbif');
+                    if (resp.results) {
+                        checklist.setAttribute('data-results', resp.results);
+                        var headerRow = document.createElement('tr');
+                        var header = document.createElement('th');
+                        header.textContent = 'taxon checklist';
+                        headerRow.appendChild(header);
+                        checklist.appendChild(headerRow);
+                        resp.results.forEach(function (occurrence) {
+                            if (occurrence.taxonRank === 'SPECIES') {
+                                var row = document.createElement('tr');
+                                var path = document.createElement('td');
+                                path.textContent = ['kingdom', 'phylum', 'order', 'family', 'genus', 'species'].reduce(function (pathFull, pathPart) {
+                                            var pathPartValue = occurrence[pathPart];
+                                            if (pathPartValue !== undefined) {
+                                                return pathFull + ' | ' + pathPartValue;
+                                            } else {
+                                                return pathFull;
+                                            }
+                                        }, ''
+                                );
+                                row.appendChild(path);
+                                checklist.appendChild(row);
+                            }
+                        });
+                    }
+                } else {
+                    setStatus('not ok.');
+                }
+            };
+            var checklist = document.querySelector('#checklist');
+            while (checklist.firstChild) {
+                checklist.removeChild(checklist.firstChild);
+            }
+            setStatus('building new list...');
+            req.send(null);
+        }
+    };
+
+    var setStatus = function (status) {
+        document.querySelector('#status').textContent = status;
+    }
+
+    var getDataFilter = function () {
+        var checklist = document.querySelector('#checklist');
+        var dataFilter = { hasSpatialIssue: 'false' };
+        if (checklist.hasAttribute('data-filter')) {
+            dataFilter = JSON.parse(checklist.getAttribute('data-filter'));
+        }
+        return dataFilter;
+    }
+
+    var setDataFilter = function (dataFilter) {
+        var dataFilterString = JSON.stringify(dataFilter);
+        document.querySelector('#checklist').setAttribute('data-filter', dataFilterString);
+    }
+
+    var updateBBox = function (areaSelect) {
+        var wktPoints = areaSelect._northEast.lat + ' ' + areaSelect._northEast.lng
+                + ',' + areaSelect._northEast.lat + ' ' + areaSelect._southWest.lng
+                + ',' + areaSelect._southWest.lat + ' ' + areaSelect._southWest.lng
+                + ',' + areaSelect._southWest.lat + ' ' + areaSelect._northEast.lng
+                + ',' + areaSelect._northEast.lat + ' ' + areaSelect._northEast.lng;
+
+        var dataFilter = getDataFilter();
+        dataFilter.geometry = 'POLYGON((' + wktPoints + '))';
+        setDataFilter(dataFilter);
+    }
+
+
+    areaSelect.on("change", function () {
+        updateBBox(this.getBounds());
+        updateChecklist();
+    });
+
+
+    var nameInput = document.querySelector('#scientificName');
+    nameInput.onchange = function (event) {
+        var filter = getDataFilter();
+        filter.scientificName = event.target.value.trim();
+        setDataFilter(filter);
+        updateChecklist();
+    };
+
+    var init = function () {
+        updateBBox(areaSelect.getBounds());
+        updateChecklist();
+    }
+
+</script>
+</body>
+</html>

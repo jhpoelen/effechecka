@@ -91,15 +91,21 @@
                         resp.results.forEach(function (occurrence) {
                             var row = document.createElement('tr');
                             var path = document.createElement('td');
-                            path.textContent = ['kingdom', 'phylum', 'order', 'family', 'genus', 'species'].reduce(function (pathFull, pathPart) {
+                            var pathElems = ['kingdom', 'phylum', 'order', 'family', 'genus', 'species'].reduce(function (pathFull, pathPart) {
                                         var pathPartValue = occurrence[pathPart];
                                         if (pathPartValue !== undefined) {
-                                            return pathFull + ' | ' + pathPartValue;
+                                            var pathPartElem = document.createElement('a');
+                                            pathPartElem.setAttribute('href', 'http://eol.org/' + pathPartValue);
+                                            pathPartElem.textContent = pathPartValue;
+                                            pathPartElem.setAttribute('title', 'search EOL for [' + pathPartValue + '] by name');
+                                            var sepElem = document.createElement('span');
+                                            sepElem.textContent = ' | ';
+                                            return pathFull.concat([pathPartElem, sepElem])
                                         } else {
                                             return pathFull;
                                         }
-                                    }, ''
-                            );
+                                    }, []);
+                            pathElems.forEach(function(elem) path.appendChild(elem));
                             row.appendChild(path);
                             var latLng = document.createElement('td');
                             latLng.textContent = '(' + occurrence.decimalLatitude + ',' + occurrence.decimalLongitude + ')';

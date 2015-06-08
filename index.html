@@ -91,7 +91,7 @@
                         resp.results.forEach(function (occurrence) {
                             var row = document.createElement('tr');
                             var path = document.createElement('td');
-                            var pathElems = ['kingdom', 'phylum', 'order', 'family', 'genus', 'species'].reduce(function (pathFull, pathPart) {
+                            var pathElems = ['kingdom', 'phylum', 'class', 'order', 'family', 'genus', 'species'].reduce(function (pathFull, pathPart) {
                                         var pathPartValue = occurrence[pathPart];
                                         if (pathPartValue !== undefined) {
                                             var pathPartElem = document.createElement('a');

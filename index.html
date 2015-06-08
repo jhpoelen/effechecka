@@ -9,7 +9,7 @@
     <link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.css"/>
     <link rel="stylesheet" href="https://rawgit.com/heyman/leaflet-areaselect/master/src/leaflet-areaselect.css"/>
 </head>
-<body onload="init()">
+<body>
 <h1>Effechecka - Taxonomic Checklist Generator</h1>
 
 <div id="map" style="width: 600px; height: 400px"></div>
@@ -77,8 +77,8 @@
               if (req.readyState === 4) {
                 setStatus('received response');
                 if (req.status === 200) {
-                    setStatus('got [' + resp.count + '] matches from gbif');
                     var resp = JSON.parse(req.responseText);
+                    setStatus('got [' + resp.count + '] matches from gbif');
                     if (resp.results) {
                         checklist.setAttribute('data-results', resp.results);
                         var headerRow = document.createElement('tr');
@@ -106,7 +106,9 @@
                                             return pathFull;
                                         }
                                     }, []);
-                            pathElems.forEach(function(elem) path.appendChild(elem));
+                                    pathElems.forEach(function(elem) {
+                                      path.appendChild(elem); 
+                                    });
                             row.appendChild(path);
                             var latLng = document.createElement('td');
                             latLng.textContent = '(' + occurrence.decimalLatitude + ',' + occurrence.decimalLongitude + ')';
@@ -180,6 +182,10 @@
         updateBBox(areaSelect.getBounds());
         updateChecklist();
     }
+
+    window.addEventListener('load', function () {
+      init();
+    });
 
 </script>
 </body>

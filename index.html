@@ -74,10 +74,11 @@
             var url = baseUrl + query;
             req.open('GET', url, true);
             req.onreadystatechange = function () {
+              if (req.readyState === 4) {
                 setStatus('received response');
-                if (req.readyState === 4 && req.status === 200) {
-                    var resp = JSON.parse(req.responseText);
+                if (req.status === 200) {
                     setStatus('got [' + resp.count + '] matches from gbif');
+                    var resp = JSON.parse(req.responseText);
                     if (resp.results) {
                         checklist.setAttribute('data-results', resp.results);
                         var headerRow = document.createElement('tr');
@@ -120,7 +121,7 @@
                 } else {
                     setStatus('not ok. Received a [' + req.status + '] status with text [' + req.statusText + '] in response to [' + url + ']');
                 }
-            };
+            }};
             var checklist = document.querySelector('#checklist');
             while (checklist.firstChild) {
                 checklist.removeChild(checklist.firstChild);

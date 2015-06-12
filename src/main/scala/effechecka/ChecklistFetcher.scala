@@ -3,17 +3,17 @@ package effechecka
 import com.datastax.driver.core.{Session, Row, ResultSet, Cluster}
 import scala.collection.JavaConversions._
 
-trait ChecklistFetcher {
+trait ChecklistFetcher extends Configure {
   def fetchChecklist(taxonSelector: String, wktString: String): List[Map[String, Any]] = {
     val results: ResultSet = session.execute(checklistSelect
-      , taxonSelector.replace(',','|'), wktString)
+      , taxonSelector.replace(',', '|'), wktString)
     val items: List[Row] = results.all.toList
     items.map(item => Map("taxon" -> item.getString("taxon"), "recordcount" -> item.getInt("recordcount")))
   }
 
   def session: Session = {
     val cluster = Cluster.builder()
-      .addContactPoint("localhost").build()
+      .addContactPoint(config.getString("effechecka.cassandra.host")).build()
     cluster.connect("idigbio")
   }
 

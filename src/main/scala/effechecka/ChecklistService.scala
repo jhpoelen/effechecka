@@ -2,6 +2,7 @@ package effechecka
 
 import akka.actor.Actor
 import org.apache.spark.deploy.SparkSubmit
+import spray.http.HttpHeaders.RawHeader
 import spray.routing._
 import spray.http._
 import MediaTypes._

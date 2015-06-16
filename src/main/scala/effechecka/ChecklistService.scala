@@ -6,7 +6,7 @@ import spray.routing._
 import spray.http._
 import MediaTypes._
 
-import scala.util.parsing.json.{JSONObject,JSONArray}
+import scala.util.parsing.json.{JSONObject, JSONArray}
 
 // we don't implement our route structure directly in the service actor because
 // we want to be able to test it independently, without having to spin up an actor
@@ -34,17 +34,23 @@ trait ChecklistService extends HttpService with ChecklistFetcher with Configure 
         parameters('taxonSelector ?, 'wktString ?).as(Checklist) {
           request => {
             respondWithMediaType(`application/json`) {
-              val checklist: List[Map[String, Any]] = fetchChecklist(request.taxonSelector, request.wktString)
-              if (checklist.isEmpty) {
-                SparkSubmit.main(Array("--master", config.getString("effechecka.spark.master.url")
-                  , "--class", "ChecklistGenerator"
-                  , "--deploy-mode", "cluster"
-                  , config.getString("effechecka.spark.job.jar")
-                  , config.getString("effechecka.data.dir") + "occurrence.txt"
-                  , request.taxonSelector.replace(',', '|'), request.wktString, "cassandra"))
+              val status: Option[String] = fetchChecklistStatus(request.taxonSelector, request.wktString)
+              val (checklist_items, checklist_status) = status match {
+                case Some("ready") => (fetchChecklistItems(request.taxonSelector, request.wktString), "ready")
+                case _ =>
+                  SparkSubmit.main(Array("--master", config.getString("effechecka.spark.master.url")
+                    , "--class", "ChecklistGenerator"
+                    , "--deploy-mode", "cluster"
+                    , config.getString("effechecka.spark.job.jar")
+                    , config.getString("effechecka.data.dir") + "occurrence.txt"
+                    , request.taxonSelector.replace(',', '|'), request.wktString, "cassandra"))
+                  (List(), insertChecklistRequest(request.taxonSelector, request.wktString))
               }
               complete {
-                JSONObject(Map("taxonSelector" -> request.taxonSelector, "wktString" -> request.wktString, "checklist" -> JSONArray(checklist.map(JSONObject(_))))).toString()
+                JSONObject(Map("taxonSelector" -> request.taxonSelector,
+                  "wktString" -> request.wktString,
+                  "status" -> checklist_status,
+                  "items" -> JSONArray(checklist_items.map(JSONObject)))).toString()
               }
             }
           }

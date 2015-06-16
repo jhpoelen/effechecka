@@ -37,7 +37,7 @@ trait ChecklistService extends HttpService with ChecklistFetcher with Configure 
               val status: Option[String] = fetchChecklistStatus(request.taxonSelector, request.wktString)
               val (checklist_items, checklist_status) = status match {
                 case Some("ready") => (fetchChecklistItems(request.taxonSelector, request.wktString), "ready")
-                case _ =>
+                case None =>
                   SparkSubmit.main(Array("--master", config.getString("effechecka.spark.master.url")
                     , "--class", "ChecklistGenerator"
                     , "--deploy-mode", "cluster"
@@ -45,6 +45,7 @@ trait ChecklistService extends HttpService with ChecklistFetcher with Configure 
                     , config.getString("effechecka.data.dir") + "occurrence.txt"
                     , request.taxonSelector.replace(',', '|'), request.wktString, "cassandra"))
                   (List(), insertChecklistRequest(request.taxonSelector, request.wktString))
+                case _ => (List(), status.get)
               }
               complete {
                 JSONObject(Map("taxonSelector" -> request.taxonSelector,

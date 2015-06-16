@@ -42,7 +42,7 @@ trait ChecklistService extends HttpService with ChecklistFetcher with Configure 
                     , "--class", "ChecklistGenerator"
                     , "--deploy-mode", "cluster"
                     , config.getString("effechecka.spark.job.jar")
-                    , config.getString("effechecka.data.dir") + "occurrence.txt"
+                    , config.getString("effechecka.data.dir") + "*.gz"
                     , request.taxonSelector.replace(',', '|'), request.wktString, "cassandra"))
                   (List(), insertChecklistRequest(request.taxonSelector, request.wktString))
                 case _ => (List(), status.get)

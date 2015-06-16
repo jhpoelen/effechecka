@@ -41,6 +41,7 @@ trait ChecklistService extends HttpService with ChecklistFetcher with Configure 
                   SparkSubmit.main(Array("--master", config.getString("effechecka.spark.master.url")
                     , "--class", "ChecklistGenerator"
                     , "--deploy-mode", "cluster"
+                    , "--executor-memory", "32G"
                     , config.getString("effechecka.spark.job.jar")
                     , config.getString("effechecka.data.dir") + "*occurrence.txt"
                     , request.taxonSelector.replace(',', '|'), request.wktString, "cassandra"))

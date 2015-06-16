@@ -34,25 +34,27 @@ trait ChecklistService extends HttpService with ChecklistFetcher with Configure 
         parameters('taxonSelector ?, 'wktString ?).as(Checklist) {
           request => {
             respondWithMediaType(`application/json`) {
-              val status: Option[String] = fetchChecklistStatus(request.taxonSelector, request.wktString)
-              val (checklist_items, checklist_status) = status match {
-                case Some("ready") => (fetchChecklistItems(request.taxonSelector, request.wktString), "ready")
-                case None =>
-                  SparkSubmit.main(Array("--master", config.getString("effechecka.spark.master.url")
-                    , "--class", "ChecklistGenerator"
-                    , "--deploy-mode", "cluster"
-                    , "--executor-memory", "32G"
-                    , config.getString("effechecka.spark.job.jar")
-                    , config.getString("effechecka.data.dir") + "*occurrence.txt"
-                    , request.taxonSelector.replace(',', '|'), request.wktString, "cassandra"))
-                  (List(), insertChecklistRequest(request.taxonSelector, request.wktString))
-                case _ => (List(), status.get)
-              }
-              complete {
-                JSONObject(Map("taxonSelector" -> request.taxonSelector,
-                  "wktString" -> request.wktString,
-                  "status" -> checklist_status,
-                  "items" -> JSONArray(checklist_items.map(JSONObject)))).toString()
+              respondWithHeader(RawHeader("Access-Control-Allow-Origin","*")) {
+                val status: Option[String] = fetchChecklistStatus(request.taxonSelector, request.wktString)
+                val (checklist_items, checklist_status) = status match {
+                  case Some("ready") => (fetchChecklistItems(request.taxonSelector, request.wktString), "ready")
+                  case None =>
+                    SparkSubmit.main(Array("--master", config.getString("effechecka.spark.master.url")
+                      , "--class", "ChecklistGenerator"
+                      , "--deploy-mode", "cluster"
+                      , "--executor-memory", "32G"
+                      , config.getString("effechecka.spark.job.jar")
+                      , config.getString("effechecka.data.dir") + "*occurrence.txt"
+                      , request.taxonSelector.replace(',', '|'), request.wktString, "cassandra"))
+                    (List(), insertChecklistRequest(request.taxonSelector, request.wktString))
+                  case _ => (List(), status.get)
+                }
+                complete {
+                  JSONObject(Map("taxonSelector" -> request.taxonSelector,
+                    "wktString" -> request.wktString,
+                    "status" -> checklist_status,
+                    "items" -> JSONArray(checklist_items.map(JSONObject)))).toString()
+                }
               }
             }
           }

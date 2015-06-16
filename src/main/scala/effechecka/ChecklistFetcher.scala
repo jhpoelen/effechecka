@@ -34,8 +34,7 @@ trait ChecklistFetcher extends Configure {
 
   def insertChecklistRequest(taxonSelector: String, wktString: String): String = {
     val values = Seq(normalizeTaxonSelector(taxonSelector), wktString, "requested").map("'" + _ + "'").mkString(",")
-    "INSERT INTO idigbio.checklist_registry ( taxonselector, wktstring, status ) VALUES ( " + values + ") using TTL 600"
-    session.execute(values)
+    session.execute(s"INSERT INTO idigbio.checklist_registry (taxonselector, wktstring, status) VALUES ($values) using TTL 600")
     "requested"
   }
 

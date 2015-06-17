@@ -327,7 +327,7 @@ var init = function () {
     });
 
     var nameInput = document.getElementById('scientificName');
-    nameInput.value = getDataFilter().scientificName || "Aves,Insecta";
+    nameInput.value = dataFilter.scientificName || "Aves,Insecta";
 
     nameInput.onchange = function (event) {
         updateTaxonSelector(event.target);

@@ -35,7 +35,7 @@ trait ChecklistService extends HttpService with ChecklistFetcher with Configure 
         parameters('taxonSelector ?, 'wktString ?).as(Checklist) {
           request => {
             respondWithMediaType(`application/json`) {
-              respondWithHeader(RawHeader("Access-Control-Allow-Origin","*")) {
+              respondWithHeader(RawHeader("Access-Control-Allow-Origin", "*")) {
                 val status: Option[String] = fetchChecklistStatus(request.taxonSelector, request.wktString)
                 val (checklist_items, checklist_status) = status match {
                   case Some("ready") => (fetchChecklistItems(request.taxonSelector, request.wktString), "ready")
@@ -60,25 +60,25 @@ trait ChecklistService extends HttpService with ChecklistFetcher with Configure 
             }
           }
         }
-      } ~ get {
-        respondWithMediaType(`text/html`) {
-          // XML is marshalled to `text/xml` by default, so we simply override here
-          val url = """/checklist?taxonSelector=Animalia,Insecta&wktString=ENVELOPE(-150,-50,40,10)"""
-          complete {
-            <html>
-              <body>
-                <p>
-                  API for generating taxonomic checklists.
-                </p>
-                <p>
-                  example:
-                  <a href={url}>
-                    {url}
-                  </a>
-                </p>
-              </body>
-            </html>
-          }
+      }
+    } ~ get {
+      respondWithMediaType(`text/html`) {
+        // XML is marshalled to `text/xml` by default, so we simply override here
+        val url = """/checklist?taxonSelector=Animalia,Insecta&wktString=ENVELOPE(-150,-50,40,10)"""
+        complete {
+          <html>
+            <body>
+              <p>
+                API for generating taxonomic checklists.
+              </p>
+              <p>
+                example:
+                <a href={url}>
+                  {url}
+                </a>
+              </p>
+            </body>
+          </html>
         }
       }
     }

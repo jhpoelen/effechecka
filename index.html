@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Effechecka - Taxonomic Checklist Generator</title>
+    <title>Effechecka - Spatio-taxonomic Checklist Generator</title>
     <meta charset="utf-8"/>
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -14,20 +14,299 @@
 
 <div id="map" style="width: 600px; height: 400px"></div>
 <div id="taxonFilter">Include only taxa related to <input id='scientificName' type="text"
-                                                          placeholder="enter taxon name" autocomplete="off" value=""/>.
+                                                          placeholder="enter taxon name"/>.
 </div>
-<div id="status"></div>
+<h1>checklist</h1>
+
+<p>Checklists contain distinct taxa ordered by frequency of occurrence and are built directly from iDigBio's Darwin Core
+    Archive (~15M specimen records). If the checklist has not been calculated before, this may take several minutes. See
+    <a href="http://apihack-c18.idigbio.org:8080">Checklist Procesing Dashboard</a> for checklist calculation status.
+    Supports comma separated list of focal taxa (e.g. "Aves,Insecta").
+</p>
+<button id="requestChecklist">Request Checklist</button>
+checklist status: [<b><span id="checklistStatus"></span></b>]
+<button id="refreshChecklist">Refresh</button>
 <table id="checklist">
-    <tr>
-        <th>name</th>
-        <th>hierarchy</th>
-    </tr>
+</table>
+<h1>occurrences</h1>
+
+<p>Occurrences are retrieved directly from the GBIF API. This list may contain duplicates and is not ordered in any
+    way. Only supports single focal taxa (e.g. "Aves", but not "Aves,Insecta").</p>
+
+<div id="occurrenceStatus"></div>
+<table id="occurrences">
 </table>
 <script src="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.js"></script>
 <script src="https://rawgit.com/heyman/leaflet-areaselect/master/src/leaflet-areaselect.js"></script>
+<script src="https://rawgit.com/globalbioticinteractions/globalbioticinteractions.github.io/master/query-string.js"></script>
 <script>
 
-    var map = L.map('map').setView([51.505, -0.09], 1);
+function createEllipsis() {
+    var ellipsis = document.createElement('td');
+    ellipsis.textContent = '...';
+    return ellipsis;
+}
+function renderGBIF(occurrences, resp) {
+    occurrences.setAttribute('data-results', resp.results);
+    var headerRow = document.createElement('tr');
+    var header = document.createElement('th');
+    header.textContent = 'taxon occurrences';
+    headerRow.appendChild(header);
+    header = document.createElement('th');
+    header.textContent = '(lat,lng)';
+    headerRow.appendChild(header);
+    occurrences.appendChild(headerRow);
+    resp.results.forEach(function (occurrence) {
+        var row = document.createElement('tr');
+        var path = document.createElement('td');
+        var pathElems = ['kingdom', 'phylum', 'class', 'order', 'family', 'genus', 'species'].reduce(function (pathFull, pathPart) {
+            var pathPartValue = occurrence[pathPart];
+            if (pathPartValue !== undefined) {
+                var pathPartElem = document.createElement('a');
+                pathPartElem.setAttribute('href', 'http://eol.org/' + pathPartValue);
+                pathPartElem.textContent = pathPartValue;
+                pathPartElem.setAttribute('title', 'search EOL for [' + pathPartValue + '] by name');
+                var sepElem = document.createElement('span');
+                sepElem.textContent = ' | ';
+                return pathFull.concat([pathPartElem, sepElem])
+            } else {
+                return pathFull;
+            }
+        }, []);
+        pathElems.forEach(function (elem) {
+            path.appendChild(elem);
+        });
+        row.appendChild(path);
+        var latLng = document.createElement('td');
+        latLng.textContent = '(' + occurrence.decimalLatitude + ',' + occurrence.decimalLongitude + ')';
+        row.appendChild(latLng);
+        occurrences.appendChild(row);
+    });
+    var ellipsisRow = document.createElement('tr');
+    ellipsisRow.appendChild(createEllipsis());
+    ellipsisRow.appendChild(createEllipsis());
+    occurrences.appendChild(ellipsisRow);
+}
+
+function sepElem() {
+    var sepElem = document.createElement('span');
+    sepElem.textContent = ' | ';
+    return sepElem;
+}
+function renderChecklist(checklist, resp) {
+    checklist.setAttribute('data-results', resp.results);
+    var headerRow = document.createElement('tr');
+    var header = document.createElement('th');
+    header.textContent = 'checklist items';
+    headerRow.appendChild(header);
+    header = document.createElement('th');
+    header.textContent = 'occurrence count';
+    headerRow.appendChild(header);
+    checklist.appendChild(headerRow);
+    resp.items.forEach(function (item) {
+        var row = document.createElement('tr');
+        var path = document.createElement('td');
+        var pathElems = item.taxon.split('|').reduce(function (pathFull, pathPartValue) {
+            if (pathPartValue.length == 0) {
+                return pathFull.concat([sepElem()]);
+            } else {
+                var pathPartElem = document.createElement('a');
+                pathPartElem.setAttribute('href', 'http://eol.org/' + pathPartValue);
+                pathPartElem.textContent = pathPartValue;
+                pathPartElem.setAttribute('title', 'search EOL for [' + pathPartValue + '] by name');
+                return pathFull.concat([pathPartElem, sepElem()])
+            }
+        }, []);
+        pathElems.forEach(function (elem) {
+            path.appendChild(elem);
+        });
+        row.appendChild(path);
+        var latLng = document.createElement('td');
+        latLng.textContent = item.recordcount;
+        row.appendChild(latLng);
+        checklist.appendChild(row);
+    });
+    var ellipsisRow = document.createElement('tr');
+    ellipsisRow.appendChild(createEllipsis());
+    ellipsisRow.appendChild(createEllipsis());
+    checklist.appendChild(ellipsisRow);
+}
+
+function xhr() {
+    var req = null;
+    if (window.XMLHttpRequest) { // Mozilla, Safari, ...
+        req = new XMLHttpRequest();
+    } else if ((typeof window !== 'undefined') && window.ActiveXObject) { //     IE
+        try {
+            req = new ActiveXObject('Msxml2.XMLHTTP');
+        } catch (e) {
+            try {
+                req = new ActiveXObject('Microsoft.XMLHTTP');
+            } catch (e) {
+            }
+        }
+    }
+    return req;
+}
+var updateOccurrences = function () {
+    var req = xhr();
+    if (req !== undefined) {
+        var baseUrl = 'http://api.gbif.org/v1/occurrence/search';
+        var dataFilter = getDataFilter();
+        var query = Object.keys(dataFilter).reduce(function (accum, key) {
+            if (dataFilter[key] !== null) {
+                return accum + key + '=' + encodeURIComponent(dataFilter[key]) + '&';
+            } else {
+                return accum;
+            }
+        }, '?');
+
+        var url = baseUrl + query;
+        req.open('GET', url, true);
+        req.onreadystatechange = function () {
+            if (req.readyState === 4) {
+                setOccurrenceStatus('received response');
+                if (req.status === 200) {
+                    var resp = JSON.parse(req.responseText);
+                    setOccurrenceStatus('got [' + resp.count + '] matches from gbif');
+                    if (resp.results) {
+                        renderGBIF(occurrences, resp);
+                    }
+                } else {
+                    setOccurrenceStatus('not ok. Received a [' + req.status + '] status with text [' + req.statusText + '] in response to [' + url + ']');
+                }
+            }
+        };
+        var occurrences = document.querySelector('#occurrences');
+        while (occurrences.firstChild) {
+            occurrences.removeChild(occurrences.firstChild);
+        }
+        setOccurrenceStatus('building new list...');
+        req.send(null);
+    }
+};
+
+function clearChecklist() {
+    var checklist = document.querySelector('#checklist');
+    while (checklist.firstChild) {
+        checklist.removeChild(checklist.firstChild);
+    }
+    setChecklistStatus('none requested');
+}
+
+var updateChecklist = function () {
+    var req = xhr();
+    if (req !== undefined) {
+        var baseUrl = 'http://apihack-c18.idigbio.org:8888/checklist';
+        var dataFilter = getDataFilter();
+        var query = Object.keys(dataFilter).filter(function (key) {
+            return ['taxonSelector', 'wktString'].indexOf(key) != -1;
+        }).reduce(function (accum, key) {
+            if (dataFilter[key] !== null) {
+                return accum + key + '=' + encodeURIComponent(dataFilter[key]) + '&';
+            } else {
+                return accum;
+            }
+        }, '?');
+
+        var url = baseUrl + query;
+        req.open('GET', url, true);
+        req.onreadystatechange = function () {
+            if (req.readyState === 4) {
+                setChecklistStatus('received response');
+                if (req.status === 200) {
+                    var resp = JSON.parse(req.responseText);
+                    setChecklistStatus(resp.status);
+                    if (resp.items) {
+                        renderChecklist(checklist, resp);
+                    }
+                } else {
+                    setChecklistStatus('not ok. Received a [' + req.status + '] status with text [' + req.statusText + '] in response to [' + url + ']');
+                }
+            }
+        };
+        clearChecklist();
+        setChecklistStatus('requesting checklist...');
+        req.send(null);
+    }
+};
+
+var setOccurrenceStatus = function (status) {
+    document.querySelector('#occurrenceStatus').textContent = status;
+}
+
+var setChecklistStatus = function (status) {
+    document.querySelector('#checklistStatus').textContent = status;
+}
+
+var getDataFilter = function () {
+    var occurrences = document.querySelector('#checklist');
+    var dataFilter = { hasSpatialIssue: 'false' };
+    if (occurrences.hasAttribute('data-filter')) {
+        dataFilter = JSON.parse(occurrences.getAttribute('data-filter'));
+    }
+    return dataFilter;
+}
+
+var setDataFilter = function (dataFilter) {
+    var dataFilterString = JSON.stringify(dataFilter);
+    document.querySelector('#checklist').setAttribute('data-filter', dataFilterString);
+    document.location.hash = queryString.stringify(dataFilter);
+}
+
+function updateTaxonSelector(target) {
+    var filter = getDataFilter();
+    filter.scientificName = target.value.trim();
+    filter.taxonSelector = target.value.trim();
+    setDataFilter(filter);
+}
+
+var updateBBox = function (areaSelect) {
+    var bounds = areaSelect.getBounds();
+    var wktPoints = bounds._northEast.lng + ' ' + bounds._northEast.lat
+            + ',' + bounds._northEast.lng + ' ' + bounds._southWest.lat
+            + ',' + bounds._southWest.lng + ' ' + bounds._southWest.lat
+            + ',' + bounds._southWest.lng + ' ' + bounds._northEast.lat
+            + ',' + bounds._northEast.lng + ' ' + bounds._northEast.lat;
+
+    var dataFilter = getDataFilter();
+    dataFilter.geometry = 'POLYGON((' + wktPoints + '))';
+
+    var lngMin = Math.min(bounds._northEast.lng, bounds._southWest.lng);
+    var lngMax = Math.max(bounds._northEast.lng, bounds._southWest.lng);
+    var latMin = Math.min(bounds._northEast.lat, bounds._southWest.lat);
+    var latMax = Math.max(bounds._northEast.lat, bounds._southWest.lat);
+    dataFilter.wktString = 'ENVELOPE(' + [lngMin, lngMax, latMax, latMin].join(',') + ')';
+
+    dataFilter.zoom = areaSelect.map.getZoom();
+    dataFilter.lat = areaSelect.map.getCenter().lat;
+    dataFilter.lng = areaSelect.map.getCenter().lng;
+    dataFilter.width = areaSelect._width;
+    dataFilter.height = areaSelect._height;
+
+    setDataFilter(dataFilter);
+}
+
+var init = function () {
+    function addRequestHandler(buttonId) {
+        var checklistButton = document.querySelector(buttonId);
+        checklistButton.addEventListener('click', function (event) {
+            updateChecklist();
+        }, false);
+    }
+
+    clearChecklist();
+    ['#requestChecklist', '#refreshChecklist'].forEach(function (id) {
+        addRequestHandler(id)
+    });
+
+    var dataFilter = queryString.parse(document.location.hash);
+
+    var zoom = parseInt(dataFilter.zoom || 7);
+    var lat = parseFloat(dataFilter.lat || 42.31);
+    var lng = parseFloat(dataFilter.lng || -71.05);
+
+    var map = L.map('map').setView([lat, lng], zoom);
 
     L.tileLayer('https://{s}.tiles.mapbox.com/v3/{id}/{z}/{x}/{y}.png', {
         maxZoom: 18,
@@ -37,155 +316,33 @@
         id: 'examples.map-i875mjb7'
     }).addTo(map);
 
-    var areaSelect = L.areaSelect({width: 200, height: 300});
+     var width = parseInt((dataFilter.width || 200));
+    var height = parseInt((dataFilter.height || 200));
+    var areaSelect = L.areaSelect({width: width, height: height});
     areaSelect.addTo(map);
-
-    function createEllipsis() {
-        var ellipsis = document.createElement('td');
-        ellipsis.textContent = '...';
-        return ellipsis;
-    }
-    var updateChecklist = function () {
-        var req = null;
-        if (window.XMLHttpRequest) { // Mozilla, Safari, ...
-            req = new XMLHttpRequest();
-        } else if ((typeof window !== 'undefined') && window.ActiveXObject) { //     IE
-            try {
-                req = new ActiveXObject('Msxml2.XMLHTTP');
-            } catch (e) {
-                try {
-                    req = new ActiveXObject('Microsoft.XMLHTTP');
-                } catch (e) {
-                }
-            }
-        }
-
-        if (req !== undefined) {
-            var baseUrl = 'http://api.gbif.org/v1/occurrence/search';
-            var dataFilter = getDataFilter();
-            var query = Object.keys(dataFilter).reduce(function (accum, key) {
-                if (dataFilter[key] !== null) {
-                    return accum + key + '=' + encodeURIComponent(dataFilter[key]) + '&';
-                } else {
-                    return accum;
-                }
-            }, '?');
-
-            var url = baseUrl + query;
-            req.open('GET', url, true);
-            req.onreadystatechange = function () {
-              if (req.readyState === 4) {
-                setStatus('received response');
-                if (req.status === 200) {
-                    var resp = JSON.parse(req.responseText);
-                    setStatus('got [' + resp.count + '] matches from gbif');
-                    if (resp.results) {
-                        checklist.setAttribute('data-results', resp.results);
-                        var headerRow = document.createElement('tr');
-                        var header = document.createElement('th');
-                        header.textContent = 'taxon checklist';
-                        headerRow.appendChild(header);
-                        header = document.createElement('th');
-                        header.textContent = '(lat,lng)';
-                        headerRow.appendChild(header);
-                        checklist.appendChild(headerRow);
-                        resp.results.forEach(function (occurrence) {
-                            var row = document.createElement('tr');
-                            var path = document.createElement('td');
-                            var pathElems = ['kingdom', 'phylum', 'class', 'order', 'family', 'genus', 'species'].reduce(function (pathFull, pathPart) {
-                                        var pathPartValue = occurrence[pathPart];
-                                        if (pathPartValue !== undefined) {
-                                            var pathPartElem = document.createElement('a');
-                                            pathPartElem.setAttribute('href', 'http://eol.org/' + pathPartValue);
-                                            pathPartElem.textContent = pathPartValue;
-                                            pathPartElem.setAttribute('title', 'search EOL for [' + pathPartValue + '] by name');
-                                            var sepElem = document.createElement('span');
-                                            sepElem.textContent = ' | ';
-                                            return pathFull.concat([pathPartElem, sepElem])
-                                        } else {
-                                            return pathFull;
-                                        }
-                                    }, []);
-                                    pathElems.forEach(function(elem) {
-                                      path.appendChild(elem); 
-                                    });
-                            row.appendChild(path);
-                            var latLng = document.createElement('td');
-                            latLng.textContent = '(' + occurrence.decimalLatitude + ',' + occurrence.decimalLongitude + ')';
-                            row.appendChild(latLng);
-                            checklist.appendChild(row);
-                        });
-                        var ellipsisRow = document.createElement('tr');
-                        ellipsisRow.appendChild(createEllipsis());
-                        ellipsisRow.appendChild(createEllipsis());
-                        checklist.appendChild(ellipsisRow);
-                    }
-                } else {
-                    setStatus('not ok. Received a [' + req.status + '] status with text [' + req.statusText + '] in response to [' + url + ']');
-                }
-            }};
-            var checklist = document.querySelector('#checklist');
-            while (checklist.firstChild) {
-                checklist.removeChild(checklist.firstChild);
-            }
-            setStatus('building new list...');
-            req.send(null);
-        }
-    };
-
-    var setStatus = function (status) {
-        document.querySelector('#status').textContent = status;
-    }
-
-    var getDataFilter = function () {
-        var checklist = document.querySelector('#checklist');
-        var dataFilter = { hasSpatialIssue: 'false' };
-        if (checklist.hasAttribute('data-filter')) {
-            dataFilter = JSON.parse(checklist.getAttribute('data-filter'));
-        }
-        return dataFilter;
-    }
-
-    var setDataFilter = function (dataFilter) {
-        var dataFilterString = JSON.stringify(dataFilter);
-        document.querySelector('#checklist').setAttribute('data-filter', dataFilterString);
-    }
-
-    var updateBBox = function (areaSelect) {
-        var wktPoints = areaSelect._northEast.lng + ' ' + areaSelect._northEast.lat
-                + ',' + areaSelect._northEast.lng + ' ' + areaSelect._southWest.lat
-                + ',' + areaSelect._southWest.lng + ' ' + areaSelect._southWest.lat
-                + ',' + areaSelect._southWest.lng + ' ' + areaSelect._northEast.lat
-                + ',' + areaSelect._northEast.lng + ' ' + areaSelect._northEast.lat;
-
-        var dataFilter = getDataFilter();
-        dataFilter.geometry = 'POLYGON((' + wktPoints + '))';
-        setDataFilter(dataFilter);
-    }
-
-
     areaSelect.on("change", function () {
-        updateBBox(this.getBounds());
-        updateChecklist();
+        updateBBox(this);
+        updateOccurrences();
+        clearChecklist();
     });
 
+    var nameInput = document.getElementById('scientificName');
+    nameInput.value = getDataFilter().scientificName || "Aves,Insecta";
 
-    var nameInput = document.querySelector('#scientificName');
     nameInput.onchange = function (event) {
-        var filter = getDataFilter();
-        filter.scientificName = event.target.value.trim();
-        setDataFilter(filter);
-        updateChecklist();
+        updateTaxonSelector(target);
+        clearChecklist();
+        updateOccurrences();
     };
 
-    var init = function () {
-        updateBBox(areaSelect.getBounds());
-        updateChecklist();
-    }
+    updateTaxonSelector(nameInput);
+    updateBBox(areaSelect);
+    updateOccurrences();
+}
 
-    window.addEventListener('load', function () {
-      init();
-    });
+window.addEventListener('load', function () {
+    init();
+});
 
 </script>
 </body>

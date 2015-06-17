@@ -330,7 +330,7 @@ var init = function () {
     nameInput.value = getDataFilter().scientificName || "Aves,Insecta";
 
     nameInput.onchange = function (event) {
-        updateTaxonSelector(target);
+        updateTaxonSelector(event.target);
         clearChecklist();
         updateOccurrences();
     };

@@ -27,7 +27,7 @@ class ChecklistServiceActor extends Actor with ChecklistService {
 case class Checklist(taxonSelector: String, wktString: String)
 
 // this trait defines our service behavior independently from the service actor
-trait ChecklistService extends HttpService with ChecklistFetcher with Configure {
+trait ChecklistService extends HttpService with ChecklistFetcher with LiveCassandraSession with Configure {
 
   val myRoute =
     path("checklist") {
@@ -36,9 +36,9 @@ trait ChecklistService extends HttpService with ChecklistFetcher with Configure 
           request => {
             respondWithMediaType(`application/json`) {
               respondWithHeader(RawHeader("Access-Control-Allow-Origin", "*")) {
-                val status: Option[String] = fetchChecklistStatus(request.taxonSelector, request.wktString)
+                val status: Option[String] = fetchChecklistStatus(execute, request.taxonSelector, request.wktString)
                 val (checklist_items, checklist_status) = status match {
-                  case Some("ready") => (fetchChecklistItems(request.taxonSelector, request.wktString), "ready")
+                  case Some("ready") => (fetchChecklistItems(execute, request.taxonSelector, request.wktString), "ready")
                   case None =>
                     SparkSubmit.main(Array("--master", config.getString("effechecka.spark.master.url")
                       , "--class", "ChecklistGenerator"
@@ -47,7 +47,7 @@ trait ChecklistService extends HttpService with ChecklistFetcher with Configure 
                       , config.getString("effechecka.spark.job.jar")
                       , config.getString("effechecka.data.dir") + "*occurrence.txt"
                       , request.taxonSelector.replace(',', '|'), request.wktString, "cassandra"))
-                    (List(), insertChecklistRequest(request.taxonSelector, request.wktString))
+                    (List(), insertChecklistRequest(execute, request.taxonSelector, request.wktString))
                   case _ => (List(), status.get)
                 }
                 complete {

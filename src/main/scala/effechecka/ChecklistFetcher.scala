@@ -10,7 +10,7 @@ trait ChecklistFetcher extends Configure {
     items.map(item => Map("taxon" -> item.getString("taxon"), "recordcount" -> item.getInt("recordcount")))
   }
 
-  def fetchChecklistStatus(execute: (String, Any*) => ResultSet, taxonSelector: String, wktString: String): Option[String] = {
+  def fetchChecklistStatus(execute: (String, Seq[Any]) => ResultSet, taxonSelector: String, wktString: String): Option[String] = {
     val results: ResultSet = execute(checklistStatusSelect, Seq(normalizeTaxonSelector(taxonSelector), wktString))
     val items: List[Row] = results.all.toList
     items.map(_.getString("status")).headOption

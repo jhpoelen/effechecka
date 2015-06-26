@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/jhpoelen/effechecka.svg?branch=master)](https://travis-ci.org/jhpoelen/effechecka)
+
 # effechecka
 Taxon checklist generator: creates a list of organisms that satisfy specified spatial, temporal or trait based constraints.
 

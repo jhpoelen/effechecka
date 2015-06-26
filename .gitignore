@@ -1,11 +1,4 @@
+.idea/
 .DS_Store
-project/target/
-/.idea/
-/project/boot/
-/project/plugins/project
+project/target
 target/
-lib_managed/
-src_managed/
-test-output/
-*.iml
-.classpath_nb

@@ -5,15 +5,13 @@ import scala.collection.JavaConversions._
 
 trait ChecklistFetcher extends Configure {
   def fetchChecklistItems(taxonSelector: String, wktString: String): List[Map[String, Any]] = {
-    val results: ResultSet = session.execute(checklistSelect
-      , normalizeTaxonSelector(taxonSelector), wktString)
+    val results: ResultSet = session.execute(checklistSelect, normalizeTaxonSelector(taxonSelector), wktString)
     val items: List[Row] = results.all.toList
     items.map(item => Map("taxon" -> item.getString("taxon"), "recordcount" -> item.getInt("recordcount")))
   }
 
   def fetchChecklistStatus(taxonSelector: String, wktString: String): Option[String] = {
-    val results: ResultSet = session.execute(checklistStatusSelect
-      , normalizeTaxonSelector(taxonSelector), wktString)
+    val results: ResultSet = session.execute(checklistStatusSelect, normalizeTaxonSelector(taxonSelector), wktString)
     val items: List[Row] = results.all.toList
     items.map(_.getString("status")).headOption
   }

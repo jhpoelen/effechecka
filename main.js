@@ -156,22 +156,36 @@ function clearChecklist() {
     setChecklistStatus('none requested');
 }
 
+var createChecklistURL = function(dataFilter) {
+    return 'http://apihack-c18.idigbio.org:8888/checklist' + Object.keys(dataFilter).filter(function (key) {
+        return ['taxonSelector', 'wktString', 'type', 'limit'].indexOf(key) != -1;
+    }).reduce(function (accum, key) {
+        if (dataFilter[key] !== null) {
+            return accum + key + '=' + encodeURIComponent(dataFilter[key]) + '&';
+        } else {
+            return accum;
+        }
+    }, '?');
+};
+
 var updateChecklist = function () {
     var req = xhr();
-    if (req !== undefined) {
-        var baseUrl = 'http://apihack-c18.idigbio.org:8888/checklist';
-        var dataFilter = getDataFilter();
-        var query = Object.keys(dataFilter).filter(function (key) {
-            return ['taxonSelector', 'wktString'].indexOf(key) != -1;
-        }).reduce(function (accum, key) {
-            if (dataFilter[key] !== null) {
-                return accum + key + '=' + encodeURIComponent(dataFilter[key]) + '&';
-            } else {
-                return accum;
-            }
-        }, '?');
+    var url = createChecklistURL(getDataFilter());
 
-        var url = baseUrl + query;
+    function updateDownloadURL() {
+        var requestURL = document.querySelector("#requestURL");
+        while (requestURL.firstChild) {
+            requestURL.removeChild(requestURL.firstChild);
+        }
+        var a = requestURL.appendChild(document.createElement("a"));
+        var dataFilter = getDataFilter();
+        dataFilter.type = 'csv';
+        dataFilter.limit = null;
+        a.setAttribute('href', createChecklistURL(dataFilter));
+        a.textContent = 'as csv';
+    }
+
+    if (req !== undefined) {
         req.open('GET', url, true);
         req.onreadystatechange = function () {
             if (req.readyState === 4) {
@@ -183,10 +197,11 @@ var updateChecklist = function () {
                         renderChecklist(checklist, resp);
                     }
                 } else {
-                    setChecklistStatus('not ok. Received a [' + req.status + '] status with text [' + req.statusText + '] in response to [' + url + ']');
+                    setChecklistStatus('not ok. Received a [' + req.status + '] status with text [' + req.statusText + '] in response to [' + createChecklistURL(getDataFilter()) + ']');
                 }
             }
         };
+        updateDownloadURL();
         clearChecklist();
         setChecklistStatus('requesting checklist...');
         req.send(null);
@@ -203,7 +218,7 @@ var setChecklistStatus = function (status) {
 
 var getDataFilter = function () {
     var occurrences = document.querySelector('#checklist');
-    var dataFilter = { hasSpatialIssue: 'false' };
+    var dataFilter = { hasSpatialIssue: 'false', limit: 20 };
     if (occurrences.hasAttribute('data-filter')) {
         dataFilter = JSON.parse(occurrences.getAttribute('data-filter'));
     }

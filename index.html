@@ -16,10 +16,12 @@
 <div id="map" style="width: 600px; height: 400px"></div>
 
 <h1>taxon filter</h1>
+
 <div id="taxonFilter"></div>
 <br/>
+
 <div id="taxonSelector">
-    <input id="scientificName" class="editable centered" type="text" placeholder="lookup taxa" autocomplete="off" />
+    <input id="scientificName" class="editable centered" type="text" placeholder="lookup taxa" autocomplete="off"/>
     <div id="suggestions"></div>
 </div>
 
@@ -30,11 +32,18 @@
     <a href="http://apihack-c18.idigbio.org:8080">Checklist Processing Dashboard</a> for checklist calculation status.
     Supports comma separated list of focal taxa (e.g. "Aves,Insecta").
 </p>
-<button id="requestChecklist">Request Checklist</button>
-checklist status: [<b><span id="checklistStatus"></span></b>]
-<button id="refreshChecklist">Refresh</button>
-<table id="checklist">
-</table>
+
+<div id="checklist-controls">
+    <button id="requestChecklist">request checklist</button>
+    checklist status: [<b><span id="checklistStatus"></span></b>]
+    <button id="refreshChecklist">refresh</button>
+
+</div>
+<div id="checklist-results">
+    <br/>
+    <div id="requestURL"></div>
+    <table id="checklist"></table>
+</div>
 <h1>occurrences</h1>
 
 <p>Occurrences are retrieved directly from the GBIF API. This list may contain duplicates and is not ordered in any

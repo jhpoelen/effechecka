@@ -1,0 +1,37 @@
+{
+  "name": "effechecka",
+  "version": "0.0.1",
+  "description": "taxonomic checklist generator",
+  "main": "main.js",
+  "dependencies": {
+    "autocomplete-element": "^1.0.0",
+    "globi-data": "^0.0.43",
+    "leaflet": "^0.7.3",
+    "query-string": "^2.3.0"
+  },
+  "devDependencies": {
+    "browserify": "^8.1.1",
+    "tape": "^3.0.3",
+    "watchify": "^2.2.1"
+  },
+  "scripts": {
+    "test": "tape test/*.js",
+    "watch": "watchify main.js -o static/bundle.js -dv",
+    "build": "browserify main.js > static/bundle.js",
+    "publish": "npm run build && html-inline index.html | htmlbin"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/jhpoelen/effechecka.git"
+  },
+  "homepage": "https://github.com/jhpoelen/effechecka",
+  "keywords": [
+    "calendar",
+    "replication"
+  ],
+  "author": {
+    "name": "Jorrit Poelen",
+    "email": "jhpoelen+npm@gmail.com"
+  },
+  "license": "MIT"
+}

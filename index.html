@@ -13,9 +13,11 @@
 <h1>Effechecka - Spatio-Taxonomic Checklist Generator</h1>
 
 <div id="map" style="width: 600px; height: 400px"></div>
-<div id="taxonFilter">Include only taxa related to <input id='scientificName' type="text"
-                                                          placeholder="enter taxon name"/>.
+<div id="taxonFilter">Include only taxa related to:
+    <input id='scientificName' type="text" placeholder="enter taxon name"/>
+    <button id="addTaxon">+</button>
 </div>
+
 <h1>checklist</h1>
 
 <p>Checklists contain distinct taxa ordered by frequency of occurrence and are built directly from iDigBio's Darwin Core
@@ -254,10 +256,20 @@ var setDataFilter = function (dataFilter) {
     document.location.hash = queryString.stringify(dataFilter);
 }
 
-function updateTaxonSelector(target) {
+function updateTaxonSelector() {
+    var filterElems = Array.prototype.slice.call(document.querySelectorAll('.taxonFilterElementName'));
+
+    var filterJoin = filterElems.reduce(function(filterAgg, filterElem) {
+        var taxonName = filterElem.textContent.trim();
+        if (taxonName.length > 0 ) {
+            filterAgg = filterAgg.concat(filterElem.textContent.trim());
+        }
+        return filterAgg;
+    }, []).join(',');
+
     var filter = getDataFilter();
-    filter.scientificName = target.value.trim();
-    filter.taxonSelector = target.value.trim();
+    filter.scientificName = filterJoin;
+    filter.taxonSelector = filterJoin;
     setDataFilter(filter);
 }
 
@@ -288,7 +300,7 @@ var updateBBox = function (areaSelect) {
 }
 
 var init = function () {
-    function addRequestHandler(buttonId) {
+    var addRequestHandler = function(buttonId) {
         var checklistButton = document.querySelector(buttonId);
         checklistButton.addEventListener('click', function (event) {
             updateChecklist();
@@ -299,6 +311,33 @@ var init = function () {
     ['#requestChecklist', '#refreshChecklist'].forEach(function (id) {
         addRequestHandler(id)
     });
+
+    var addTaxonFilterElement = function(taxonName) {
+        var taxonDiv = document.createElement('span');
+        taxonDiv.setAttribute('class', 'taxonFilterElement');
+        var removeButton = document.createElement('button');
+        removeButton.addEventListener('click', function (event) {
+            taxonDiv.parentNode.removeChild(taxonDiv);
+            updateTaxonSelector();
+            clearChecklist();
+            updateOccurrences();
+        });
+        removeButton.textContent = 'x';
+
+        var taxonNameSpan = document.createElement('span');
+        taxonNameSpan.setAttribute('class', 'taxonFilterElementName');
+        taxonNameSpan.textContent = taxonName;
+        taxonDiv.appendChild(taxonNameSpan);
+        taxonDiv.appendChild(removeButton);
+        document.querySelector('#taxonFilter').insertBefore(taxonDiv, document.querySelector('#scientificName'));
+        updateTaxonSelector();
+    }
+
+    var checklistButton = document.querySelector('#addTaxon');
+    checklistButton.addEventListener('click', function (event) {
+        addTaxonFilterElement(document.querySelector('#scientificName').value.trim());
+    }, false);
+
 
     var dataFilter = queryString.parse(document.location.hash);
 
@@ -316,7 +355,7 @@ var init = function () {
         id: 'examples.map-i875mjb7'
     }).addTo(map);
 
-     var width = parseInt((dataFilter.width || 200));
+    var width = parseInt((dataFilter.width || 200));
     var height = parseInt((dataFilter.height || 200));
     var areaSelect = L.areaSelect({width: width, height: height});
     areaSelect.addTo(map);
@@ -326,16 +365,21 @@ var init = function () {
         clearChecklist();
     });
 
-    var nameInput = document.getElementById('scientificName');
-    nameInput.value = dataFilter.scientificName || "Aves,Insecta";
+    var taxonFilterNames = (dataFilter.scientificName && dataFilter.scientificName.split(',')) || ['Aves','Insecta'];
 
+    taxonFilterNames.forEach(function(taxonName) {
+        addTaxonFilterElement(taxonName);
+    });
+
+    var nameInput = document.getElementById('scientificName');
     nameInput.onchange = function (event) {
-        updateTaxonSelector(event.target);
+        addTaxonFilterElement(event.target.value.trim());
+        event.target.value = '';
         clearChecklist();
         updateOccurrences();
     };
 
-    updateTaxonSelector(nameInput);
+    updateTaxonSelector();
     updateBBox(areaSelect);
     updateOccurrences();
 }

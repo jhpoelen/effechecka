@@ -24,7 +24,7 @@ class ChecklistServiceActor extends Actor with ChecklistService {
 }
 
 
-case class Checklist(taxonSelector: String, wktString: String)
+case class Checklist(taxonSelector: String, wktString: String, limit: Int)
 
 // this trait defines our service behavior independently from the service actor
 trait ChecklistService extends HttpService with ChecklistFetcher with Configure {
@@ -32,13 +32,13 @@ trait ChecklistService extends HttpService with ChecklistFetcher with Configure 
   val myRoute =
     path("checklist") {
       get {
-        parameters('taxonSelector ?, 'wktString ?).as(Checklist) {
+        parameters('taxonSelector ?, 'wktString ?, 'limit ? 20).as(Checklist) {
           request => {
             respondWithMediaType(`application/json`) {
               respondWithHeader(RawHeader("Access-Control-Allow-Origin", "*")) {
                 val status: Option[String] = fetchChecklistStatus(request.taxonSelector, request.wktString)
                 val (checklist_items, checklist_status) = status match {
-                  case Some("ready") => (fetchChecklistItems(request.taxonSelector, request.wktString), "ready")
+                  case Some("ready") => (fetchChecklistItems(request.taxonSelector, request.wktString, request.limit), "ready")
                   case None =>
                     SparkSubmit.main(Array("--master", config.getString("effechecka.spark.master.url")
                       , "--class", "ChecklistGenerator"

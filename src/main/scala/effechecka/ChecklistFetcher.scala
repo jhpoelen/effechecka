@@ -1,11 +1,11 @@
 package effechecka
 
-import com.datastax.driver.core.{Session, Row, ResultSet, Cluster}
+import com.datastax.driver.core._
 import scala.collection.JavaConversions._
 
 trait ChecklistFetcher extends Configure {
-  def fetchChecklistItems(taxonSelector: String, wktString: String): List[Map[String, Any]] = {
-    val results: ResultSet = session.execute(checklistSelect, normalizeTaxonSelector(taxonSelector), wktString)
+  def fetchChecklistItems(taxonSelector: String, wktString: String, limit: Int = 20): List[Map[String, Any]] = {
+    val results: ResultSet = session.execute(checklistSelect(limit), normalizeTaxonSelector(taxonSelector), wktString)
     val items: List[Row] = results.all.toList
     items.map(item => Map("taxon" -> item.getString("taxon"), "recordcount" -> item.getInt("recordcount")))
   }
@@ -22,8 +22,8 @@ trait ChecklistFetcher extends Configure {
     cluster.connect("idigbio")
   }
 
-  def checklistSelect: String = {
-    "SELECT taxon,recordcount FROM idigbio.checklist WHERE taxonselector = ? AND wktstring = ? ORDER BY recordcount DESC LIMIT 20"
+  def checklistSelect(limit: Int): String = {
+    s"SELECT taxon,recordcount FROM idigbio.checklist WHERE taxonselector = ? AND wktstring = ? ORDER BY recordcount DESC LIMIT $limit"
   }
 
   def checklistStatusSelect: String = {

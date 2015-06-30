@@ -83,9 +83,9 @@ function renderChecklist(checklist, resp) {
             path.appendChild(elem);
         });
         row.appendChild(path);
-        var latLng = document.createElement('td');
-        latLng.textContent = item.recordcount;
-        row.appendChild(latLng);
+        var recordCount = document.createElement('td');
+        recordCount.textContent = item.recordcount;
+        row.appendChild(recordCount);
         checklist.appendChild(row);
     });
     var ellipsisRow = document.createElement('tr');
@@ -156,9 +156,9 @@ function clearChecklist() {
     setChecklistStatus('none requested');
 }
 
-var createChecklistURL = function(dataFilter) {
+var createChecklistURL = function (dataFilter) {
     return 'http://apihack-c18.idigbio.org:8888/checklist' + Object.keys(dataFilter).filter(function (key) {
-        return ['taxonSelector', 'wktString', 'type', 'limit'].indexOf(key) != -1;
+        return ['taxonSelector', 'wktString', 'limit'].indexOf(key) != -1;
     }).reduce(function (accum, key) {
         if (dataFilter[key] !== null) {
             return accum + key + '=' + encodeURIComponent(dataFilter[key]) + '&';
@@ -168,25 +168,55 @@ var createChecklistURL = function(dataFilter) {
     }, '?');
 };
 
-var updateChecklist = function () {
-    var req = xhr();
-    var url = createChecklistURL(getDataFilter());
-
-    function updateDownloadURL() {
-        var requestURL = document.querySelector("#requestURL");
-        while (requestURL.firstChild) {
-            requestURL.removeChild(requestURL.firstChild);
-        }
-        var a = requestURL.appendChild(document.createElement("a"));
-        var dataFilter = getDataFilter();
-        dataFilter.type = 'csv';
-        dataFilter.limit = null;
-        a.setAttribute('href', createChecklistURL(dataFilter));
-        a.textContent = 'as csv';
+var updateDownloadURL = function () {
+    var requestURL = document.querySelector("#requestURL");
+    while (requestURL.firstChild) {
+        requestURL.removeChild(requestURL.firstChild);
     }
 
+    var dataFilter = getDataFilter();
+    dataFilter.limit = 1024 * 4;
+
+    requestURL.appendChild(document.createElement("span"))
+        .textContent = 'download up to [' + dataFilter.limit + '] checklist items as ';
+
+    var url = createChecklistURL(dataFilter);
+    var jsonRef = requestURL.appendChild(document.createElement("a"));
+    jsonRef.setAttribute('href', url);
+    jsonRef.textContent = 'json';
+
+    var req = xhr();
     if (req !== undefined) {
         req.open('GET', url, true);
+        req.onreadystatechange = function () {
+            if (req.readyState === 4) {
+                if (req.status === 200) {
+                    var resp = JSON.parse(req.responseText);
+                    if (resp.items) {
+                        var csvString = resp.items.reduce(function (agg, item) {
+                            if (item.taxon && item.recordcount) {
+                                agg = agg.concat([item.taxon, item.recordcount].join(','));
+                            }
+                            return agg;
+                        }, ['taxon path,record count']).join('\n');
+                        requestURL.appendChild(document.createElement("span")).textContent = ' or as ';
+                        var csvRef = requestURL.appendChild(document.createElement("a"));
+                        csvRef.setAttribute('href', encodeURI('data:text/csv;charset=utf-8,' + csvString));
+                        csvRef.setAttribute('download', 'checklist.csv')
+                        csvRef.textContent = 'csv';
+                    }
+                }
+            }
+        };
+        req.send(null);
+    }
+}
+
+
+var updateChecklist = function () {
+    var req = xhr();
+    if (req !== undefined) {
+        req.open('GET', createChecklistURL(getDataFilter()), true);
         req.onreadystatechange = function () {
             if (req.readyState === 4) {
                 setChecklistStatus('received response');
@@ -368,7 +398,7 @@ var init = function () {
                     if (closeMatch.commonNames.en) {
                         addTaxonButton(closeMatch.commonNames.en, closeMatch.scientificName, suggestion);
                     }
-                    closeMatch.path.forEach(function(pathElem) {
+                    closeMatch.path.forEach(function (pathElem) {
                         addTaxonButton(pathElem, pathElem, suggestion);
                     });
 

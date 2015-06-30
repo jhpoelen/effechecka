@@ -387,7 +387,7 @@ var init = function () {
         if (nameInput.value.length > 0) {
             var closeMatchCallback = function (closeMatches) {
                 var instructions = document.createElement('div');
-                instructions.textContent = 'click any button below to add taxon to filter';
+                instructions.textContent = 'click any button below to add taxon to selector';
                 suggestions.appendChild(instructions);
                 function addTaxonButton(taxonLabel, scientificName, suggestion) {
                     var addTaxonButton = document.createElement('button');

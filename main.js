@@ -139,20 +139,24 @@ var updateOccurrences = function () {
                 }
             }
         };
-        var occurrences = document.querySelector('#occurrences');
-        while (occurrences.firstChild) {
-            occurrences.removeChild(occurrences.firstChild);
-        }
+        removeChildren('#occurrences');
         setOccurrenceStatus('building new list...');
         req.send(null);
     }
 };
 
-function clearChecklist() {
-    var checklist = document.querySelector('#checklist');
+var removeChildren = function (selector) {
+    var checklist = document.querySelector(selector);
     while (checklist.firstChild) {
         checklist.removeChild(checklist.firstChild);
     }
+    return checklist;
+};
+
+
+function clearChecklist() {
+    removeChildren('#checklist');
+    removeChildren('#download');
     setChecklistStatus('none requested');
 }
 
@@ -169,19 +173,17 @@ var createChecklistURL = function (dataFilter) {
 };
 
 var updateDownloadURL = function () {
-    var requestURL = document.querySelector("#requestURL");
-    while (requestURL.firstChild) {
-        requestURL.removeChild(requestURL.firstChild);
-    }
+    removeChildren("#download");
 
     var dataFilter = getDataFilter();
     dataFilter.limit = 1024 * 4;
 
-    requestURL.appendChild(document.createElement("span"))
+    var download = document.querySelector('#download');
+    download.appendChild(document.createElement("span"))
         .textContent = 'download up to [' + dataFilter.limit + '] checklist items as ';
 
     var url = createChecklistURL(dataFilter);
-    var jsonRef = requestURL.appendChild(document.createElement("a"));
+    var jsonRef = download.appendChild(document.createElement("a"));
     jsonRef.setAttribute('href', url);
     jsonRef.textContent = 'json';
 
@@ -199,8 +201,8 @@ var updateDownloadURL = function () {
                             }
                             return agg;
                         }, ['taxon path,record count']).join('\n');
-                        requestURL.appendChild(document.createElement("span")).textContent = ' or as ';
-                        var csvRef = requestURL.appendChild(document.createElement("a"));
+                        download.appendChild(document.createElement("span")).textContent = ' or as ';
+                        var csvRef = download.appendChild(document.createElement("a"));
                         csvRef.setAttribute('href', encodeURI('data:text/csv;charset=utf-8,' + csvString));
                         csvRef.setAttribute('download', 'checklist.csv')
                         csvRef.textContent = 'csv';
@@ -225,13 +227,15 @@ var updateChecklist = function () {
                     setChecklistStatus(resp.status);
                     if (resp.items) {
                         renderChecklist(checklist, resp);
+                        if (resp.items.length > 0) {
+                            updateDownloadURL();
+                        }
                     }
                 } else {
                     setChecklistStatus('not ok. Received a [' + req.status + '] status with text [' + req.statusText + '] in response to [' + createChecklistURL(getDataFilter()) + ']');
                 }
             }
         };
-        updateDownloadURL();
         clearChecklist();
         setChecklistStatus('requesting checklist...');
         req.send(null);
@@ -240,11 +244,11 @@ var updateChecklist = function () {
 
 var setOccurrenceStatus = function (status) {
     document.querySelector('#occurrenceStatus').textContent = status;
-}
+};
 
 var setChecklistStatus = function (status) {
     document.querySelector('#checklistStatus').textContent = status;
-}
+};
 
 var getDataFilter = function () {
     var occurrences = document.querySelector('#checklist');
@@ -317,15 +321,20 @@ var init = function () {
         addRequestHandler(id)
     });
 
+    var updateLists = function () {
+        clearChecklist();
+        updateOccurrences();
+    };
+
     var addTaxonFilterElement = function (taxonName) {
         var taxonDiv = document.createElement('span');
         taxonDiv.setAttribute('class', 'taxonFilterElement');
         var removeButton = document.createElement('button');
+
         removeButton.addEventListener('click', function (event) {
             taxonDiv.parentNode.removeChild(taxonDiv);
             updateTaxonSelector();
-            clearChecklist();
-            updateOccurrences();
+            updateLists();
         });
         removeButton.textContent = 'x';
 
@@ -336,6 +345,7 @@ var init = function () {
         taxonDiv.appendChild(taxonNameSpan);
         document.querySelector('#taxonFilter').appendChild(taxonDiv);
         updateTaxonSelector();
+        updateLists();
     }
 
     var dataFilter = queryString.parse(document.location.hash);
@@ -360,8 +370,7 @@ var init = function () {
     areaSelect.addTo(map);
     areaSelect.on("change", function () {
         updateBBox(this);
-        updateOccurrences();
-        clearChecklist();
+        updateLists();
     });
 
     var taxonFilterNames = (dataFilter.scientificName && dataFilter.scientificName.split(',')) || ['Aves', 'Insecta'];
@@ -373,10 +382,8 @@ var init = function () {
     var nameInput = document.getElementById('scientificName');
 
     nameInput.onkeyup = function (event) {
-        var suggestions = document.getElementById('suggestions');
-        while (suggestions.firstChild) {
-            suggestions.removeChild(suggestions.firstChild);
-        }
+        var suggestions = removeChildren('#suggestions');
+
         if (nameInput.value.length > 0) {
             var closeMatchCallback = function (closeMatches) {
                 var instructions = document.createElement('div');
@@ -411,7 +418,7 @@ var init = function () {
 
     updateTaxonSelector();
     updateBBox(areaSelect);
-    updateOccurrences();
+    updateLists();
 }
 
 window.addEventListener('load', function () {

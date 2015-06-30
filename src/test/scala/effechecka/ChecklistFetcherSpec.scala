@@ -12,7 +12,6 @@ trait TestCassandraSession extends CassandraSession with Mockito {
     val mockRow = mock[Row]
     mockRow.getString("taxon") returns "checklist item"
     mockRow.getInt("recordcount") returns 1
-    mockRow.getString("status") returns "a status"
 
     mockResult.all returns List(mockRow).toList
   }
@@ -27,9 +26,9 @@ class ChecklistFetcherSpec extends Specification with ChecklistFetcher with Test
       checklist must contain(Map("taxon" -> "checklist item", "recordcount" -> 1))
     }
 
-    "report checklist status" in {
-      val checklistStatus = fetchChecklistStatus(execute, "Insecta|Mammalia", "ENVELOPE(-150,-50,40,10)")
-      checklistStatus must beSome("a status")
+    "create a checklist" in {
+      val checklist = fetchChecklistItems(execute, "Insecta|Mammalia", "ENVELOPE(-150,-50,40,10)")
+      checklist must contain(Map("taxon" -> "checklist item", "recordcount" -> 1))
     }
   }
 

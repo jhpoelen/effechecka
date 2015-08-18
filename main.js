@@ -356,7 +356,8 @@ var init = function () {
 
     var map = L.map('map').setView([lat, lng], zoom);
 
-    L.tileLayer('https://{s}.tiles.mapbox.com/v3/{id}/{z}/{x}/{y}.png', {
+    var tileUrlTemplate = 'http://{s}.tile.osm.org/{z}/{x}/{y}.png'; 
+    L.tileLayer(tileUrlTemplate, {
         maxZoom: 18,
         attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, ' +
             '<a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, ' +

@@ -360,10 +360,7 @@ var init = function () {
     var tileUrlTemplate = 'http://{s}.tile.osm.org/{z}/{x}/{y}.png'; 
     L.tileLayer(tileUrlTemplate, {
         maxZoom: 18,
-        attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, ' +
-            '<a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, ' +
-            'Imagery © <a href="http://mapbox.com">Mapbox</a>',
-        id: 'examples.map-i875mjb7'
+        attribution: '&copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors'
     }).addTo(map);
 
     var width = parseInt((dataFilter.width || 200));

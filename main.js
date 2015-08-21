@@ -354,9 +354,9 @@ var init = function () {
     var lat = parseFloat(dataFilter.lat || 42.31);
     var lng = parseFloat(dataFilter.lng || -71.05);
 
-    var map = L.map('map').setView([lat, lng], zoom);
+    var map = L.map('map', {scrollWheelZoom: false}).setView([lat, lng], zoom);
 
-    var tileUrlTemplate = 'http://{s}.tile.osm.org/{z}/{x}/{y}.png'; 
+    var tileUrlTemplate = 'http://{s}.tile.osm.org/{z}/{x}/{y}.png';
     L.tileLayer(tileUrlTemplate, {
         maxZoom: 18,
         attribution: '&copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors'

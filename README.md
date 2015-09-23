@@ -5,7 +5,9 @@ Taxon checklist generator: creates a list of organisms that satisfy specified sp
 
 See gh_pages branch and http://jhpoelen.github.io/effechecka for a prototype of the checklist generator.
 
-
+# running
+to run the effechecka webservice:
+```sh run-idigbio.sh```
 
 
 

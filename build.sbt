@@ -18,7 +18,6 @@ libraryDependencies ++= {
     "org.apache.spark" %% "spark-core" % "1.5.0" excludeAll(
       // only using the submit job functionality at this point
       ExclusionRule("io.dropwizard.metrics"),
-      ExclusionRule("org.apache.hadoop"),
       ExclusionRule("org.apache.mesos"),
       ExclusionRule("org.tachyonproject"),
       ExclusionRule("org.apache.avro"),

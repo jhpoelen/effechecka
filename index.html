@@ -12,7 +12,7 @@
 </head>
 <body>
 <h1>Effechecka - Taxonomic Checklist Generator*</h1>
-<p>The purpose of <a href="https://github.com/jhpoelen/effechecka">Effechecka</a> is to create, save, export and follow checklists given specific spatial, taxonomic and trait constraints using data sources including, but not limited to, <a href="http://gbif.org">GBIF</a>, <a href="https://idigbio.org">iDigBio</a> and <a href="http://eol.org/traitbank">EOL TraitBank</a>.</p><p> Currently, spatial and taxonomic contraints are supported. In the future, we'll be adding trait based constraints (e.g. body mass greater than 10 grams) and add the ability to save into an EOL collection. Want to know more? Please open <a href="https://github.com/jhpoelen/effechecka/issues/new">an issue</a> or yell really loudly. </p> <p>This project is supported by the <a href="http://eol.org">Encyclopedia of Life</a> and (partly) runs on <a href="https://idigbio.org">iDigBio</a> servers.</p>
+<p>The purpose of <a href="https://github.com/jhpoelen/effechecka">Effechecka</a> is to create, save, export and follow checklists given specific spatial, taxonomic and trait constraints using data sources including, but not limited to, <a href="http://gbif.org">GBIF</a>, <a href="https://idigbio.org">iDigBio</a> and <a href="http://eol.org/traitbank">EOL TraitBank</a>.</p><p> Currently, spatial and taxonomic constraints are supported. In the future, we'll be adding trait based constraints (e.g. body mass greater than 10 grams) and add the ability to save into an EOL collection. Want to know more? Please open <a href="https://github.com/jhpoelen/effechecka/issues/new">an issue</a> or yell really loudly. </p> <p>This project is supported by the <a href="http://eol.org">Encyclopedia of Life</a> and (partly) runs on <a href="https://idigbio.org">iDigBio</a> servers.</p>
 <p>*a working prototype</p>
 <h1>spatial selector</h1>
 <p>The spatial selector specifies an area of interest. Currently, only a rectangular selection is supported for sake of simplicity, but underlying algorithms can use any arbitary WKT string.</p>
@@ -32,11 +32,8 @@ lists taxa, including their higher order ranks, similar to the provided scientif
 <h1>checklist</h1>
 
 <p>Checklists contain distinct taxa ordered by frequency of occurrence and are built directly from iDigBio's Darwin Core
-    Archive (~15M specimen records). If the checklist has not been calculated before, this may take several minutes. Please
-    click the refresh button to check for results. See
-    <a href="http://apihack-c18.idigbio.org:8080">Checklist Processing Dashboard</a> for checklist calculation status.
-
-</p>
+Archive (~15M specimen records). We are planning to add <a href="http://eol.org/traitbank">EOL's TraitBank</a> and <a href="http://gbif.org">GBIF</a> in 2015-2016</p>
+<p>By clicking on "request checklist", the specified spatial and taxonomic selectors are used to generate an ordered checklist of unique taxa: the most frequently occuring taxa with given constraints appear first. If the checklist has not been calculated before, the checklist generation may take several minutes. Please click the refresh button to check for results. See <a href="http://apihack-c18.idigbio.org:8080">Checklist Processing Dashboard</a> for checklist calculation status.</p>
 
 <div id="checklist-controls">
     <button id="requestChecklist">request checklist</button>
@@ -52,8 +49,8 @@ lists taxa, including their higher order ranks, similar to the provided scientif
 </div>
 <h1>occurrences</h1>
 
-<p>Occurrences are retrieved directly from the GBIF API. This list may contain duplicates and is not ordered in any
-    way. Only supports single focal taxa (e.g. "Aves", but not "Aves,Insecta").</p>
+<p>Occurrences are retrieved directly from the GBIF API. The items in the list correspond to individual GBIF occurrence records that were recorded within the given area and the first taxonomic constraint (e.g. if "Aves" and "Insecta" are selected, only "Aves" is applied). So, the list may contain duplicates and is not ordered in any way. Only the top 20 matching occurrence records are provided for performance and simplicity sake. </p>
+<p>When the checklist generator includes GBIF data this feature will be deprecated. Until then, this list serves as a spot check for quick comparison between the iDigBio based checklist and GBIF occurrence records.</p>
 
 <div id="occurrenceStatus"></div>
 <table id="occurrences">

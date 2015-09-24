@@ -345,7 +345,6 @@ var init = function () {
         taxonDiv.appendChild(taxonNameSpan);
         document.querySelector('#taxonFilter').appendChild(taxonDiv);
         updateTaxonSelector();
-        updateLists();
     }
 
     var dataFilter = queryString.parse(document.location.hash);
@@ -391,6 +390,7 @@ var init = function () {
                     var addTaxonButton = document.createElement('button');
                     addTaxonButton.addEventListener('click', function (event) {
                         addTaxonFilterElement(scientificName.trim());
+                        updateLists();
                     }, false);
                     addTaxonButton.textContent = taxonLabel;
                     suggestion.appendChild(addTaxonButton);

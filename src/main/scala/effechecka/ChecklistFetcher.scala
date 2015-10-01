@@ -23,16 +23,16 @@ trait ChecklistFetcher extends Configure {
   }
 
   def checklistSelect(limit: Int): String = {
-    s"SELECT taxon,recordcount FROM idigbio.checklist WHERE taxonselector = ? AND wktstring = ? AND traitselector = ? ORDER BY recordcount DESC LIMIT $limit"
+    s"SELECT taxon,recordcount FROM effechecka.checklist WHERE taxonselector = ? AND wktstring = ? AND traitselector = ? ORDER BY recordcount DESC LIMIT $limit"
   }
 
   def checklistStatusSelect: String = {
-    "SELECT status FROM idigbio.checklist_registry WHERE taxonselector = ? AND wktstring = ? AND traitselector = ? LIMIT 1"
+    "SELECT status FROM effechecka.checklist_registry WHERE taxonselector = ? AND wktstring = ? AND traitselector = ? LIMIT 1"
   }
 
   def insertChecklistRequest(taxonSelector: String, wktString: String, traitSelector: String): String = {
     val values = Seq(normalizeTaxonSelector(taxonSelector), wktString, traitSelector, "requested").map("'" + _ + "'").mkString(",")
-    session.execute(s"INSERT INTO idigbio.checklist_registry (taxonselector, wktstring, traitSelector, status) VALUES ($values) using TTL 600")
+    session.execute(s"INSERT INTO effechecka.checklist_registry (taxonselector, wktstring, traitSelector, status) VALUES ($values) using TTL 600")
     "requested"
   }
 

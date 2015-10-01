@@ -24,7 +24,7 @@ class ChecklistServiceActor extends Actor with ChecklistService {
 }
 
 
-case class Checklist(taxonSelector: String, wktString: String, limit: Int)
+case class Checklist(taxonSelector: String, wktString: String, traitSelector: String, limit: Int)
 
 // this trait defines our service behavior independently from the service actor
 trait ChecklistService extends HttpService with ChecklistFetcher with Configure {
@@ -32,13 +32,13 @@ trait ChecklistService extends HttpService with ChecklistFetcher with Configure 
   val myRoute =
     path("checklist") {
       get {
-        parameters('taxonSelector ?, 'wktString ?, 'limit ? 20).as(Checklist) {
+        parameters('taxonSelector ?, 'wktString ?, 'traitSelector ? "", 'limit ? 20).as(Checklist) {
           request => {
             respondWithMediaType(`application/json`) {
               respondWithHeader(RawHeader("Access-Control-Allow-Origin", "*")) {
-                val status: Option[String] = fetchChecklistStatus(request.taxonSelector, request.wktString)
+                val status: Option[String] = fetchChecklistStatus(request.taxonSelector, request.wktString, request.traitSelector)
                 val (checklist_items, checklist_status) = status match {
-                  case Some("ready") => (fetchChecklistItems(request.taxonSelector, request.wktString, request.limit), "ready")
+                  case Some("ready") => (fetchChecklistItems(request.taxonSelector, request.wktString, request.traitSelector, request.limit), "ready")
                   case None =>
                     SparkSubmit.main(Array("--master", config.getString("effechecka.spark.master.url")
                       , "--class", "ChecklistGenerator"
@@ -46,13 +46,19 @@ trait ChecklistService extends HttpService with ChecklistFetcher with Configure 
                       , "--executor-memory", "32G"
                       , config.getString("effechecka.spark.job.jar")
                       , config.getString("effechecka.data.dir") + "*occurrence.txt"
-                      , request.taxonSelector.replace(',', '|'), request.wktString, "cassandra"))
-                    (List(), insertChecklistRequest(request.taxonSelector, request.wktString))
+                      , request.taxonSelector.replace(',', '|')
+                      , request.wktString
+                      , "cassandra"
+                      , request.traitSelector
+                      , config.getString("effechecka.data.dir") + "*traits.csv"
+                    ))
+                    (List(), insertChecklistRequest(request.taxonSelector, request.wktString, request.traitSelector))
                   case _ => (List(), status.get)
                 }
                 complete {
                   JSONObject(Map("taxonSelector" -> request.taxonSelector,
                     "wktString" -> request.wktString,
+                    "traitSelector" -> request.traitSelector,
                     "status" -> checklist_status,
                     "items" -> JSONArray(checklist_items.map(JSONObject)))).toString()
                 }

@@ -19,7 +19,7 @@ trait ChecklistFetcher extends Configure {
   def session: Session = {
     val cluster = Cluster.builder()
       .addContactPoint(config.getString("effechecka.cassandra.host")).build()
-    cluster.connect("idigbio")
+    cluster.connect("effechecka")
   }
 
   def checklistSelect(limit: Int): String = {

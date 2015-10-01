@@ -49,7 +49,7 @@ trait ChecklistService extends HttpService with ChecklistFetcher with Configure 
                       , request.taxonSelector.replace(',', '|')
                       , request.wktString
                       , "cassandra"
-                      , request.traitSelector
+                      , request.traitSelector.replace(',', '|')
                       , config.getString("effechecka.data.dir") + "*traits.csv"
                     ))
                     (List(), insertChecklistRequest(request.taxonSelector, request.wktString, request.traitSelector))

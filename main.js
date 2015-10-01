@@ -367,7 +367,7 @@ var init = function () {
         var removeTraitButton = document.createElement('button');
         removeTraitButton.textContent = 'x';
         removeTraitButton.addEventListener('click', function(event) {
-          removeTraitButton.parentNode.removeChild(removeTraitElement);
+          traitFilterElement.parentNode.removeChild(traitFilterElement);
           updateTraitSelector();
         });
         traitFilterElement.appendChild(removeTraitButton);
@@ -405,7 +405,7 @@ var init = function () {
       addTaxonFilterElement(taxonName);
     });
 
-    var traitFilters = (dataFilter.traitSelector && dataFilter.traitSelector.split(',')) || [];
+    var traitFilters = (dataFilter.traitSelector && dataFilter.traitSelector.split(',')) || ['bodyMass greaterThan 10 g', 'bodyMass lessThan 1.0 kg'];
     traitFilters.forEach(function(traitFilter) {
       addTraitFilterElement(traitFilter);
     });

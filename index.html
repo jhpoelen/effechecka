@@ -32,6 +32,7 @@ lists taxa, including their higher order ranks, similar to the provided scientif
 <h1>trait selector</h1>
 <p>The trait selector is used to select those taxa (e.g. species) that have a specific trait or traits.</p>
 <p>syntax: [trait] [operator] [value] [(optional)unit]</p>
+<p>Currently only <a href="http://purl.obolibrary.org/obo/VT_0001259">bodyMass</a> is a supported trait. Supported operators are: greaterThan, lessThan and equals. Units g (i.e. <a href="http://purl.obolibrary.org/obo/UO_0000021">grams</a>) and kg (i.e. <a href="http://purl.obolibrary.org/obo/UO_0000009">kilograms</a>) are available. We expect to include more traits in 2015 - 2016.
 <p>Examples:</p> 
 <ul><li>bodyMass greaterThan 50 kg</li><li>bodyMass lessThan 11.2 g</li><li>bodyMass equals 32 g</li></ul></p>
 <p>A trait selector "bodyMass greaterThan 2.7 kg" can be specified to include only taxa that have a body mass above 2.7 kilograms. </p>

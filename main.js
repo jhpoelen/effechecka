@@ -162,7 +162,7 @@ function clearChecklist() {
 
 var createChecklistURL = function (dataFilter) {
     return 'http://apihack-c18.idigbio.org:8888/checklist' + Object.keys(dataFilter).filter(function (key) {
-        return ['taxonSelector', 'wktString', 'limit'].indexOf(key) != -1;
+        return ['taxonSelector', 'wktString', 'traitSelector', 'limit'].indexOf(key) != -1;
     }).reduce(function (accum, key) {
         if (dataFilter[key] !== null) {
             return accum + key + '=' + encodeURIComponent(dataFilter[key]) + '&';
@@ -265,8 +265,8 @@ var setDataFilter = function (dataFilter) {
     document.location.hash = queryString.stringify(dataFilter);
 }
 
-function updateTaxonSelector() {
-    var filterElems = Array.prototype.slice.call(document.querySelectorAll('.taxonFilterElementName'));
+function collectSelectors(selector) {
+    var filterElems = Array.prototype.slice.call(document.querySelectorAll(selector));
 
     var filterJoin = filterElems.reduce(function (filterAgg, filterElem) {
         var taxonName = filterElem.textContent.trim();
@@ -275,10 +275,21 @@ function updateTaxonSelector() {
         }
         return filterAgg;
     }, []).join(',');
+    return filterJoin;
+}
 
+function updateTaxonSelector() {
+    var filterJoin = collectSelectors('.taxonFilterElementName');
     var filter = getDataFilter();
     filter.scientificName = filterJoin;
     filter.taxonSelector = filterJoin;
+    setDataFilter(filter);
+}
+
+
+function updateTraitSelector() {
+    var filter = getDataFilter();
+    filter.traitSelector = collectSelectors('.traitFilterElement');
     setDataFilter(filter);
 }
 
@@ -347,6 +358,24 @@ var init = function () {
         updateTaxonSelector();
     }
 
+    var addTraitFilterElement = function(traitFilter) {
+        var traitFilterElement = document.createElement('div');
+        var traitFilterText = document.createElement('span');
+        traitFilterText.setAttribute('class', 'traitFilterElement');
+        traitFilterText.textContent = traitFilter;
+        traitFilterElement.appendChild(traitFilterText);
+        var removeTraitButton = document.createElement('button');
+        removeTraitButton.textContent = 'x';
+        removeTraitButton.addEventListener('click', function(event) {
+          removeTraitButton.parentNode.removeChild(removeTraitElement);
+          updateTraitSelector();
+        });
+        traitFilterElement.appendChild(removeTraitButton);
+
+        document.getElementById('traitFilter').appendChild(traitFilterElement);
+        updateTraitSelector();
+    };
+
     var dataFilter = queryString.parse(document.location.hash);
 
     var zoom = parseInt(dataFilter.zoom || 7);
@@ -373,8 +402,24 @@ var init = function () {
     var taxonFilterNames = (dataFilter.scientificName && dataFilter.scientificName.split(',')) || ['Aves', 'Insecta'];
 
     taxonFilterNames.forEach(function (taxonName) {
-        addTaxonFilterElement(taxonName);
+      addTaxonFilterElement(taxonName);
     });
+
+    var traitFilters = (dataFilter.traitSelector && dataFilter.traitSelector.split(',')) || [];
+    traitFilters.forEach(function(traitFilter) {
+      addTraitFilterElement(traitFilter);
+    });
+
+    var addTraitButton = document.getElementById('addTraitSelector');
+    if (addTraitButton) {
+      addTraitButton.addEventListener('click', function(event) {
+        var traitSelectorInput = document.getElementById('traitSelector');
+        var traitFilterText = traitSelectorInput.value;
+        addTraitFilterElement(traitSelectorInput.value);
+        traitSelectorInput.value = '';
+      });
+
+    }
 
     var nameInput = document.getElementById('scientificName');
 
@@ -415,6 +460,7 @@ var init = function () {
     };
 
     updateTaxonSelector();
+    updateTraitSelector();
     updateBBox(areaSelect);
     updateLists();
 }

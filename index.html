@@ -29,6 +29,19 @@ lists taxa, including their higher order ranks, similar to the provided scientif
     <div id="suggestions"></div>
 </div>
 
+<h1>trait selector</h1>
+<p>The trait selector is used to select those taxa (e.g. species) that have a specific trait.</p> 
+<p>For instance, a trait selector "bodyMass greaterThan 2.7 kg" can be specified to include only taxa that have a body mass above 2.7 kilograms. </p>
+<p>If no unit is specified (e.g. kg or g), the trait selector does a string comparison when the operator "equals" is used. So, if a source reports a value of "2.7" for the measurement body weight of the Black Vulture (<a href="http://eol.org/pages/1049011"><em>Coragyps atratus</em></a>) and the trait selector does *not* specify a unit, then "bodyMass equals 2.7" will include the Black Vulture, but "bodyMass equals 2.70" will *not*. However, when including the unit (e.g. "bodyMass equals 2.70 kg"), the Black Vulture will be selected.</p>
+
+<div id="traitFilter"></div>
+
+<div id="traitEditor">
+  <input id="traitSelector" type="text" placeholder="trait name" autocomplete="off"/>
+  <button id="addTraitSelector">+</button>
+</div>
+
+
 <h1>checklist</h1>
 
 <p>Checklists contain distinct taxa ordered by frequency of occurrence and are built directly from iDigBio's Darwin Core

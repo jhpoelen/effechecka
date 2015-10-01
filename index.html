@@ -33,7 +33,7 @@ lists taxa, including their higher order ranks, similar to the provided scientif
 <p>The trait selector is used to select those taxa (e.g. species) that have a specific trait or traits.</p>
 <p>syntax: [trait] [operator] [value] [(optional)unit]</p>
 <p>Examples:</p> 
-<ul><li>bodyMass greaterThan 50 kg</li><li>bodyMass lessThan 11.2 g</li><li>bodyMass equals 11.0 g</li></ul></p>
+<ul><li>bodyMass greaterThan 50 kg</li><li>bodyMass lessThan 11.2 g</li><li>bodyMass equals 32 g</li></ul></p>
 <p>A trait selector "bodyMass greaterThan 2.7 kg" can be specified to include only taxa that have a body mass above 2.7 kilograms. </p>
 <p>If no unit is specified (e.g. kg or g), the trait selector does a string comparison when the operator "equals" is used. So, if a source reports a value of "2.7" for the measurement body weight of the Black Vulture (<a href="http://eol.org/pages/1049011"><em>Coragyps atratus</em></a>) and the trait selector does *not* specify a unit, then "bodyMass equals 2.7" will include the Black Vulture, but "bodyMass equals 2.70" will *not*. However, when including the unit (e.g. "bodyMass equals 2.70 kg"), the Black Vulture will be selected.</p>
 

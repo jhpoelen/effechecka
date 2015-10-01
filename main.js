@@ -360,10 +360,7 @@ var init = function () {
 
     var addTraitFilterElement = function(traitFilter) {
         var traitFilterElement = document.createElement('div');
-        var traitFilterText = document.createElement('span');
-        traitFilterText.setAttribute('class', 'traitFilterElement');
-        traitFilterText.textContent = traitFilter;
-        traitFilterElement.appendChild(traitFilterText);
+        
         var removeTraitButton = document.createElement('button');
         removeTraitButton.textContent = 'x';
         removeTraitButton.addEventListener('click', function(event) {
@@ -371,6 +368,11 @@ var init = function () {
           updateTraitSelector();
         });
         traitFilterElement.appendChild(removeTraitButton);
+        
+        var traitFilterText = document.createElement('span');
+        traitFilterText.setAttribute('class', 'traitFilterElement');
+        traitFilterText.textContent = traitFilter;
+        traitFilterElement.appendChild(traitFilterText);
 
         document.getElementById('traitFilter').appendChild(traitFilterElement);
         updateTraitSelector();

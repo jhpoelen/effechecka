@@ -28,7 +28,7 @@ class ChecklistService2Spec extends WordSpec with Matchers with ScalatestRouteTe
 
     "return requested checklist" in {
       Get("/checklist?taxonSelector=Animalia,Insecta&wktString=ENVELOPE(-150,-50,40,10)") ~> route ~> check {
-        responseAs[Checklist] shouldEqual Checklist("Animalia,Insecta", "ENVELOPE(-150,-50,40,10)","", "ready", List(ChecklistItem("donald", 1)))
+        responseAs[Checklist] shouldEqual Checklist("Animalia,Insecta", "ENVELOPE(-150,-50,40,10)","", "ready", List(ChecklistItem("donald", 1)))        
       }
     }
 

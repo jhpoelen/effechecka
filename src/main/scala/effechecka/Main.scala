@@ -22,13 +22,13 @@ import akka.http.scaladsl.model.StatusCode
 import akka.http.scaladsl.model.MediaTypes
 
 trait Protocols extends SprayJsonSupport with DefaultJsonProtocol {
-  implicit val checklistFormat = jsonFormat4(Checklist)
+  implicit val checklistFormat = jsonFormat4(ChecklistRequest)
   implicit val itemFormat = jsonFormat2(ChecklistItem)
-  implicit val checklist2Format = jsonFormat5(Checklist2)
+  implicit val checklist2Format = jsonFormat5(Checklist)
 }
 
 
-trait Service extends Protocols with ChecklistFetcher2 {
+trait Service extends Protocols with ChecklistFetcher {
   
   private def addAccessControlHeaders: Directive0 = {
     mapResponseHeaders { headers =>
@@ -46,7 +46,7 @@ trait Service extends Protocols with ChecklistFetcher2 {
       addAccessControlHeaders {
         path("checklist") {
           get {
-            parameters('taxonSelector.as[String], 'wktString.as[String], 'traitSelector.as[String] ? "", 'limit.as[Int] ? 20).as(Checklist) { checklist =>
+            parameters('taxonSelector.as[String], 'wktString.as[String], 'traitSelector.as[String] ? "", 'limit.as[Int] ? 20).as(ChecklistRequest) { checklist =>
               val statusOpt: Option[String] = statusOf(checklist)
               val (items, status) = statusOpt match {
                 case Some("ready") => (itemsFor(checklist), "ready")
@@ -54,7 +54,7 @@ trait Service extends Protocols with ChecklistFetcher2 {
                 case _ => (List(), statusOpt.get)
               }
               complete {
-                Checklist2(checklist.taxonSelector, checklist.wktString, checklist.traitSelector, status, items)
+                Checklist(checklist.taxonSelector, checklist.wktString, checklist.traitSelector, status, items)
               }
             }
           }
@@ -71,7 +71,7 @@ trait Service extends Protocols with ChecklistFetcher2 {
     }
 }
 
-object Main extends App with Service with Configure with ChecklistFetcher {
+object Main extends App with Service with Configure with ChecklistFetcherCassandra {
   implicit val system = ActorSystem("effechecka")
   implicit val materializer = ActorMaterializer()
   implicit val ec = system.dispatcher

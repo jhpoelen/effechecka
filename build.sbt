@@ -29,7 +29,6 @@ libraryDependencies ++= {
       ExclusionRule("org.apache.avro"),
       ExclusionRule("org.apache.spark", "spark-unsafe"),
       ExclusionRule("org.apache.zookeeper")),
-    "org.specs2" %% "specs2-core" % "2.3.11" % "test",
     "org.scalatest" %% "scalatest" % scalaTestV % "test"
   )
 }

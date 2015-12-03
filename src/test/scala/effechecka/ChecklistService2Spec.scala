@@ -11,10 +11,10 @@ import akka.http.scaladsl.model.HttpCharset
 import akka.http.scaladsl.model.HttpCharsets
 import akka.http.scaladsl.model.MediaTypes
 
-trait ChecklistFetcherStatic extends ChecklistFetcher2 {
-  def itemsFor(checklist: Checklist): List[ChecklistItem] = List(ChecklistItem("donald", 1))
-  def statusOf(checklist: Checklist): Option[String] = Some("ready")
-  def request(checklist: Checklist): String = "requested"
+trait ChecklistFetcherStatic extends ChecklistFetcher {
+  def itemsFor(checklist: ChecklistRequest): List[ChecklistItem] = List(ChecklistItem("donald", 1))
+  def statusOf(checklist: ChecklistRequest): Option[String] = Some("ready")
+  def request(checklist: ChecklistRequest): String = "requested"
 }
 
 class ChecklistService2Spec extends WordSpec with Matchers with ScalatestRouteTest with Service with ChecklistFetcherStatic {
@@ -28,7 +28,7 @@ class ChecklistService2Spec extends WordSpec with Matchers with ScalatestRouteTe
 
     "return requested checklist" in {
       Get("/checklist?taxonSelector=Animalia,Insecta&wktString=ENVELOPE(-150,-50,40,10)") ~> route ~> check {
-        responseAs[Checklist2] shouldEqual Checklist2("Animalia,Insecta", "ENVELOPE(-150,-50,40,10)","", "ready", List(ChecklistItem("donald", 1)))
+        responseAs[Checklist] shouldEqual Checklist("Animalia,Insecta", "ENVELOPE(-150,-50,40,10)","", "ready", List(ChecklistItem("donald", 1)))
       }
     }
 

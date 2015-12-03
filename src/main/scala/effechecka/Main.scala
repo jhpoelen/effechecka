@@ -3,7 +3,6 @@ package effechecka
 import akka.event.{ LoggingAdapter, Logging }
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
-import org.apache.spark.deploy.SparkSubmit
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.marshallers.xml.ScalaXmlSupport._
 import akka.http.scaladsl.server.Directives._

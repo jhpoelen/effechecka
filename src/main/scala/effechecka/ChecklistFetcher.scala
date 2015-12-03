@@ -2,12 +2,42 @@ package effechecka
 
 import com.datastax.driver.core._
 import scala.collection.JavaConversions._
+import org.apache.spark.deploy.SparkSubmit
+import com.typesafe.config.Config
 
-trait ChecklistFetcher extends Configure {
+trait ChecklistFetcher2 {
+  def itemsFor(checklist: Checklist): List[ChecklistItem]
+  def statusOf(checklist: Checklist): Option[String]
+  def request(checklist: Checklist): String
+}
+
+trait ChecklistFetcher extends ChecklistFetcher2 {
+  implicit def session: Session
+  implicit def config: Config
+
   def fetchChecklistItems(taxonSelector: String, wktString: String, traitSelector: String, limit: Int = 20): List[Map[String, Any]] = {
-    val results: ResultSet = session.execute(checklistSelect(limit), normalizeTaxonSelector(taxonSelector), wktString, normalizeTaxonSelector(traitSelector))
+    fetchChecklistItems2(Checklist(taxonSelector, wktString, traitSelector, limit))
+  }
+
+  def fetchChecklistItems2(checklist: Checklist): List[Map[String, Any]] = {
+    val results: ResultSet = session.execute(checklistSelect(checklist.limit), normalizeTaxonSelector(checklist.taxonSelector), checklist.wktString, normalizeTaxonSelector(checklist.traitSelector))
     val items: List[Row] = results.all.toList
     items.map(item => Map("taxon" -> item.getString("taxon"), "recordcount" -> item.getInt("recordcount")))
+  }
+
+  def itemsFor(checklist: Checklist): List[ChecklistItem] = {
+    val checklist_items = fetchChecklistItems2(checklist)
+    checklist_items.map { item =>
+      List("taxon", "recordcount") flatMap (item get _) match {
+        case Some(taxon: String) :: Some(recordCount: Int) :: _ => Some(ChecklistItem(taxon, recordCount))
+        case _ => None
+      }
+    }.flatten
+  }
+  
+  def request(checklist: Checklist): String = {
+    SparkSubmit.main(Array("--master", config.getString("effechecka.spark.master.url"), "--class", "ChecklistGenerator", "--deploy-mode", "cluster", "--executor-memory", "32G", config.getString("effechecka.spark.job.jar"), config.getString("effechecka.data.dir") + "*occurrence.txt", checklist.taxonSelector.replace(',', '|'), checklist.wktString, "cassandra", checklist.traitSelector.replace(',', '|'), config.getString("effechecka.data.dir") + "*traits.csv"))
+    insertChecklistRequest(checklist.taxonSelector, checklist.wktString, checklist.traitSelector)                  
   }
 
   def fetchChecklistStatus(taxonSelector: String, wktString: String, traitSelector: String): Option[String] = {
@@ -15,12 +45,10 @@ trait ChecklistFetcher extends Configure {
     val items: List[Row] = results.all.toList
     items.map(_.getString("status")).headOption
   }
-
-  def session: Session = {
-    val cluster = Cluster.builder()
-      .addContactPoint(config.getString("effechecka.cassandra.host")).build()
-    cluster.connect("effechecka")
-  }
+  
+   def statusOf(checklist: Checklist): Option[String] = {
+     fetchChecklistStatus(checklist.taxonSelector, checklist.wktString, checklist.traitSelector)
+   }
 
   def checklistSelect(limit: Int): String = {
     s"SELECT taxon,recordcount FROM effechecka.checklist WHERE taxonselector = ? AND wktstring = ? AND traitselector = ? ORDER BY recordcount DESC LIMIT $limit"

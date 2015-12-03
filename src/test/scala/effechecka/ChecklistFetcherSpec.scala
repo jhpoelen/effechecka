@@ -2,7 +2,7 @@ package effechecka
 
 import org.specs2.mutable.Specification
 
-class ChecklistFetcherSpec extends Specification with ChecklistFetcher {
+class ChecklistFetcherSpec extends Specification with ChecklistFetcher with Configure {
 
   "Cassandra driver" should {
 

@@ -7,7 +7,7 @@ class ChecklistFetcherSpec extends WordSpec with Matchers with ChecklistFetcherC
   // needs running cassandra
   "Cassandra driver" should {
 
-    "create a wellformed status query" in {
+    @Ignore `create a wellformed status query` {
       def checklistTableCreate: String = {
         s"CREATE TABLE IF NOT EXISTS effechecka.checklist (taxonselector TEXT, wktstring TEXT, traitselector TEXT, taxon TEXT, recordcount int, PRIMARY KEY((taxonselector, wktstring, traitselector), recordcount, taxon))"
       }

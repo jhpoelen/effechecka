@@ -2,7 +2,7 @@ package effechecka
 
 import com.datastax.driver.core._
 import scala.collection.JavaConversions._
-//import org.apache.spark.deploy.SparkSubmit
+import org.apache.spark.deploy.SparkSubmit
 import com.typesafe.config.Config
 
 trait ChecklistFetcher2 {
@@ -36,7 +36,7 @@ trait ChecklistFetcher extends ChecklistFetcher2 {
   }
   
   def request(checklist: Checklist): String = {
-    //SparkSubmit.main(Array("--master", config.getString("effechecka.spark.master.url"), "--class", "ChecklistGenerator", "--deploy-mode", "cluster", "--executor-memory", "32G", config.getString("effechecka.spark.job.jar"), config.getString("effechecka.data.dir") + "*occurrence.txt", checklist.taxonSelector.replace(',', '|'), checklist.wktString, "cassandra", checklist.traitSelector.replace(',', '|'), config.getString("effechecka.data.dir") + "*traits.csv"))
+    SparkSubmit.main(Array("--master", config.getString("effechecka.spark.master.url"), "--class", "ChecklistGenerator", "--deploy-mode", "cluster", "--executor-memory", "32G", config.getString("effechecka.spark.job.jar"), config.getString("effechecka.data.dir") + "*occurrence.txt", checklist.taxonSelector.replace(',', '|'), checklist.wktString, "cassandra", checklist.traitSelector.replace(',', '|'), config.getString("effechecka.data.dir") + "*traits.csv"))
     insertChecklistRequest(checklist.taxonSelector, checklist.wktString, checklist.traitSelector)                  
   }
 

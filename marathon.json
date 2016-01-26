@@ -1,0 +1,10 @@
+{
+    "id": "effechecka-api", 
+    "cmd": "cd effechecka-master && chmod u+x run.sh && ./run.sh",
+    "cpus": 0.1,
+    "mem": 2048.0,
+    "instances": 1,
+    "uris": [
+	    "https://github.com/jhpoelen/effechecka/archive/master.zip"
+    ]
+}

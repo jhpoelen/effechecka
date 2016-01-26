@@ -11,7 +11,8 @@ to run the effechecka webservice:
 ```sh run-idigbio.sh```
 
 ## marathon
-```curl -i -H 'Content-Type: application/json' -d@effechecka-marathon.json [marathon host]:8082/v2/apps```
+to run in http://github.com/mesosphere/marathon do something like
+```curl -i -H 'Content-Type: application/json' -d@marathon.json [marathon host]:8082/v2/apps```
 
 
 

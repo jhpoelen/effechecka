@@ -1,3 +1,4 @@
+#!/bin/bash
 sbt run \
 -Deffechecka.host=0.0.0.0 \
 -Deffechecka.data.dir=/home/int/data/idigbio/ \

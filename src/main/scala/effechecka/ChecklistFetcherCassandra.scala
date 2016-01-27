@@ -29,7 +29,8 @@ trait ChecklistFetcherCassandra extends ChecklistFetcher {
       config.getString("effechecka.spark.job.jar"),
       "\"" + config.getString("effechecka.data.dir") + "*occurrence.txt" + "\"",
       "\"" + checklist.taxonSelector.replace(',', '|') +"\"",
-      checklist.wktString, "cassandra",
+      "\"" + checklist.wktString + "\"",
+      "cassandra",
       "\"" + checklist.traitSelector.replace(',', '|') + "\"",
       "\"" + config.getString("effechecka.data.dir") + "*traits.csv" + "\""))
     insertRequest(checklist)

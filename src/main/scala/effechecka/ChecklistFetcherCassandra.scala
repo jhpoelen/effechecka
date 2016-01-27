@@ -22,7 +22,16 @@ trait ChecklistFetcherCassandra extends ChecklistFetcher {
   }
 
   def request(checklist: ChecklistRequest): String = {
-    SparkSubmit.main(Array("--master", config.getString("effechecka.spark.master.url"), "--class", "ChecklistGenerator", "--deploy-mode", "cluster", "--executor-memory", "32G", config.getString("effechecka.spark.job.jar"), config.getString("effechecka.data.dir") + "*occurrence.txt", checklist.taxonSelector.replace(',', '|'), checklist.wktString, "cassandra", checklist.traitSelector.replace(',', '|'), config.getString("effechecka.data.dir") + "*traits.csv"))
+    SparkSubmit.main(Array("--master",
+      config.getString("effechecka.spark.master.url"),
+      "--class", "ChecklistGenerator",
+      "--deploy-mode", "cluster",
+      config.getString("effechecka.spark.job.jar"),
+      "\"" + config.getString("effechecka.data.dir") + "*occurrence.txt" + "\"",
+      "\"" + checklist.taxonSelector.replace(',', '|') +"\"",
+      checklist.wktString, "cassandra",
+      "\"" + checklist.traitSelector.replace(',', '|') + "\"",
+      "\"" + config.getString("effechecka.data.dir") + "*traits.csv" + "\""))
     insertRequest(checklist)
   }
 

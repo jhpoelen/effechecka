@@ -15,7 +15,14 @@ trait ChecklistFetcherCassandra extends ChecklistFetcher {
   implicit def session: Session
   implicit def config: Config
 
+  def ensureSchema = {
+    session.execute("CREATE KEYSPACE IF NOT EXISTS effechecka WITH REPLICATION = {'class': 'SimpleStrategy', 'replication_factor': 1 }")
+    session.execute("CREATE TABLE IF NOT EXISTS effechecka.checklist (taxonselector TEXT, wktstring TEXT, traitselector TEXT, taxon TEXT, recordcount int, PRIMARY KEY((taxonselector, wktstring, traitselector), recordcount, taxon))")
+    session.execute("CREATE TABLE IF NOT EXISTS effechecka.checklist_registry (taxonselector TEXT, wktstring TEXT, traitselector TEXT, status TEXT, recordcount int, PRIMARY KEY(taxonselector, wktstring, traitselector))")
+  }
+
   def itemsFor(checklist: ChecklistRequest): List[ChecklistItem] = {
+    ensureSchema
     val results: ResultSet = session.execute(checklistSelect(checklist.limit), normalizeTaxonSelector(checklist.taxonSelector), checklist.wktString, normalizeTaxonSelector(checklist.traitSelector))
     val items: List[Row] = results.all.toList
     items.map(item => ChecklistItem(item.getString("taxon"), item.getInt("recordcount")))
@@ -37,6 +44,7 @@ trait ChecklistFetcherCassandra extends ChecklistFetcher {
   }
 
   def statusOf(checklist: ChecklistRequest): Option[String] = {
+    ensureSchema
     val results: ResultSet = session.execute(checklistStatusSelect, normalizeTaxonSelector(checklist.taxonSelector), checklist.wktString, normalizeTaxonSelector(checklist.traitSelector))
     val items: List[Row] = results.all.toList
     items.map(_.getString("status")).headOption
@@ -51,6 +59,7 @@ trait ChecklistFetcherCassandra extends ChecklistFetcher {
   }
 
   def insertRequest(checklist: ChecklistRequest): String = {
+    ensureSchema
     val values = Seq(normalizeTaxonSelector(checklist.taxonSelector), checklist.wktString, checklist.traitSelector, "requested").map("'" + _ + "'").mkString(",")
     session.execute(s"INSERT INTO effechecka.checklist_registry (taxonselector, wktstring, traitSelector, status) VALUES ($values) using TTL 600")
     "requested"

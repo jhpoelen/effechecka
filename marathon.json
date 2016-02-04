@@ -8,12 +8,14 @@
 	    "https://github.com/jhpoelen/effechecka/archive/master.zip"
     ],
     "healthChecks": [ 
-      "path": "/checklist?limit=20&taxonSelector=Aves%2CInsecta&traitSelector=&wktString=ENVELOPE(-72.147216796875%2C-69.949951171875%2C43.11702412135048%2C41.49212083968776)&",
-      "port": 8888,
-      "protocol": "HTTP",
-      "gracePeriodSeconds": 300,
-      "intervalSeconds": 60,
-      "timeoutSeconds": 20,
-      "maxConsecutiveFailures": 3,
-    }
+      {
+        "path": "/checklist?limit=20&taxonSelector=Aves%2CInsecta&traitSelector=&wktString=ENVELOPE(-72.147216796875%2C-69.949951171875%2C43.11702412135048%2C41.49212083968776)&",
+        "port": 8888,
+        "protocol": "HTTP",
+        "gracePeriodSeconds": 300,
+        "intervalSeconds": 60,
+        "timeoutSeconds": 20,
+        "maxConsecutiveFailures": 3,
+      }
+    ]
 }

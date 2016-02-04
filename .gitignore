@@ -1,4 +1,5 @@
 .idea/
+assets/*.swp
 .DS_Store
 project/target
 target/

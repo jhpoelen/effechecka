@@ -6,7 +6,7 @@ import com.datastax.driver.core._
 trait Configure {
   def config = ConfigFactory.load()
   
-  def session: Session = {
+  lazy val session: Session = {
     val cluster = Cluster.builder()
       .addContactPoint(config.getString("effechecka.cassandra.host")).build()
     val clusterSession = cluster.connect()

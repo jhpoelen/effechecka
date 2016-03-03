@@ -27,12 +27,12 @@ trait ChecklistFetcherCassandra extends ChecklistFetcher {
       "--class", "ChecklistGenerator",
       "--deploy-mode", "cluster",
       config.getString("effechecka.spark.job.jar"),
-      "\"" + config.getString("effechecka.data.dir") + "*occurrence.txt" + "\"",
+      "-f", "cassandra",
+      "-c", "\"" + config.getString("effechecka.data.dir") + "*occurrence.txt.parquet" + "\"",
+      "-t", "\"" + config.getString("effechecka.data.dir") + "*traits.csv" + "\"")
       "\"" + checklist.taxonSelector.replace(',', '|') +"\"",
       "\"" + checklist.wktString + "\"",
-      "cassandra",
-      "\"" + checklist.traitSelector.replace(',', '|') + "\"",
-      "\"" + config.getString("effechecka.data.dir") + "*traits.csv" + "\""))
+      "\"" + checklist.traitSelector.replace(',', '|') + "\"")
     insertRequest(checklist)
   }
 

@@ -29,10 +29,10 @@ trait ChecklistFetcherCassandra extends ChecklistFetcher {
       config.getString("effechecka.spark.job.jar"),
       "-f", "cassandra",
       "-c", "\"" + config.getString("effechecka.data.dir") + "*occurrence.txt.parquet" + "\"",
-      "-t", "\"" + config.getString("effechecka.data.dir") + "*traits.csv" + "\"")
+      "-t", "\"" + config.getString("effechecka.data.dir") + "*traits.csv" + "\"",
       "\"" + checklist.taxonSelector.replace(',', '|') +"\"",
       "\"" + checklist.wktString + "\"",
-      "\"" + checklist.traitSelector.replace(',', '|') + "\"")
+      "\"" + checklist.traitSelector.replace(',', '|') + "\""))
     insertRequest(checklist)
   }
 

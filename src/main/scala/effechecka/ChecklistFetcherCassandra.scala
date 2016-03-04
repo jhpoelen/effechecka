@@ -28,8 +28,8 @@ trait ChecklistFetcherCassandra extends ChecklistFetcher {
       "--deploy-mode", "cluster",
       config.getString("effechecka.spark.job.jar"),
       "-f", "cassandra",
-      "-c", "\"" + config.getString("effechecka.data.dir") + "*occurrence.txt.parquet" + "\"",
-      "-t", "\"" + config.getString("effechecka.data.dir") + "*traits.csv" + "\"",
+      "-c", "\"" + config.getString("effechecka.data.dir") + "gbif-idigbio.parquet" + "\"",
+      "-t", "\"" + config.getString("effechecka.data.dir") + "traitbank/*.csv" + "\"",
       "\"" + checklist.taxonSelector.replace(',', '|') +"\"",
       "\"" + checklist.wktString + "\"",
       "\"" + checklist.traitSelector.replace(',', '|') + "\""))

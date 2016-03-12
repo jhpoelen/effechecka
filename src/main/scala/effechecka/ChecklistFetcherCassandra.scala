@@ -11,7 +11,7 @@ trait ChecklistFetcher {
   def request(checklist: ChecklistRequest): String
 }
 
-trait ChecklistFetcherCassandra extends ChecklistFetcher {
+trait ChecklistFetcherCassandra extends ChecklistFetcher with Fetcher {
   implicit def session: Session
   implicit def config: Config
 
@@ -54,10 +54,6 @@ trait ChecklistFetcherCassandra extends ChecklistFetcher {
     val values = Seq(normalizeTaxonSelector(checklist.taxonSelector), checklist.wktString, checklist.traitSelector, "requested").map("'" + _ + "'").mkString(",")
     session.execute(s"INSERT INTO effechecka.checklist_registry (taxonselector, wktstring, traitSelector, status) VALUES ($values) using TTL 600")
     "requested"
-  }
-
-  def normalizeTaxonSelector(taxonSelector: String) = {
-    taxonSelector.replace(',', '|')
   }
 
 }

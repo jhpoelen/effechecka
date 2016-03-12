@@ -4,6 +4,8 @@ jdk:
 scala:
   - 2.11.7
 sudo: false
+services:
+  - cassandra
 cache:
   directories:
       - $HOME/.ivy2

@@ -17,7 +17,15 @@ trait ChecklistFetcherStatic extends ChecklistFetcher {
   def request(checklist: ChecklistRequest): String = "requested"
 }
 
-class ChecklistService2Spec extends WordSpec with Matchers with ScalatestRouteTest with Service with ChecklistFetcherStatic {
+trait OccurrenceCollectionFetcherStatic extends OccurrenceCollectionFetcher {
+  val anOccurrence = Occurrence("Cartoona | mickey", 12.1, 32.1, 123L, "http://record.url", 456L, "http://archive.url")
+
+  def occurrencesFor(checklist: OccurrenceCollectionRequest): List[Occurrence] = List(anOccurrence)
+  def statusOf(checklist: OccurrenceCollectionRequest): Option[String] = Some("ready")
+  def request(checklist: OccurrenceCollectionRequest): String = "requested"
+}
+
+class ChecklistService2Spec extends WordSpec with Matchers with ScalatestRouteTest with Service with ChecklistFetcherStatic with OccurrenceCollectionFetcherStatic {
 
   "The service" should {
     "return a 'ping' response for GET requests to /ping" in {
@@ -29,6 +37,12 @@ class ChecklistService2Spec extends WordSpec with Matchers with ScalatestRouteTe
     "return requested checklist" in {
       Get("/checklist?taxonSelector=Animalia,Insecta&wktString=ENVELOPE(-150,-50,40,10)") ~> route ~> check {
         responseAs[Checklist] shouldEqual Checklist("Animalia,Insecta", "ENVELOPE(-150,-50,40,10)","", "ready", List(ChecklistItem("donald", 1)))        
+      }
+    }
+
+    "return requested occurrenceColection" in {
+      Get("/occurrenceCollection?taxonSelector=Animalia,Insecta&wktString=ENVELOPE(-150,-50,40,10)") ~> route ~> check {
+        responseAs[OccurrenceCollection] shouldEqual OccurrenceCollection("Animalia,Insecta", "ENVELOPE(-150,-50,40,10)","", "ready", List(anOccurrence))
       }
     }
 

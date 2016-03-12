@@ -25,10 +25,14 @@ trait Protocols extends SprayJsonSupport with DefaultJsonProtocol {
   implicit val checklistFormat = jsonFormat4(ChecklistRequest)
   implicit val itemFormat = jsonFormat2(ChecklistItem)
   implicit val checklist2Format = jsonFormat5(Checklist)
+
+  implicit val occurrenceRequestFormat = jsonFormat4(OccurrenceCollectionRequest)
+  implicit val occurrenceFormat = jsonFormat7(Occurrence)
+  implicit val occurrenceCollection2Format = jsonFormat5(OccurrenceCollection)
 }
 
 
-trait Service extends Protocols with ChecklistFetcher {
+trait Service extends Protocols with ChecklistFetcher with OccurrenceCollectionFetcher {
   
   private def addAccessControlHeaders: Directive0 = {
     mapResponseHeaders { headers =>
@@ -58,6 +62,20 @@ trait Service extends Protocols with ChecklistFetcher {
               }
             }
           }
+        } ~ path("occurrenceCollection") {
+          get {
+            parameters('taxonSelector.as[String], 'wktString.as[String], 'traitSelector.as[String] ? "", 'limit.as[Int] ? 20).as(OccurrenceCollectionRequest) { ocRequest =>
+              val statusOpt: Option[String] = statusOf(ocRequest)
+              val (items, status) = statusOpt match {
+                case Some("ready") => (occurrencesFor(ocRequest), "ready")
+                case None => (List(), request(ocRequest))
+                case _ => (List(), statusOpt.get)
+              }
+              complete {
+                OccurrenceCollection(ocRequest.taxonSelector, ocRequest.wktString, ocRequest.traitSelector, status, items)
+              }
+            }
+          }
         } ~ path("ws-echo") {
           get {
             handleWebsocketMessages(echoService)
@@ -71,7 +89,7 @@ trait Service extends Protocols with ChecklistFetcher {
     }
 }
 
-object Main extends App with Service with Configure with ChecklistFetcherCassandra {
+object Main extends App with Service with Configure with ChecklistFetcherCassandra with OccurrenceCollectionFetcherCassandra {
   implicit val system = ActorSystem("effechecka")
   implicit val materializer = ActorMaterializer()
   implicit val ec = system.dispatcher

@@ -41,7 +41,7 @@ class ChecklistService2Spec extends WordSpec with Matchers with ScalatestRouteTe
     }
 
     "return requested occurrenceColection" in {
-      Get("/occurrenceCollection?taxonSelector=Animalia,Insecta&wktString=ENVELOPE(-150,-50,40,10)") ~> route ~> check {
+      Get("/occurrences?taxonSelector=Animalia,Insecta&wktString=ENVELOPE(-150,-50,40,10)") ~> route ~> check {
         responseAs[OccurrenceCollection] shouldEqual OccurrenceCollection("Animalia,Insecta", "ENVELOPE(-150,-50,40,10)","", "ready", List(anOccurrence))
       }
     }

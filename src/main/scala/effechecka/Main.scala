@@ -62,7 +62,7 @@ trait Service extends Protocols with ChecklistFetcher with OccurrenceCollectionF
               }
             }
           }
-        } ~ path("occurrenceCollection") {
+        } ~ path("occurrences") {
           get {
             parameters('taxonSelector.as[String], 'wktString.as[String], 'traitSelector.as[String] ? "", 'limit.as[Int] ? 20).as(OccurrenceCollectionRequest) { ocRequest =>
               val statusOpt: Option[String] = statusOf(ocRequest)

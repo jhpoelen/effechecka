@@ -56,7 +56,7 @@ trait OccurrenceCollectionFetcherCassandra extends OccurrenceCollectionFetcher w
   }
 
   def occurrenceCollectionStatus: String = {
-    "SELECT status FROM effechecka.occcurrence_collection_registry WHERE taxonselector = ? AND wktstring = ? AND traitselector = ? LIMIT 1"
+    "SELECT status FROM effechecka.occurrence_collection_registry WHERE taxonselector = ? AND wktstring = ? AND traitselector = ? LIMIT 1"
   }
 
   def insertRequest(request: OccurrenceCollectionRequest): String = {

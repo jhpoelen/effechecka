@@ -18,7 +18,7 @@ trait ChecklistFetcherStatic extends ChecklistFetcher {
 }
 
 trait OccurrenceCollectionFetcherStatic extends OccurrenceCollectionFetcher {
-  val anOccurrence = Occurrence("Cartoona | mickey", 12.1, 32.1, 123L, "http://record.url", 456L, "http://archive.url")
+  val anOccurrence = Occurrence("Cartoona | mickey", 12.1, 32.1, 123L, 124L, "recordId", 456L, "archiveId")
 
   def occurrencesFor(checklist: OccurrenceCollectionRequest): List[Occurrence] = List(anOccurrence)
   def statusOf(checklist: OccurrenceCollectionRequest): Option[String] = Some("ready")

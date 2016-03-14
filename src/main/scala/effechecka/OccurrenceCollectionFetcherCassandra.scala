@@ -27,7 +27,7 @@ trait OccurrenceCollectionFetcherCassandra extends OccurrenceCollectionFetcher w
   def occurrencesFor(ocRequest: OccurrenceCollectionRequest): List[Occurrence] = {
     val results: ResultSet = session.execute(occurrenceCollectionSelect(ocRequest.limit), normalizeTaxonSelector(ocRequest.taxonSelector), ocRequest.wktString, normalizeTaxonSelector(ocRequest.traitSelector))
     val items: List[Row] = results.all.toList
-    items.map(item => Occurrence(item.getString("taxon"), item.getDouble("lat"), item.getDouble("lng"), item.getDate("event_date").getTime, item.getString("record_url"), item.getDate("first_added_date").getTime, item.getString("archive_url")))
+    items.map(item => Occurrence(item.getString("taxon"), item.getDouble("lat"), item.getDouble("lng"), item.getDate("start").getTime, item.getDate("end").getTime, item.getString("id"), item.getDate("added").getTime, item.getString("source")))
   }
 
   def request(ocRequest: OccurrenceCollectionRequest): String = {
@@ -52,7 +52,7 @@ trait OccurrenceCollectionFetcherCassandra extends OccurrenceCollectionFetcher w
   }
 
   def occurrenceCollectionSelect(limit: Int): String = {
-    s"SELECT taxon, lat, lng, event_date, record_url, first_added_date, archive_url FROM effechecka.occurrence_collection WHERE taxonselector = ? AND wktstring = ? AND traitselector = ? LIMIT $limit"
+    s"SELECT taxon, lat, lng, start, end, id, added, source FROM effechecka.occurrence_collection WHERE taxonselector = ? AND wktstring = ? AND traitselector = ? LIMIT $limit"
   }
 
   def occurrenceCollectionStatus: String = {

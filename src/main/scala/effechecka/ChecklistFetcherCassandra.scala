@@ -52,7 +52,7 @@ trait ChecklistFetcherCassandra extends ChecklistFetcher with Fetcher {
 
   def insertRequest(checklist: ChecklistRequest): String = {
     val values = Seq(normalizeTaxonSelector(checklist.taxonSelector), checklist.wktString, checklist.traitSelector, "requested").map("'" + _ + "'").mkString(",")
-    session.execute(s"INSERT INTO effechecka.checklist_registry (taxonselector, wktstring, traitSelector, status) VALUES ($values) using TTL 600")
+    session.execute(s"INSERT INTO effechecka.checklist_registry (taxonselector, wktstring, traitSelector, status) VALUES ($values) using TTL 7200")
     "requested"
   }
 

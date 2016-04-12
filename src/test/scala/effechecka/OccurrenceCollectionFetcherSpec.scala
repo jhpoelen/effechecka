@@ -21,6 +21,8 @@ class OccurrenceCollectionFetcherSpec extends WordSpec with Matchers with Occurr
       occ.id should be("http://record.url")
       occ.source should be("http://archive.url")
       occ.added should be(1328156581000L)
+
+      monitors() should contain(OccurrenceMonitor("Insecta|Mammalia", "ENVELOPE(-150,-50,40,10)", "bodyMass greaterThan 2.7 kg", "requested", 0))
     }
   }
 

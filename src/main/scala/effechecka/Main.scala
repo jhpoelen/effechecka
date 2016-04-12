@@ -29,6 +29,7 @@ trait Protocols extends SprayJsonSupport with DefaultJsonProtocol {
   implicit val occurrenceRequestFormat = jsonFormat4(OccurrenceCollectionRequest)
   implicit val occurrenceFormat = jsonFormat8(Occurrence)
   implicit val occurrenceCollection2Format = jsonFormat5(OccurrenceCollection)
+  implicit val occurrenceMonitorFormat = jsonFormat5(OccurrenceMonitor)
 }
 
 
@@ -74,6 +75,12 @@ trait Service extends Protocols with ChecklistFetcher with OccurrenceCollectionF
               complete {
                 OccurrenceCollection(ocRequest.taxonSelector, ocRequest.wktString, ocRequest.traitSelector, status, items)
               }
+            }
+          }
+        } ~ path("monitors") {
+          get {
+            complete {
+              monitors()
             }
           }
         } ~ path("ws-echo") {

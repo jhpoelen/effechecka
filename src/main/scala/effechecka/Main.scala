@@ -53,7 +53,7 @@ trait Service extends Protocols with ChecklistFetcher with OccurrenceCollectionF
       addAccessControlHeaders {
         path("checklist") {
           get {
-            parameters('taxonSelector.as[String], 'wktString.as[String], 'traitSelector.as[String] ? "").as(OccurrenceSelector) { ocSelector =>
+            extractSelector { ocSelector =>
               parameters('limit.as[Int] ? 20) { limit =>
                 val checklist = ChecklistRequest(ocSelector, limit)
                 val statusOpt: Option[String] = statusOf(checklist)
@@ -70,7 +70,7 @@ trait Service extends Protocols with ChecklistFetcher with OccurrenceCollectionF
           }
         } ~ path("occurrences") {
           get {
-            parameters('taxonSelector.as[String], 'wktString.as[String], 'traitSelector.as[String] ? "").as(OccurrenceSelector) { ocSelector =>
+            extractSelector { ocSelector =>
               parameters('limit.as[Int] ? 20) { limit =>
                 val ocRequest = OccurrenceCollectionRequest(ocSelector, limit)
                 val statusOpt: Option[String] = statusOf(ocRequest)
@@ -102,6 +102,10 @@ trait Service extends Protocols with ChecklistFetcher with OccurrenceCollectionF
         }
       }
     }
+
+  def extractSelector: OccurrenceSelector = {
+    parameters('taxonSelector.as[String], 'wktString.as[String], 'traitSelector.as[String] ? "").as(OccurrenceSelector)
+  }
 }
 
 object Main extends App with Service with Configure with ChecklistFetcherCassandra with OccurrenceCollectionFetcherCassandra {

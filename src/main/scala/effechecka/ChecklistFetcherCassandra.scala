@@ -16,7 +16,10 @@ trait ChecklistFetcherCassandra extends ChecklistFetcher with Fetcher {
   implicit def config: Config
 
   def itemsFor(checklist: ChecklistRequest): List[ChecklistItem] = {
-    val results: ResultSet = session.execute(checklistSelect(checklist.limit), normalizeTaxonSelector(checklist.taxonSelector), checklist.wktString, normalizeTaxonSelector(checklist.traitSelector))
+    val results: ResultSet = session.execute(checklistSelect(checklist.limit),
+      normalizeTaxonSelector(checklist.selector.taxonSelector),
+      checklist.selector.wktString,
+      normalizeTaxonSelector(checklist.selector.traitSelector))
     val items: List[Row] = results.all.toList
     items.map(item => ChecklistItem(item.getString("taxon"), item.getInt("recordcount")))
   }
@@ -30,14 +33,14 @@ trait ChecklistFetcherCassandra extends ChecklistFetcher with Fetcher {
       "-f", "cassandra",
       "-c", "\"" + config.getString("effechecka.data.dir") + "gbif-idigbio.parquet" + "\"",
       "-t", "\"" + config.getString("effechecka.data.dir") + "traitbank/*.csv" + "\"",
-      "\"" + checklist.taxonSelector.replace(',', '|') +"\"",
-      "\"" + checklist.wktString + "\"",
-      "\"" + checklist.traitSelector.replace(',', '|') + "\""))
+      "\"" + checklist.selector.taxonSelector.replace(',', '|') +"\"",
+      "\"" + checklist.selector.wktString + "\"",
+      "\"" + checklist.selector.traitSelector.replace(',', '|') + "\""))
     insertRequest(checklist)
   }
 
   def statusOf(checklist: ChecklistRequest): Option[String] = {
-    val results: ResultSet = session.execute(checklistStatusSelect, normalizeTaxonSelector(checklist.taxonSelector), checklist.wktString, normalizeTaxonSelector(checklist.traitSelector))
+    val results: ResultSet = session.execute(checklistStatusSelect, normalizeTaxonSelector(checklist.selector.taxonSelector), checklist.selector.wktString, normalizeTaxonSelector(checklist.selector.traitSelector))
     val items: List[Row] = results.all.toList
     items.map(_.getString("status")).headOption
   }
@@ -51,7 +54,7 @@ trait ChecklistFetcherCassandra extends ChecklistFetcher with Fetcher {
   }
 
   def insertRequest(checklist: ChecklistRequest): String = {
-    val values = Seq(normalizeTaxonSelector(checklist.taxonSelector), checklist.wktString, checklist.traitSelector, "requested").map("'" + _ + "'").mkString(",")
+    val values = Seq(normalizeTaxonSelector(checklist.selector.taxonSelector), checklist.selector.wktString, checklist.selector.traitSelector, "requested").map("'" + _ + "'").mkString(",")
     session.execute(s"INSERT INTO effechecka.checklist_registry (taxonselector, wktstring, traitSelector, status) VALUES ($values) using TTL 7200")
     "requested"
   }

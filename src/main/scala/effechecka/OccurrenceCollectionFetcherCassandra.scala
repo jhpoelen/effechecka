@@ -27,7 +27,7 @@ trait OccurrenceCollectionFetcherCassandra extends OccurrenceCollectionFetcher w
   implicit def config: Config
 
   def occurrencesFor(ocRequest: OccurrenceCollectionRequest): List[Occurrence] = {
-    val results: ResultSet = session.execute(occurrenceCollectionSelect(ocRequest.limit), normalizeTaxonSelector(ocRequest.taxonSelector), ocRequest.wktString, normalizeTaxonSelector(ocRequest.traitSelector))
+    val results: ResultSet = session.execute(occurrenceCollectionSelect(ocRequest.limit), normalizeTaxonSelector(ocRequest.selector.taxonSelector), ocRequest.selector.wktString, normalizeTaxonSelector(ocRequest.selector.traitSelector))
     val items: List[Row] = results.all.toList
     items.map(item => Occurrence(item.getString("taxon"), item.getDouble("lat"), item.getDouble("lng"), item.getDate("start").getTime, item.getDate("end").getTime, item.getString("id"), item.getDate("added").getTime, item.getString("source")))
   }
@@ -35,7 +35,10 @@ trait OccurrenceCollectionFetcherCassandra extends OccurrenceCollectionFetcher w
   def monitors(): List[OccurrenceMonitor] = {
     val results: ResultSet = session.execute(occurrenceCollectionRegistrySelect())
     val items: List[Row] = results.all.toList
-    items.map(item => OccurrenceMonitor(item.getString("taxonselector"), item.getString("wktstring"), item.getString("traitselector"), item.getString("status"), item.getInt("recordcount")))
+    items.map(item => {
+      val selector = OccurrenceSelector(item.getString("taxonselector"), item.getString("wktstring"), item.getString("traitselector"))
+      OccurrenceMonitor(selector, item.getString("status"), item.getInt("recordcount"))
+    })
   }
 
   def request(ocRequest: OccurrenceCollectionRequest): String = {
@@ -47,14 +50,18 @@ trait OccurrenceCollectionFetcherCassandra extends OccurrenceCollectionFetcher w
       "-f", "cassandra",
       "-c", "\"" + config.getString("effechecka.data.dir") + "gbif-idigbio.parquet" + "\"",
       "-t", "\"" + config.getString("effechecka.data.dir") + "traitbank/*.csv" + "\"",
-      "\"" + ocRequest.taxonSelector.replace(',', '|') + "\"",
-      "\"" + ocRequest.wktString + "\"",
-      "\"" + ocRequest.traitSelector.replace(',', '|') + "\""))
+      "\"" + ocRequest.selector.taxonSelector.replace(',', '|') + "\"",
+      "\"" + ocRequest.selector.wktString + "\"",
+      "\"" + ocRequest.selector.traitSelector.replace(',', '|') + "\""))
     insertRequest(ocRequest)
   }
 
   def statusOf(ocRequest: OccurrenceCollectionRequest): Option[String] = {
-    val results: ResultSet = session.execute(occurrenceCollectionStatus, normalizeTaxonSelector(ocRequest.taxonSelector), ocRequest.wktString, normalizeTaxonSelector(ocRequest.traitSelector))
+    val results: ResultSet = session.execute(occurrenceCollectionStatus,
+      normalizeTaxonSelector(ocRequest.selector.taxonSelector),
+      ocRequest.selector.wktString,
+      normalizeTaxonSelector(ocRequest.selector.traitSelector))
+
     val items: List[Row] = results.all.toList
     items.map(_.getString("status")).headOption
   }
@@ -72,7 +79,7 @@ trait OccurrenceCollectionFetcherCassandra extends OccurrenceCollectionFetcher w
   }
 
   def insertRequest(request: OccurrenceCollectionRequest): String = {
-    val values = Seq(normalizeTaxonSelector(request.taxonSelector), request.wktString, request.traitSelector, "requested").map("'" + _ + "'").mkString(",")
+    val values = Seq(normalizeTaxonSelector(request.selector.taxonSelector), request.selector.wktString, request.selector.traitSelector, "requested").map("'" + _ + "'").mkString(",")
     session.execute(s"INSERT INTO effechecka.occurrence_collection_registry (taxonselector, wktstring, traitSelector, status) VALUES ($values) using TTL 600")
     "requested"
   }

@@ -20,7 +20,7 @@ trait ChecklistFetcherCassandra extends ChecklistFetcher with Fetcher {
       normalizeTaxonSelector(checklist.selector.taxonSelector),
       checklist.selector.wktString,
       normalizeTaxonSelector(checklist.selector.traitSelector))
-    val items: List[Row] = results.all.toList
+    val items: List[Row] = results.iterator.toList
     items.map(item => ChecklistItem(item.getString("taxon"), item.getInt("recordcount")))
   }
 
@@ -41,7 +41,7 @@ trait ChecklistFetcherCassandra extends ChecklistFetcher with Fetcher {
 
   def statusOf(checklist: ChecklistRequest): Option[String] = {
     val results: ResultSet = session.execute(checklistStatusSelect, normalizeTaxonSelector(checklist.selector.taxonSelector), checklist.selector.wktString, normalizeTaxonSelector(checklist.selector.traitSelector))
-    val items: List[Row] = results.all.toList
+    val items: List[Row] = results.iterator.toList
     items.map(_.getString("status")).headOption
   }
 

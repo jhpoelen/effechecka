@@ -10,16 +10,12 @@ import akka.stream.ActorMaterializer
 import spray.json._
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import akka.actor.ActorSystem
-import akka.http.scaladsl.model.StatusCodes
+import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers.RawHeader
 import akka.http.scaladsl.model.headers._
-import akka.http.scaladsl.model.HttpHeader
 import akka.http.scaladsl.model.ws.{Message, TextMessage}
 import akka.stream.scaladsl.Flow
 import akka.http.scaladsl.server.Directive0
-import akka.http.scaladsl.model.HttpEntity
-import akka.http.scaladsl.model.StatusCode
-import akka.http.scaladsl.model.MediaTypes
 
 trait Protocols extends SprayJsonSupport with DefaultJsonProtocol {
   implicit val occurrenceSelector = jsonFormat3(OccurrenceSelector)
@@ -28,7 +24,7 @@ trait Protocols extends SprayJsonSupport with DefaultJsonProtocol {
   implicit val itemFormat = jsonFormat2(ChecklistItem)
   implicit val checklist2Format = jsonFormat3(Checklist)
 
-  implicit val occurrenceRequestFormat = jsonFormat2(OccurrenceCollectionRequest)
+  implicit val occurrenceRequestFormat = jsonFormat4(OccurrenceCollectionRequest)
   implicit val occurrenceFormat = jsonFormat8(Occurrence)
   implicit val occurrenceCollection2Format = jsonFormat3(OccurrenceCollection)
   implicit val occurrenceMonitorFormat = jsonFormat3(OccurrenceMonitor)
@@ -53,7 +49,7 @@ trait Service extends Protocols with ChecklistFetcher with OccurrenceCollectionF
       addAccessControlHeaders {
         path("checklist") {
           get {
-            extractSelector { ocSelector =>
+            parameters('taxonSelector.as[String], 'wktString.as[String], 'traitSelector.as[String] ? "").as(OccurrenceSelector) { ocSelector =>
               parameters('limit.as[Int] ? 20) { limit =>
                 val checklist = ChecklistRequest(ocSelector, limit)
                 val statusOpt: Option[String] = statusOf(checklist)
@@ -70,19 +66,22 @@ trait Service extends Protocols with ChecklistFetcher with OccurrenceCollectionF
           }
         } ~ path("occurrences") {
           get {
-            extractSelector { ocSelector =>
+            parameters('taxonSelector.as[String], 'wktString.as[String], 'traitSelector.as[String] ? "").as(OccurrenceSelector) { ocSelector => {
               parameters('limit.as[Int] ? 20) { limit =>
-                val ocRequest = OccurrenceCollectionRequest(ocSelector, limit)
-                val statusOpt: Option[String] = statusOf(ocRequest)
-                val (items, status) = statusOpt match {
-                  case Some("ready") => (occurrencesFor(ocRequest), "ready")
-                  case None => (List(), request(ocRequest))
-                  case _ => (List(), statusOpt.get)
-                }
-                complete {
-                  OccurrenceCollection(ocSelector, status, items)
+                parameters('addedBefore.as[String] ?, 'addedAfter.as[String] ?) { (addedBefore, addedAfter) =>
+                  val ocRequest = OccurrenceCollectionRequest(ocSelector, limit, addedBefore, addedAfter)
+                  val statusOpt: Option[String] = statusOf(ocRequest)
+                  val (items, status) = statusOpt match {
+                    case Some("ready") => (occurrencesFor(ocRequest), "ready")
+                    case None => (List(), request(ocRequest))
+                    case _ => (List(), statusOpt.get)
+                  }
+                  complete {
+                    OccurrenceCollection(ocSelector, status, items)
+                  }
                 }
               }
+            }
             }
           }
         } ~ path("monitors") {
@@ -102,10 +101,6 @@ trait Service extends Protocols with ChecklistFetcher with OccurrenceCollectionF
         }
       }
     }
-
-  def extractSelector: OccurrenceSelector = {
-    parameters('taxonSelector.as[String], 'wktString.as[String], 'traitSelector.as[String] ? "").as(OccurrenceSelector)
-  }
 }
 
 object Main extends App with Service with Configure with ChecklistFetcherCassandra with OccurrenceCollectionFetcherCassandra {

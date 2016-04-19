@@ -33,6 +33,7 @@ class OccurrenceCollectionFetcherSpec extends WordSpec with Matchers with Occurr
       assertCountForAddedRange(None, Some("1972-01-01"), addedDateString, 0)
       assertCountForAddedRange(Some("1999-01-01"), Some("1972-01-01"), addedDateString, 0)
     }
+
   }
 
   def assertCountForAddedRange(addedBefore: Option[String], addedAfter: Option[String], addedDateString: String, expectedOccurrenceCount: Int): Unit = {

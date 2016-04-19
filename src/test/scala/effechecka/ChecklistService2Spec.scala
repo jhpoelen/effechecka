@@ -13,7 +13,9 @@ import akka.http.scaladsl.model.MediaTypes
 
 trait ChecklistFetcherStatic extends ChecklistFetcher {
   def itemsFor(checklist: ChecklistRequest): List[ChecklistItem] = List(ChecklistItem("donald", 1))
+
   def statusOf(checklist: ChecklistRequest): Option[String] = Some("ready")
+
   def request(checklist: ChecklistRequest): String = "requested"
 }
 
@@ -22,8 +24,11 @@ trait OccurrenceCollectionFetcherStatic extends OccurrenceCollectionFetcher {
   val aMonitor = OccurrenceMonitor(OccurrenceSelector("Cartoona | mickey", "some wkt string", "some trait selector"), "some status", 123)
 
   def occurrencesFor(checklist: OccurrenceCollectionRequest): List[Occurrence] = List(anOccurrence)
+
   def statusOf(checklist: OccurrenceCollectionRequest): Option[String] = Some("ready")
+
   def request(checklist: OccurrenceCollectionRequest): String = "requested"
+
   def monitors(): List[OccurrenceMonitor] = List(aMonitor)
 }
 
@@ -38,19 +43,43 @@ class ChecklistService2Spec extends WordSpec with Matchers with ScalatestRouteTe
 
     "return requested checklist" in {
       Get("/checklist?taxonSelector=Animalia,Insecta&wktString=ENVELOPE(-150,-50,40,10)") ~> route ~> check {
-        responseAs[Checklist] shouldEqual Checklist(OccurrenceSelector("Animalia,Insecta", "ENVELOPE(-150,-50,40,10)",""), "ready", List(ChecklistItem("donald", 1)))
+        responseAs[Checklist] shouldEqual Checklist(OccurrenceSelector("Animalia,Insecta", "ENVELOPE(-150,-50,40,10)", ""), "ready", List(ChecklistItem("donald", 1)))
       }
     }
 
     "return requested occurrenceColection" in {
       Get("/occurrences?taxonSelector=Animalia,Insecta&wktString=ENVELOPE(-150,-50,40,10)") ~> route ~> check {
-        responseAs[OccurrenceCollection] shouldEqual OccurrenceCollection(OccurrenceSelector("Animalia,Insecta", "ENVELOPE(-150,-50,40,10)",""), "ready", List(anOccurrence))
+        responseAs[OccurrenceCollection] shouldEqual OccurrenceCollection(OccurrenceSelector("Animalia,Insecta", "ENVELOPE(-150,-50,40,10)", ""), "ready", List(anOccurrence))
       }
     }
 
+//    "subscribe to monitor" in {
+//      Get("/subscribe?subscriber=mailto%3Afoo%40bar&taxonSelector=Animalia,Insecta&wktString=ENVELOPE(-150,-50,40,10)") ~> route ~> check {
+//        responseAs[OccurrenceSelector] shouldEqual OccurrenceSelector("Animalia,Insecta", "ENVELOPE(-150,-50,40,10)", "")
+//      }
+//    }
+//
+//    "unsubscribe to selector" in {
+//      Get("/unsubscribe?subscriber=mailto%3Afoo%40bar&taxonSelector=Animalia,Insecta&wktString=ENVELOPE(-150,-50,40,10)") ~> route ~> check {
+//        responseAs[OccurrenceSelector] shouldEqual OccurrenceSelector("Animalia,Insecta", "ENVELOPE(-150,-50,40,10)", "")
+//      }
+//    }
+//
+//    "refresh monitor" in {
+//      Get("/update?taxonSelector=Animalia,Insecta&wktString=ENVELOPE(-150,-50,40,10)") ~> route ~> check {
+//        responseAs[OccurrenceSelector] shouldEqual OccurrenceSelector("Animalia,Insecta", "ENVELOPE(-150,-50,40,10)", "")
+//      }
+//    }
+//
+//    "send notification to monitor subscribers" in {
+//      Get("/notify?addedAfter=2016-01-10&taxonSelector=Animalia,Insecta&wktString=ENVELOPE(-150,-50,40,10)") ~> route ~> check {
+//        responseAs[OccurrenceSelector] shouldEqual OccurrenceSelector("Animalia,Insecta", "ENVELOPE(-150,-50,40,10)", "")
+//      }
+//    }
+
     "return requested monitors" in {
       Get("/monitors") ~> route ~> check {
-        responseAs[List[OccurrenceMonitor]] should contain(OccurrenceMonitor(OccurrenceSelector("Cartoona | mickey", "some wkt string","some trait selector"), "some status", 123))
+        responseAs[List[OccurrenceMonitor]] should contain(OccurrenceMonitor(OccurrenceSelector("Cartoona | mickey", "some wkt string", "some trait selector"), "some status", 123))
       }
     }
 
@@ -58,10 +87,10 @@ class ChecklistService2Spec extends WordSpec with Matchers with ScalatestRouteTe
       Get("/donald") ~> route ~> check {
         contentType shouldEqual ContentType(MediaTypes.`text/html`, HttpCharsets.`UTF-8`)
         responseAs[String] should include("/checklist?taxonSelector=Animalia,Insecta&amp;wktString=ENVELOPE(-150,-50,40,10)")
-       
+
       }
     }
-    
+
   }
 
 }

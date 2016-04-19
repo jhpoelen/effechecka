@@ -17,9 +17,7 @@ trait ChecklistFetcherCassandra extends ChecklistFetcher with Fetcher {
 
   def itemsFor(checklist: ChecklistRequest): List[ChecklistItem] = {
     val results: ResultSet = session.execute(checklistSelect(checklist.limit),
-      normalizeTaxonSelector(checklist.selector.taxonSelector),
-      checklist.selector.wktString,
-      normalizeTaxonSelector(checklist.selector.traitSelector))
+      selectorParams(checklist.selector): _*)
     val items: List[Row] = results.iterator.toList
     items.map(item => ChecklistItem(item.getString("taxon"), item.getInt("recordcount")))
   }
@@ -40,7 +38,7 @@ trait ChecklistFetcherCassandra extends ChecklistFetcher with Fetcher {
   }
 
   def statusOf(checklist: ChecklistRequest): Option[String] = {
-    val results: ResultSet = session.execute(checklistStatusSelect, normalizeTaxonSelector(checklist.selector.taxonSelector), checklist.selector.wktString, normalizeTaxonSelector(checklist.selector.traitSelector))
+    val results: ResultSet = session.execute(checklistStatusSelect, selectorParams(checklist.selector): _*)
     val items: List[Row] = results.iterator.toList
     items.map(_.getString("status")).headOption
   }
@@ -54,7 +52,7 @@ trait ChecklistFetcherCassandra extends ChecklistFetcher with Fetcher {
   }
 
   def insertRequest(checklist: ChecklistRequest): String = {
-    val values = Seq(normalizeTaxonSelector(checklist.selector.taxonSelector), checklist.selector.wktString, checklist.selector.traitSelector, "requested").map("'" + _ + "'").mkString(",")
+    val values = (selectorParams(checklist.selector) ::: List("requested")).map("'" + _ + "'").mkString(",")
     session.execute(s"INSERT INTO effechecka.checklist_registry (taxonselector, wktstring, traitSelector, status) VALUES ($values) using TTL 7200")
     "requested"
   }

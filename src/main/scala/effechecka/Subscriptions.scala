@@ -32,8 +32,6 @@ trait SubscriptionsCassandra extends Subscriptions with Fetcher {
     selectorParams(selector) ::: List(subscriber.toString)
   }
 
-  val selectorWhereClause: String = s"WHERE taxonSelector = ? AND wktString = ? AND traitSelector = ?"
-
   def subscribe(subscriber: URL, selector: OccurrenceSelector): URL = {
     session.execute(s"INSERT INTO effechecka.subscriptions (taxonSelector, wktString, traitSelector, subscriber) " +
       s"VALUES (?,?,?,?) ", subscriberParams(subscriber, selector): _*)

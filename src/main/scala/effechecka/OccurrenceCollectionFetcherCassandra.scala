@@ -18,6 +18,8 @@ trait Fetcher {
       normalizeTaxonSelector(selector.traitSelector))
   }
 
+  val selectorWhereClause: String = s"WHERE taxonSelector = ? AND wktString = ? AND traitSelector = ?"
+
 }
 
 trait OccurrenceCollectionFetcher {
@@ -66,7 +68,7 @@ trait OccurrenceCollectionFetcherCassandra extends OccurrenceCollectionFetcher w
 
 
   def monitors(): List[OccurrenceMonitor] = {
-    val results: ResultSet = session.execute(occurrenceCollectionRegistrySelect())
+    val results: ResultSet = session.execute(occurrenceCollectionRegistrySelect)
     val items: List[Row] = results.iterator().toList
     items.map(item => {
       asOccurrenceMonitor(item)
@@ -79,11 +81,12 @@ trait OccurrenceCollectionFetcherCassandra extends OccurrenceCollectionFetcher w
   }
 
   def monitorOf(selector: OccurrenceSelector): Option[OccurrenceMonitor] = {
-    val results: ResultSet = session.execute(occurrenceCollectionRegistrySelect())
+    val queryMonitor: String = List(occurrenceCollectionRegistrySelect, selectorWhereClause, """LIMIT 1""").mkString(" ")
+    val results: ResultSet = session.execute(queryMonitor, selectorParams(selector): _*)
     results.headOption match {
       case Some(item) => {
         val selector = OccurrenceSelector(item.getString("taxonselector"), item.getString("wktstring"), item.getString("traitselector"))
-                  Some(OccurrenceMonitor(selector, item.getString("status"), item.getInt("recordcount")))
+        Some(OccurrenceMonitor(selector, item.getString("status"), item.getInt("recordcount")))
       }
       case None => None
     }
@@ -112,15 +115,15 @@ trait OccurrenceCollectionFetcherCassandra extends OccurrenceCollectionFetcher w
   }
 
   def occurrenceCollectionSelect: String = {
-    s"SELECT taxon, lat, lng, start, end, id, added, source FROM effechecka.occurrence_collection WHERE taxonselector = ? AND wktstring = ? AND traitselector = ?"
+    s"SELECT taxon, lat, lng, start, end, id, added, source FROM effechecka.occurrence_collection " + selectorWhereClause
   }
 
-  def occurrenceCollectionRegistrySelect(): String = {
-    s"SELECT taxonselector, wktstring, traitselector, status, recordcount FROM effechecka.occurrence_collection_registry"
+  def occurrenceCollectionRegistrySelect: String = {
+    """SELECT taxonselector, wktstring, traitselector, status, recordcount FROM effechecka.occurrence_collection_registry"""
   }
 
   def occurrenceCollectionStatus: String = {
-    "SELECT status FROM effechecka.occurrence_collection_registry WHERE taxonselector = ? AND wktstring = ? AND traitselector = ? LIMIT 1"
+    "SELECT status FROM effechecka.occurrence_collection_registry " + selectorWhereClause + " LIMIT 1"
   }
 
   def insertRequest(selector: OccurrenceSelector): String = {

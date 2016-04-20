@@ -8,8 +8,11 @@ class OccurrenceCollectionFetcherSpec extends WordSpec with Matchers with Occurr
     "store and provide access to an occurrence collection" in {
       val selector: OccurrenceSelector = OccurrenceSelector("Insecta|Mammalia", "ENVELOPE(-150,-50,40,10)", "bodyMass greaterThan 2.7 kg")
       val request = OccurrenceCollectionRequest(selector, 2)
+      session.execute("TRUNCATE effechecka.occurrence_collection_registry")
       session.execute("TRUNCATE effechecka.occurrence_collection")
+      insertRequest(OccurrenceSelector("Insecta", "wktString", ""))
       insertRequest(selector)
+      insertRequest(OccurrenceSelector("Insecta|Aves", "wktString", ""))
       session.execute("INSERT INTO effechecka.occurrence_collection (taxonselector, wktstring, traitSelector, taxon, lat, lng, start, end, id, added, source) " +
         "VALUES ('Insecta|Mammalia', 'ENVELOPE(-150,-50,40,10)', 'bodyMass greaterThan 2.7 kg', 'Aves|Donald duckus', 12.1, 11.1, 1234, 1235, 'http://record.url', '2012-02-02T04:23:01.000Z', 'http://archive.url')")
       val occurrenceCollection = occurrencesFor(request)
@@ -24,6 +27,8 @@ class OccurrenceCollectionFetcherSpec extends WordSpec with Matchers with Occurr
       occ.added should be(1328156581000L)
 
       monitors() should contain(OccurrenceMonitor(OccurrenceSelector("Insecta|Mammalia", "ENVELOPE(-150,-50,40,10)", "bodyMass greaterThan 2.7 kg"), "requested", 0))
+      monitorOf(OccurrenceSelector("Insecta|Aves", "wktString", "")) should contain(OccurrenceMonitor(OccurrenceSelector("Insecta|Aves", "wktString", ""), "requested", 0))
+      monitorOf(OccurrenceSelector("Insecta", "wktString", "")) should contain(OccurrenceMonitor(OccurrenceSelector("Insecta", "wktString", ""), "requested", 0))
     }
 
     "store and provide access to an occurrence collection within added constraints" in {

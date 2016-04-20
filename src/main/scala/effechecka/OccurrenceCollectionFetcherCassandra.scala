@@ -23,9 +23,9 @@ trait Fetcher {
 trait OccurrenceCollectionFetcher {
   def occurrencesFor(request: OccurrenceCollectionRequest): List[Occurrence]
 
-  def statusOf(request: OccurrenceCollectionRequest): Option[String]
+  def statusOf(selector: OccurrenceSelector): Option[String]
 
-  def request(request: OccurrenceCollectionRequest): String
+  def request(selector: OccurrenceSelector): String
 
   def monitors(): List[OccurrenceMonitor]
 }
@@ -72,7 +72,7 @@ trait OccurrenceCollectionFetcherCassandra extends OccurrenceCollectionFetcher w
     })
   }
 
-  def request(ocRequest: OccurrenceCollectionRequest): String = {
+  def request(selector: OccurrenceSelector): String = {
     SparkSubmit.main(Array("--master",
       config.getString("effechecka.spark.master.url"),
       "--class", "OccurrenceCollectionGenerator",
@@ -81,14 +81,14 @@ trait OccurrenceCollectionFetcherCassandra extends OccurrenceCollectionFetcher w
       "-f", "cassandra",
       "-c", "\"" + config.getString("effechecka.data.dir") + "gbif-idigbio.parquet" + "\"",
       "-t", "\"" + config.getString("effechecka.data.dir") + "traitbank/*.csv" + "\"",
-      "\"" + ocRequest.selector.taxonSelector.replace(',', '|') + "\"",
-      "\"" + ocRequest.selector.wktString + "\"",
-      "\"" + ocRequest.selector.traitSelector.replace(',', '|') + "\""))
-    insertRequest(ocRequest)
+      "\"" + selector.taxonSelector.replace(',', '|') + "\"",
+      "\"" + selector.wktString + "\"",
+      "\"" + selector.traitSelector.replace(',', '|') + "\""))
+    insertRequest(selector)
   }
 
-  def statusOf(ocRequest: OccurrenceCollectionRequest): Option[String] = {
-    val results: ResultSet = session.execute(occurrenceCollectionStatus, selectorParams(ocRequest.selector): _*)
+  def statusOf(selector: OccurrenceSelector): Option[String] = {
+    val results: ResultSet = session.execute(occurrenceCollectionStatus, selectorParams(selector): _*)
 
     val items: List[Row] = results.iterator.toList
     items.map(_.getString("status")).headOption
@@ -106,9 +106,9 @@ trait OccurrenceCollectionFetcherCassandra extends OccurrenceCollectionFetcher w
     "SELECT status FROM effechecka.occurrence_collection_registry WHERE taxonselector = ? AND wktstring = ? AND traitselector = ? LIMIT 1"
   }
 
-  def insertRequest(request: OccurrenceCollectionRequest): String = {
-    val values = (selectorParams(request.selector) ::: List("requested")).map("'" + _ + "'").mkString(",")
-    session.execute(s"INSERT INTO effechecka.occurrence_collection_registry (taxonselector, wktstring, traitSelector, status) VALUES ($values) using TTL 600")
+  def insertRequest(selector: OccurrenceSelector): String = {
+    val values = (selectorParams(selector) ::: List("requested")).map("'" + _ + "'").mkString(",")
+    session.execute(s"INSERT INTO effechecka.occurrence_collection_registry (taxonselector, wktstring, traitSelector, status) VALUES ($values) using TTL 3600")
     "requested"
   }
 

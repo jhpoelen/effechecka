@@ -6,9 +6,10 @@ class OccurrenceCollectionFetcherSpec extends WordSpec with Matchers with Occurr
 
   "Cassandra driver" should {
     "store and provide access to an occurrence collection" in {
-      val request = OccurrenceCollectionRequest(OccurrenceSelector("Insecta|Mammalia", "ENVELOPE(-150,-50,40,10)", "bodyMass greaterThan 2.7 kg"), 2)
+      val selector: OccurrenceSelector = OccurrenceSelector("Insecta|Mammalia", "ENVELOPE(-150,-50,40,10)", "bodyMass greaterThan 2.7 kg")
+      val request = OccurrenceCollectionRequest(selector, 2)
       session.execute("TRUNCATE effechecka.occurrence_collection")
-      insertRequest(request)
+      insertRequest(selector)
       session.execute("INSERT INTO effechecka.occurrence_collection (taxonselector, wktstring, traitSelector, taxon, lat, lng, start, end, id, added, source) " +
         "VALUES ('Insecta|Mammalia', 'ENVELOPE(-150,-50,40,10)', 'bodyMass greaterThan 2.7 kg', 'Aves|Donald duckus', 12.1, 11.1, 1234, 1235, 'http://record.url', '2012-02-02T04:23:01.000Z', 'http://archive.url')")
       val occurrenceCollection = occurrencesFor(request)
@@ -39,7 +40,7 @@ class OccurrenceCollectionFetcherSpec extends WordSpec with Matchers with Occurr
   def assertCountForAddedRange(addedBefore: Option[String], addedAfter: Option[String], addedDateString: String, expectedOccurrenceCount: Int): Unit = {
     val request: OccurrenceCollectionRequest = occurrenceQuery(addedBefore, addedAfter)
     session.execute("TRUNCATE effechecka.occurrence_collection")
-    insertRequest(request)
+    insertRequest(request.selector)
 
     session.execute("INSERT INTO effechecka.occurrence_collection (taxonselector, wktstring, traitSelector, taxon, lat, lng, start, end, id, added, source) " +
       "VALUES ('Insecta|Mammalia', 'ENVELOPE(-150,-50,40,10)', 'bodyMass greaterThan 2.7 kg', 'Aves|Donald duckus', 12.1, 11.1, 1234, 1235, 'http://record.url'," + addedDateString + ", 'http://archive.url')")

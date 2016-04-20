@@ -1,5 +1,7 @@
 package effechecka
 
+import java.net.URL
+
 import akka.event.{LoggingAdapter, Logging}
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
@@ -31,7 +33,7 @@ trait Protocols extends SprayJsonSupport with DefaultJsonProtocol {
 }
 
 
-trait Service extends Protocols with ChecklistFetcher with OccurrenceCollectionFetcher {
+trait Service extends Protocols with ChecklistFetcher with OccurrenceCollectionFetcher with Subscriptions {
 
   private def addAccessControlHeaders: Directive0 = {
     mapResponseHeaders { headers =>
@@ -70,10 +72,10 @@ trait Service extends Protocols with ChecklistFetcher with OccurrenceCollectionF
               parameters('limit.as[Int] ? 20) { limit =>
                 parameters('addedBefore.as[String] ?, 'addedAfter.as[String] ?) { (addedBefore, addedAfter) =>
                   val ocRequest = OccurrenceCollectionRequest(ocSelector, limit, addedBefore, addedAfter)
-                  val statusOpt: Option[String] = statusOf(ocRequest)
+                  val statusOpt: Option[String] = statusOf(ocSelector)
                   val (items, status) = statusOpt match {
                     case Some("ready") => (occurrencesFor(ocRequest), "ready")
-                    case None => (List(), request(ocRequest))
+                    case None => (List(), request(ocSelector))
                     case _ => (List(), statusOpt.get)
                   }
                   complete {
@@ -82,6 +84,38 @@ trait Service extends Protocols with ChecklistFetcher with OccurrenceCollectionF
                 }
               }
             }
+            }
+          }
+        } ~ path("subscribe") {
+          get {
+            parameters('taxonSelector.as[String], 'wktString.as[String], 'traitSelector.as[String] ? "").as(OccurrenceSelector) { ocSelector => {
+              parameters('subscriber.as[String]) { subscriber =>
+                complete {
+                  subscribe(new URL(subscriber), ocSelector).toString
+                }
+              }
+            }
+            }
+          }
+        } ~ path("unsubscribe") {
+          get {
+            parameters('taxonSelector.as[String], 'wktString.as[String], 'traitSelector.as[String] ? "").as(OccurrenceSelector) { ocSelector => {
+              parameters('subscriber.as[String]) { subscriber =>
+                complete {
+                  unsubscribe(new URL(subscriber), ocSelector).toString
+                }
+              }
+            }
+            }
+          }
+        }~ path("update") {
+          get {
+            parameters('taxonSelector.as[String], 'wktString.as[String], 'traitSelector.as[String] ? "").as(OccurrenceSelector) { ocSelector => {
+                complete {
+                  val status = request(ocSelector)
+                  OccurrenceCollection(ocSelector, status, List())
+                }
+              }
             }
           }
         } ~ path("monitors") {
@@ -103,7 +137,10 @@ trait Service extends Protocols with ChecklistFetcher with OccurrenceCollectionF
     }
 }
 
-object Main extends App with Service with Configure with ChecklistFetcherCassandra with OccurrenceCollectionFetcherCassandra {
+object Main extends App with Service with Configure
+  with SubscriptionsCassandra
+  with ChecklistFetcherCassandra
+  with OccurrenceCollectionFetcherCassandra {
   implicit val system = ActorSystem("effechecka")
   implicit val materializer = ActorMaterializer()
   implicit val ec = system.dispatcher

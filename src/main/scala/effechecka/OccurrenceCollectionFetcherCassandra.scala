@@ -28,6 +28,8 @@ trait OccurrenceCollectionFetcher {
   def request(selector: OccurrenceSelector): String
 
   def monitors(): List[OccurrenceMonitor]
+
+  def monitorOf(selector: OccurrenceSelector): Option[OccurrenceMonitor]
 }
 
 trait OccurrenceCollectionFetcherCassandra extends OccurrenceCollectionFetcher with Fetcher {
@@ -67,9 +69,24 @@ trait OccurrenceCollectionFetcherCassandra extends OccurrenceCollectionFetcher w
     val results: ResultSet = session.execute(occurrenceCollectionRegistrySelect())
     val items: List[Row] = results.iterator().toList
     items.map(item => {
-      val selector = OccurrenceSelector(item.getString("taxonselector"), item.getString("wktstring"), item.getString("traitselector"))
-      OccurrenceMonitor(selector, item.getString("status"), item.getInt("recordcount"))
+      asOccurrenceMonitor(item)
     })
+  }
+
+  def asOccurrenceMonitor(item: Row): OccurrenceMonitor = {
+    val selector = OccurrenceSelector(item.getString("taxonselector"), item.getString("wktstring"), item.getString("traitselector"))
+    OccurrenceMonitor(selector, item.getString("status"), item.getInt("recordcount"))
+  }
+
+  def monitorOf(selector: OccurrenceSelector): Option[OccurrenceMonitor] = {
+    val results: ResultSet = session.execute(occurrenceCollectionRegistrySelect())
+    results.headOption match {
+      case Some(item) => {
+        val selector = OccurrenceSelector(item.getString("taxonselector"), item.getString("wktstring"), item.getString("traitselector"))
+                  Some(OccurrenceMonitor(selector, item.getString("status"), item.getInt("recordcount")))
+      }
+      case None => None
+    }
   }
 
   def request(selector: OccurrenceSelector): String = {

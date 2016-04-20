@@ -3,6 +3,7 @@ package effechecka
 import java.net.URL
 
 import akka.event.{LoggingAdapter, Logging}
+import akka.http.scaladsl.server.directives.ParameterDirectives.ParamDef
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import akka.http.scaladsl.Http
@@ -46,12 +47,14 @@ trait Service extends Protocols with ChecklistFetcher with OccurrenceCollectionF
     case _ => TextMessage("Message type unsupported")
   }
 
+  val selectorParams = parameters('taxonSelector.as[String], 'wktString.as[String], 'traitSelector.as[String] ? "")
+
   val route =
     logRequestResult("checklist-service") {
       addAccessControlHeaders {
         path("checklist") {
           get {
-            parameters('taxonSelector.as[String], 'wktString.as[String], 'traitSelector.as[String] ? "").as(OccurrenceSelector) { ocSelector =>
+            selectorParams.as(OccurrenceSelector) { ocSelector =>
               parameters('limit.as[Int] ? 20) { limit =>
                 val checklist = ChecklistRequest(ocSelector, limit)
                 val statusOpt: Option[String] = statusOf(checklist)
@@ -68,7 +71,7 @@ trait Service extends Protocols with ChecklistFetcher with OccurrenceCollectionF
           }
         } ~ path("occurrences") {
           get {
-            parameters('taxonSelector.as[String], 'wktString.as[String], 'traitSelector.as[String] ? "").as(OccurrenceSelector) { ocSelector => {
+            selectorParams.as(OccurrenceSelector) { ocSelector => {
               parameters('limit.as[Int] ? 20) { limit =>
                 parameters('addedBefore.as[String] ?, 'addedAfter.as[String] ?) { (addedBefore, addedAfter) =>
                   val ocRequest = OccurrenceCollectionRequest(ocSelector, limit, addedBefore, addedAfter)
@@ -88,7 +91,7 @@ trait Service extends Protocols with ChecklistFetcher with OccurrenceCollectionF
           }
         } ~ path("subscribe") {
           get {
-            parameters('taxonSelector.as[String], 'wktString.as[String], 'traitSelector.as[String] ? "").as(OccurrenceSelector) { ocSelector => {
+            selectorParams.as(OccurrenceSelector) { ocSelector => {
               parameters('subscriber.as[String]) { subscriber =>
                 complete {
                   subscribe(new URL(subscriber), ocSelector).toString
@@ -99,7 +102,7 @@ trait Service extends Protocols with ChecklistFetcher with OccurrenceCollectionF
           }
         } ~ path("unsubscribe") {
           get {
-            parameters('taxonSelector.as[String], 'wktString.as[String], 'traitSelector.as[String] ? "").as(OccurrenceSelector) { ocSelector => {
+            selectorParams.as(OccurrenceSelector) { ocSelector => {
               parameters('subscriber.as[String]) { subscriber =>
                 complete {
                   unsubscribe(new URL(subscriber), ocSelector).toString
@@ -108,16 +111,23 @@ trait Service extends Protocols with ChecklistFetcher with OccurrenceCollectionF
             }
             }
           }
-        }~ path("update") {
+        } ~ path("update") {
           get {
-            parameters('taxonSelector.as[String], 'wktString.as[String], 'traitSelector.as[String] ? "").as(OccurrenceSelector) { ocSelector => {
-                complete {
-                  val status = request(ocSelector)
-                  OccurrenceCollection(ocSelector, status, List())
-                }
+            selectorParams.as(OccurrenceSelector) { ocSelector => {
+              complete {
+                val status = request(ocSelector)
+                OccurrenceCollection(ocSelector, status, List())
               }
             }
+            }
           }
+        } ~ (path("monitors") & selectorParams.as(OccurrenceSelector)) { (ocSelector) => {
+          get {
+            complete {
+              monitorOf(ocSelector)
+            }
+          }
+        }
         } ~ path("monitors") {
           get {
             complete {

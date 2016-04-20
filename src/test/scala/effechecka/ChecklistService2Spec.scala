@@ -36,11 +36,13 @@ trait OccurrenceCollectionFetcherStatic extends OccurrenceCollectionFetcher {
 
   def occurrencesFor(checklist: OccurrenceCollectionRequest): List[Occurrence] = List(anOccurrence)
 
-  def statusOf(checklist: OccurrenceSelector): Option[String] = Some("ready")
+  def statusOf(selector: OccurrenceSelector): Option[String] = Some("ready")
 
-  def request(checklist: OccurrenceSelector): String = "requested"
+  def request(selector: OccurrenceSelector): String = "requested"
 
   def monitors(): List[OccurrenceMonitor] = List(aMonitor)
+
+  def monitorOf(selector: OccurrenceSelector): Option[OccurrenceMonitor] = Some(aMonitor)
 }
 
 class ChecklistService2Spec extends WordSpec with Matchers with ScalatestRouteTest with Service
@@ -94,6 +96,12 @@ class ChecklistService2Spec extends WordSpec with Matchers with ScalatestRouteTe
     "return requested monitors" in {
       Get("/monitors") ~> route ~> check {
         responseAs[List[OccurrenceMonitor]] should contain(OccurrenceMonitor(OccurrenceSelector("Cartoona | mickey", "some wkt string", "some trait selector"), "some status", 123))
+      }
+    }
+
+    "return single monitor" in {
+      Get("/monitors?taxonSelector=Animalia,Insecta&wktString=ENVELOPE(-150,-50,40,10)") ~> route ~> check {
+        responseAs[OccurrenceMonitor] should be(OccurrenceMonitor(OccurrenceSelector("Cartoona | mickey", "some wkt string", "some trait selector"), "some status", 123))
       }
     }
 

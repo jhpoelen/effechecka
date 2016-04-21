@@ -45,10 +45,17 @@ trait OccurrenceCollectionFetcherStatic extends OccurrenceCollectionFetcher {
   def monitorOf(selector: OccurrenceSelector): Option[OccurrenceMonitor] = Some(aMonitor)
 }
 
+trait NotificationSenderStatic extends NotificationSender {
+  def sendNotification(subscriber: URL, request: OccurrenceCollectionRequest): Unit = {
+    println("sending all sorts of stuff")
+  }
+}
+
 class ChecklistService2Spec extends WordSpec with Matchers with ScalatestRouteTest with Service
   with SubscriptionsStatic
   with ChecklistFetcherStatic
-  with OccurrenceCollectionFetcherStatic {
+  with OccurrenceCollectionFetcherStatic
+  with NotificationSenderStatic {
 
   "The service" should {
     "return a 'ping' response for GET requests to /ping" in {
@@ -86,12 +93,12 @@ class ChecklistService2Spec extends WordSpec with Matchers with ScalatestRouteTe
         responseAs[OccurrenceCollection] shouldEqual OccurrenceCollection(OccurrenceSelector("Animalia,Insecta", "ENVELOPE(-150,-50,40,10)", ""), "requested", List())
       }
     }
-//
-//    "send notification to subscribers" in {
-//      Get("/notify?addedAfter=2016-01-10&taxonSelector=Animalia,Insecta&wktString=ENVELOPE(-150,-50,40,10)") ~> route ~> check {
-//        responseAs[OccurrenceSelector] shouldEqual OccurrenceSelector("Animalia,Insecta", "ENVELOPE(-150,-50,40,10)", "")
-//      }
-//    }
+
+    "send notification to subscribers" in {
+      Get("/notify?addedAfter=2016-01-10&taxonSelector=Animalia,Insecta&wktString=ENVELOPE(-150,-50,40,10)") ~> route ~> check {
+        responseAs[String] should be("change detected: sent notifications")
+      }
+    }
 
     "return requested monitors" in {
       Get("/monitors") ~> route ~> check {

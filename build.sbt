@@ -14,6 +14,7 @@ libraryDependencies ++= {
   val scalaTestV = "2.2.5"
   Seq(
     "joda-time" % "joda-time" % "2.9.3",
+    "com.sun.jersey" % "jersey-client" % "1.9",
     "com.typesafe.akka" %% "akka-actor" % akkaV,
     "com.typesafe.akka" %% "akka-stream-experimental" % akkaStreamV,
     "com.typesafe.akka" %% "akka-http-core-experimental" % akkaStreamV,

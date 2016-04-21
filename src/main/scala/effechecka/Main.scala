@@ -34,7 +34,7 @@ trait Protocols extends SprayJsonSupport with DefaultJsonProtocol {
 }
 
 
-trait Service extends Protocols with ChecklistFetcher with OccurrenceCollectionFetcher with Subscriptions {
+trait Service extends Protocols with ChecklistFetcher with OccurrenceCollectionFetcher with Subscriptions with NotificationSender {
 
   private def addAccessControlHeaders: Directive0 = {
     mapResponseHeaders { headers =>
@@ -121,6 +121,27 @@ trait Service extends Protocols with ChecklistFetcher with OccurrenceCollectionF
             }
             }
           }
+        } ~ path("notify") {
+          get {
+            selectorParams.as(OccurrenceSelector) { ocSelector => {
+              parameters('addedBefore.as[String] ?, 'addedAfter.as[String] ?) { (addedBefore, addedAfter) =>
+                val ocRequest = OccurrenceCollectionRequest(ocSelector, 1, addedBefore, addedAfter)
+                val occurrences: List[Occurrence] = occurrencesFor(ocRequest)
+                complete {
+                  if (occurrences.nonEmpty) {
+                    val subscribers = subscribersOf(ocSelector)
+                    for (subscriber <- subscribers) {
+                      sendNotification(subscriber, ocRequest)
+                    }
+                    "change detected: sent notifications"
+                  } else {
+                    "no change: did not send notifications"
+                  }
+                }
+              }
+            }
+            }
+          }
         } ~ (path("monitors") & selectorParams.as(OccurrenceSelector)) { (ocSelector) => {
           get {
             complete {
@@ -150,7 +171,8 @@ trait Service extends Protocols with ChecklistFetcher with OccurrenceCollectionF
 object Main extends App with Service with Configure
   with SubscriptionsCassandra
   with ChecklistFetcherCassandra
-  with OccurrenceCollectionFetcherCassandra {
+  with OccurrenceCollectionFetcherCassandra
+  with NotificationSenderSendGrid {
   implicit val system = ActorSystem("effechecka")
   implicit val materializer = ActorMaterializer()
   implicit val ec = system.dispatcher

@@ -34,7 +34,12 @@ trait Protocols extends SprayJsonSupport with DefaultJsonProtocol {
 }
 
 
-trait Service extends Protocols with ChecklistFetcher with OccurrenceCollectionFetcher with Subscriptions with NotificationSender {
+trait Service extends Protocols
+  with ChecklistFetcher
+  with OccurrenceCollectionFetcher
+  with Subscriptions
+  with NotificationFeedSourceKafka
+  with NotificationSender {
 
   private def addAccessControlHeaders: Directive0 = {
     mapResponseHeaders { headers =>
@@ -42,10 +47,6 @@ trait Service extends Protocols with ChecklistFetcher with OccurrenceCollectionF
     }
   }
 
-  val echoService: Flow[Message, Message, _] = Flow[Message].map {
-    case TextMessage.Strict(txt) => TextMessage("ECHO: " + txt)
-    case _ => TextMessage("Message type unsupported")
-  }
 
   val selectorParams = parameters('taxonSelector.as[String], 'wktString.as[String], 'traitSelector.as[String] ? "")
 
@@ -155,10 +156,8 @@ trait Service extends Protocols with ChecklistFetcher with OccurrenceCollectionF
               monitors()
             }
           }
-        } ~ path("ws-echo") {
-          get {
-            handleWebsocketMessages(echoService)
-          }
+        } ~ path("feed") {
+          handleWebSocketMessages(NotificationFeed.pushToClient(feed))
         } ~ path("ping") {
           complete("pong")
         } ~ get {

@@ -1,6 +1,6 @@
 {
     "id": "kafka", 
-    "cmd": "cd kafka_2.11-0.9.0.0 && ./bin/kafka-server-start.sh ./config/server.properties",
+    "cmd": "cd kafka_2.11-0.9.0.0 && ./bin/kafka-server-start.sh ./config/server.properties --override host.name=localhost",
     "cpus": 0.5,
     "mem": 512.0,
     "instances": 1,

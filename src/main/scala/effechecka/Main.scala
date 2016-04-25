@@ -83,7 +83,7 @@ trait Service extends Protocols
                     case _ => (List(), statusOpt.get)
                   }
                   complete {
-                    OccurrenceCollection(ocSelector, status, items)
+                    OccurrenceCollection(ocSelector, Some(status), items)
                   }
                 }
               }
@@ -117,7 +117,7 @@ trait Service extends Protocols
             selectorParams.as(OccurrenceSelector) { ocSelector => {
               complete {
                 val status = request(ocSelector)
-                OccurrenceCollection(ocSelector, status, List())
+                OccurrenceCollection(ocSelector, Option(status), List())
               }
             }
             }

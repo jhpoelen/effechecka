@@ -77,7 +77,7 @@ trait OccurrenceCollectionFetcherCassandra extends OccurrenceCollectionFetcher w
 
   def asOccurrenceMonitor(item: Row): OccurrenceMonitor = {
     val selector = OccurrenceSelector(item.getString("taxonselector"), item.getString("wktstring"), item.getString("traitselector"))
-    OccurrenceMonitor(selector, item.getString("status"), item.getInt("recordcount"))
+    OccurrenceMonitor(selector, Option(item.getString("status")), Option(item.getInt("recordcount")))
   }
 
   def monitorOf(selector: OccurrenceSelector): Option[OccurrenceMonitor] = {
@@ -86,7 +86,7 @@ trait OccurrenceCollectionFetcherCassandra extends OccurrenceCollectionFetcher w
     results.headOption match {
       case Some(item) => {
         val selector = OccurrenceSelector(item.getString("taxonselector"), item.getString("wktstring"), item.getString("traitselector"))
-        Some(OccurrenceMonitor(selector, item.getString("status"), item.getInt("recordcount")))
+        Some(OccurrenceMonitor(selector, Option(item.getString("status")), Option(item.getInt("recordcount"))))
       }
       case None => None
     }
@@ -126,8 +126,8 @@ trait OccurrenceCollectionFetcherCassandra extends OccurrenceCollectionFetcher w
     "SELECT status FROM effechecka.occurrence_collection_registry " + selectorWhereClause + " LIMIT 1"
   }
 
-  def insertRequest(selector: OccurrenceSelector): String = {
-    val values = (selectorParams(selector) ::: List("requested")).map("'" + _ + "'").mkString(",")
+  def insertRequest(selector: OccurrenceSelector, status: String = "requested"): String = {
+    val values = (selectorParams(selector) ::: List(status)).map("'" + _ + "'").mkString(",")
     session.execute(s"INSERT INTO effechecka.occurrence_collection_registry (taxonselector, wktstring, traitSelector, status) VALUES ($values) using TTL 3600")
     "requested"
   }

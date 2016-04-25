@@ -1,5 +1,6 @@
 package effechecka
 
+import com.datastax.driver.core.ResultSet
 import org.scalatest.{Matchers, WordSpec}
 
 class OccurrenceCollectionFetcherSpec extends WordSpec with Matchers with OccurrenceCollectionFetcherCassandra with Configure {
@@ -8,8 +9,7 @@ class OccurrenceCollectionFetcherSpec extends WordSpec with Matchers with Occurr
     "store and provide access to an occurrence collection" in {
       val selector: OccurrenceSelector = OccurrenceSelector("Insecta|Mammalia", "ENVELOPE(-150,-50,40,10)", "bodyMass greaterThan 2.7 kg")
       val request = OccurrenceCollectionRequest(selector, 2)
-      session.execute("TRUNCATE effechecka.occurrence_collection_registry")
-      session.execute("TRUNCATE effechecka.occurrence_collection")
+      truncate
       insertRequest(OccurrenceSelector("Insecta", "wktString", ""))
       insertRequest(selector)
       insertRequest(OccurrenceSelector("Insecta|Aves", "wktString", ""))
@@ -26,9 +26,23 @@ class OccurrenceCollectionFetcherSpec extends WordSpec with Matchers with Occurr
       occ.source should be("http://archive.url")
       occ.added should be(1328156581000L)
 
-      monitors() should contain(OccurrenceMonitor(OccurrenceSelector("Insecta|Mammalia", "ENVELOPE(-150,-50,40,10)", "bodyMass greaterThan 2.7 kg"), "requested", 0))
-      monitorOf(OccurrenceSelector("Insecta|Aves", "wktString", "")) should contain(OccurrenceMonitor(OccurrenceSelector("Insecta|Aves", "wktString", ""), "requested", 0))
-      monitorOf(OccurrenceSelector("Insecta", "wktString", "")) should contain(OccurrenceMonitor(OccurrenceSelector("Insecta", "wktString", ""), "requested", 0))
+      monitors() should contain(OccurrenceMonitor(OccurrenceSelector("Insecta|Mammalia", "ENVELOPE(-150,-50,40,10)", "bodyMass greaterThan 2.7 kg"), Some("requested"), Some(0)))
+      monitorOf(OccurrenceSelector("Insecta|Aves", "wktString", "")) should contain(OccurrenceMonitor(OccurrenceSelector("Insecta|Aves", "wktString", ""), Some("requested"), Some(0)))
+      monitorOf(OccurrenceSelector("Insecta", "wktString", "")) should contain(OccurrenceMonitor(OccurrenceSelector("Insecta", "wktString", ""), Some("requested"), Some(0)))
+    }
+
+    "occurrence selector with null status" in {
+      truncate
+      session.execute("INSERT INTO effechecka.occurrence_collection_registry (taxonselector, wktstring, traitSelector, recordcount) " +
+              "VALUES ('Insecta|Mammalia', 'ENVELOPE(-150,-50,40,10)', 'bodyMass greaterThan 2.7 kg', 123)")
+      session.execute("INSERT INTO effechecka.occurrence_collection_registry (taxonselector, wktstring, traitSelector) " +
+              "VALUES ('Aves|Mammalia', 'ENVELOPE(-150,-50,40,10)', 'bodyMass greaterThan 2.7 kg')")
+      val expectedWktString: String = "ENVELOPE(-150,-50,40,10)"
+      val expectedTraitSelector: String = "bodyMass greaterThan 2.7 kg"
+      val expectedTaxonSelector: String = "Insecta|Mammalia"
+      monitors() should contain(OccurrenceMonitor(OccurrenceSelector(expectedTaxonSelector, expectedWktString, expectedTraitSelector), None, Some(123)))
+      monitorOf(OccurrenceSelector("Insecta|Mammalia", expectedWktString, expectedTraitSelector)) should be(Some(OccurrenceMonitor(OccurrenceSelector("Insecta|Mammalia", expectedWktString, expectedTraitSelector), None, Some(123))))
+      monitorOf(OccurrenceSelector("Aves|Mammalia", expectedWktString, expectedTraitSelector)) should be(Some(OccurrenceMonitor(OccurrenceSelector("Aves|Mammalia", expectedWktString, expectedTraitSelector), None, Some(0))))
     }
 
     "store and provide access to an occurrence collection within added constraints" in {
@@ -40,6 +54,11 @@ class OccurrenceCollectionFetcherSpec extends WordSpec with Matchers with Occurr
       assertCountForAddedRange(Some("1999-01-01"), Some("1972-01-01"), addedDateString, 0)
     }
 
+  }
+
+  def truncate: ResultSet = {
+    session.execute("TRUNCATE effechecka.occurrence_collection_registry")
+    session.execute("TRUNCATE effechecka.occurrence_collection")
   }
 
   def assertCountForAddedRange(addedBefore: Option[String], addedAfter: Option[String], addedDateString: String, expectedOccurrenceCount: Int): Unit = {

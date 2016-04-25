@@ -32,7 +32,8 @@ trait SubscriptionsStatic extends Subscriptions {
 
 trait OccurrenceCollectionFetcherStatic extends OccurrenceCollectionFetcher {
   val anOccurrence = Occurrence("Cartoona | mickey", 12.1, 32.1, 123L, 124L, "recordId", 456L, "archiveId")
-  val aMonitor = OccurrenceMonitor(OccurrenceSelector("Cartoona | mickey", "some wkt string", "some trait selector"), "some status", 123)
+  val aMonitor = OccurrenceMonitor(OccurrenceSelector("Cartoona | mickey", "some wkt string", "some trait selector"), Some("some status"), Some(123))
+  val anotherMonitor = OccurrenceMonitor(OccurrenceSelector("Cartoona | donald", "some wkt string", "some trait selector"), None, Some(123))
 
   def occurrencesFor(checklist: OccurrenceCollectionRequest): List[Occurrence] = List(anOccurrence)
 
@@ -40,7 +41,7 @@ trait OccurrenceCollectionFetcherStatic extends OccurrenceCollectionFetcher {
 
   def request(selector: OccurrenceSelector): String = "requested"
 
-  def monitors(): List[OccurrenceMonitor] = List(aMonitor)
+  def monitors(): List[OccurrenceMonitor] = List(aMonitor, anotherMonitor)
 
   def monitorOf(selector: OccurrenceSelector): Option[OccurrenceMonitor] = Some(aMonitor)
 }
@@ -72,7 +73,7 @@ class ChecklistService2Spec extends WordSpec with Matchers with ScalatestRouteTe
 
     "return requested occurrenceColection" in {
       Get("/occurrences?taxonSelector=Animalia,Insecta&wktString=ENVELOPE(-150,-50,40,10)") ~> route ~> check {
-        responseAs[OccurrenceCollection] shouldEqual OccurrenceCollection(OccurrenceSelector("Animalia,Insecta", "ENVELOPE(-150,-50,40,10)", ""), "ready", List(anOccurrence))
+        responseAs[OccurrenceCollection] shouldEqual OccurrenceCollection(OccurrenceSelector("Animalia,Insecta", "ENVELOPE(-150,-50,40,10)", ""), Some("ready"), List(anOccurrence))
       }
     }
 
@@ -90,7 +91,7 @@ class ChecklistService2Spec extends WordSpec with Matchers with ScalatestRouteTe
 
     "refresh monitor" in {
       Get("/update?taxonSelector=Animalia,Insecta&wktString=ENVELOPE(-150,-50,40,10)") ~> route ~> check {
-        responseAs[OccurrenceCollection] shouldEqual OccurrenceCollection(OccurrenceSelector("Animalia,Insecta", "ENVELOPE(-150,-50,40,10)", ""), "requested", List())
+        responseAs[OccurrenceCollection] shouldEqual OccurrenceCollection(OccurrenceSelector("Animalia,Insecta", "ENVELOPE(-150,-50,40,10)", ""), Some("requested"), List())
       }
     }
 
@@ -102,13 +103,13 @@ class ChecklistService2Spec extends WordSpec with Matchers with ScalatestRouteTe
 
     "return requested monitors" in {
       Get("/monitors") ~> route ~> check {
-        responseAs[List[OccurrenceMonitor]] should contain(OccurrenceMonitor(OccurrenceSelector("Cartoona | mickey", "some wkt string", "some trait selector"), "some status", 123))
+        responseAs[List[OccurrenceMonitor]] should contain(OccurrenceMonitor(OccurrenceSelector("Cartoona | mickey", "some wkt string", "some trait selector"), Some("some status"), Some(123)))
       }
     }
 
     "return single monitor" in {
       Get("/monitors?taxonSelector=Animalia,Insecta&wktString=ENVELOPE(-150,-50,40,10)") ~> route ~> check {
-        responseAs[OccurrenceMonitor] should be(OccurrenceMonitor(OccurrenceSelector("Cartoona | mickey", "some wkt string", "some trait selector"), "some status", 123))
+        responseAs[OccurrenceMonitor] should be(OccurrenceMonitor(OccurrenceSelector("Cartoona | mickey", "some wkt string", "some trait selector"), Some("some status"), Some(123)))
       }
     }
 

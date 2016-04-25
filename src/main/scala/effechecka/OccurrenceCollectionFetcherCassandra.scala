@@ -97,6 +97,7 @@ trait OccurrenceCollectionFetcherCassandra extends OccurrenceCollectionFetcher w
       config.getString("effechecka.spark.master.url"),
       "--class", "OccurrenceCollectionGenerator",
       "--deploy-mode", "cluster",
+      "--executor-memory", "2g",
       config.getString("effechecka.spark.job.jar"),
       "-f", "cassandra",
       "-c", "\"" + config.getString("effechecka.data.dir") + "gbif-idigbio.parquet" + "\"",

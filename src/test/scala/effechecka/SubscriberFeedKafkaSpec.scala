@@ -4,29 +4,26 @@ import java.net.URL
 import java.util.UUID
 import java.util.concurrent.TimeUnit
 
-import akka.NotUsed
 import akka.actor.ActorSystem
-import akka.http.scaladsl.server.Directives
-import akka.http.scaladsl.testkit.ScalatestRouteTest
-import akka.kafka.{ConsumerSettings, ProducerSettings}
 import akka.kafka.scaladsl.{Consumer, Producer}
+import akka.kafka.{ConsumerSettings, ProducerSettings}
 import akka.stream.ActorMaterializer
-import akka.stream.scaladsl.{Keep, Source, Sink}
-import akka.stream.testkit.TestSubscriber
-import akka.stream.testkit.scaladsl.TestSink
+import akka.stream.scaladsl.{Keep, Source}
 import akka.stream.testkit.TestPublisher.Probe
-import akka.stream.testkit.scaladsl.TestSource
+import akka.stream.testkit.scaladsl.{TestSink, TestSource}
 import akka.testkit.TestKit
-import org.apache.kafka.clients.consumer.{ConsumerRecord, ConsumerConfig}
+import org.apache.kafka.clients.consumer.ConsumerConfig
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.apache.kafka.common.serialization.{StringDeserializer, StringSerializer}
 import org.scalactic.ConversionCheckedTripleEquals
 import org.scalatest._
+import spray.json._
+
 import scala.concurrent.duration._
 
 class SubscriberFeedKafkaSpec extends TestKit(ActorSystem("KafkaIntegrationSpec"))
   with WordSpecLike with Matchers with BeforeAndAfterAll with BeforeAndAfterEach
-  with ConversionCheckedTripleEquals with SubscriberFeed {
+  with ConversionCheckedTripleEquals with SubscriberFeed with SubscriptionProtocols {
 
   implicit val mat = ActorMaterializer()(system)
   implicit val ec = system.dispatcher
@@ -48,9 +45,9 @@ class SubscriberFeedKafkaSpec extends TestKit(ActorSystem("KafkaIntegrationSpec"
     clientId = "test-client-" + uuid
   }
 
-  val initialMsg = "some initial test message"
+  val initialMsg = "some initial test message to establish topic"
 
-  "send record to topic" in {
+  "send subscription event" in {
     val settings = ProducerSettings(system, new StringSerializer, new StringSerializer)
       .withBootstrapServers("localhost:9092")
 
@@ -58,7 +55,8 @@ class SubscriberFeedKafkaSpec extends TestKit(ActorSystem("KafkaIntegrationSpec"
     producer.send(new ProducerRecord(topic, initialMsg))
     producer.close(60, TimeUnit.SECONDS)
 
-    val event = SelectorSubscriptionEvent(OccurrenceSelector("taxa", "wkt", "traits"), new URL("mailto:foo@bar"))
+    val event = SelectorSubscriptionEvent(OccurrenceSelector("taxa", "wkt", "traits"), "mailto:foo@bar")
+
 
     val testSource: Source[ProducerRecord[String, String], Probe[ProducerRecord[String, String]]] = TestSource.probe[ProducerRecord[String, String]]
     val (probe, notUsed) = testSource.toMat(Producer.plainSink(settings))(Keep.both).run()
@@ -71,15 +69,16 @@ class SubscriberFeedKafkaSpec extends TestKit(ActorSystem("KafkaIntegrationSpec"
 
     val subscriber = Consumer.plainSource(consumerSettings)
       .filterNot(_.value == initialMsg)
-      .map(_.value)
+      .map(_.value.parseJson.convertTo[SelectorSubscriptionEvent])
       .runWith(TestSink.probe)
 
-    probe.sendNext(new ProducerRecord(topic, "some other test message"))
+    probe.sendNext(new ProducerRecord(topic, event.toJson.toString))
 
     subscriber
       .request(1)
-      .expectNext("some other test message")
+      .expectNext(event)
 
     subscriber.cancel()
+
   }
 }

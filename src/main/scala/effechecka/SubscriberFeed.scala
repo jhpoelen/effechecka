@@ -3,13 +3,19 @@ package effechecka
 import java.net.URL
 
 import akka.NotUsed
+import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import akka.http.scaladsl.model.ws.{Message, TextMessage}
 import akka.stream.FlowShape
 import akka.stream.scaladsl.{Flow, GraphDSL, Merge, Source}
 import org.apache.kafka.clients.producer.ProducerRecord
 
 
-case class SelectorSubscriptionEvent(selector: OccurrenceSelector, subscriber: URL)
+case class SelectorSubscriptionEvent(selector: OccurrenceSelector, subscriber: String)
+
+trait SubscriptionProtocols extends Protocols {
+  implicit val selectorSubscriptionEventFormat = jsonFormat2(SelectorSubscriptionEvent)
+}
+
 
 trait SubscriberFeed {
   def feed: Flow[SelectorSubscriptionEvent, ProducerRecord[String, String], NotUsed] = {

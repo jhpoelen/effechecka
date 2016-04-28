@@ -46,17 +46,10 @@ trait OccurrenceCollectionFetcherStatic extends OccurrenceCollectionFetcher {
   def monitorOf(selector: OccurrenceSelector): Option[OccurrenceMonitor] = Some(aMonitor)
 }
 
-trait NotificationSenderStatic extends NotificationSender {
-  def sendNotification(subscriber: URL, request: OccurrenceCollectionRequest): Unit = {
-    println("sending all sorts of stuff")
-  }
-}
-
 class ChecklistService2Spec extends WordSpec with Matchers with ScalatestRouteTest with Service
   with SubscriptionsStatic
   with ChecklistFetcherStatic
-  with OccurrenceCollectionFetcherStatic
-  with NotificationSenderStatic {
+  with OccurrenceCollectionFetcherStatic {
 
   "The service" should {
     "return a 'ping' response for GET requests to /ping" in {

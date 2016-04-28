@@ -70,6 +70,7 @@ class SubscriptionFeedSpec extends TestKit(ActorSystem("KafkaIntegrationSpec"))
     val selector: OccurrenceSelector = OccurrenceSelector("taxa", "wkt", "traits")
     val event = SubscriptionEvent(selector, new URL("mailto:foo@bar"), "subscribe")
     val subscriber: Probe[SubscriptionEvent] = createTopicAndSubscribe(event)
+
     val probe = TestSource.probe[SubscriptionEvent]
       .toMat(subscriptionHandler(topic))(Keep.left)
       .run()

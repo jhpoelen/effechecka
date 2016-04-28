@@ -25,6 +25,16 @@ trait NotificationFeedSourceKafka extends NotificationFeedSource[String, Control
 
     Consumer.plainSource(settings).map(record => record.value())
   }
+
+  def subscriberFeed: Source[String, Control] = {
+    val settings = ConsumerSettings(system, new StringDeserializer, new StringDeserializer,
+      Set("effechecka-subscription"))
+      .withGroupId(UUID.randomUUID().toString)
+      .withBootstrapServers("localhost:9092")
+
+    Consumer.plainSource(settings).map(record => record.value())
+  }
+
 }
 
 

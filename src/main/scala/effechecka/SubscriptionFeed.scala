@@ -41,7 +41,7 @@ trait SubscriptionFeed extends Subscriptions with SubscriptionProtocols {
   lazy val kafkaSink: Sink[ProducerRecord[String, String], NotUsed] = Producer.plainSink(settings)
 
 
-  def subscriptionFeed(topic: String): Graph[SinkShape[SubscriptionEvent], Any] = {
+  def publishSubscriptionEvent(topic: String): Graph[SinkShape[SubscriptionEvent], Any] = {
     import GraphDSL.Implicits._
     GraphDSL.create() { implicit builder =>
 
@@ -74,13 +74,13 @@ trait SubscriptionFeed extends Subscriptions with SubscriptionProtocols {
     }
   }
 
-  def subscriptionHandler(topic: String): Graph[SinkShape[SubscriptionEvent], Any] = {
+  def subscriptionHandler(topic: String): Graph[SinkShape[SubscriptionEvent], NotUsed] = {
 
       import GraphDSL.Implicits._
       GraphDSL.create() { implicit builder =>
 
         val save = builder.add(persistSubscription)
-        val notify = builder.add(subscriptionFeed(topic))
+        val notify = builder.add(publishSubscriptionEvent(topic))
 
         save ~> notify
 

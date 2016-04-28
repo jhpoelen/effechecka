@@ -22,8 +22,12 @@ import akka.http.scaladsl.model.ws.{Message, TextMessage}
 import akka.stream.scaladsl.{Keep, Source, Flow}
 import akka.http.scaladsl.server.Directive0
 
+case class MonitorStatus(selector: OccurrenceSelector, status: String, percentComplete: Double, eta: Long)
+
+
 trait Protocols extends SprayJsonSupport with DefaultJsonProtocol {
   implicit val occurrenceSelector = jsonFormat3(OccurrenceSelector)
+  implicit val monitorStatusFormat = jsonFormat4(MonitorStatus)
 
   implicit val checklistFormat = jsonFormat2(ChecklistRequest)
   implicit val itemFormat = jsonFormat2(ChecklistItem)
@@ -40,8 +44,7 @@ trait Service extends Protocols
   with ChecklistFetcher
   with OccurrenceCollectionFetcher
   with SubscriptionFeed
-  with NotificationFeedSourceKafka
-  with NotificationSender {
+  with NotificationFeedSourceKafka {
 
   private def addAccessControlHeaders: Directive0 = {
     mapResponseHeaders { headers =>
@@ -182,8 +185,7 @@ trait Service extends Protocols
 object Main extends App with Service with Configure
   with SubscriptionsCassandra
   with ChecklistFetcherCassandra
-  with OccurrenceCollectionFetcherCassandra
-  with NotificationSenderSendGrid {
+  with OccurrenceCollectionFetcherCassandra {
   implicit val system = ActorSystem("effechecka")
   implicit val materializer = ActorMaterializer()
   implicit val ec = system.dispatcher

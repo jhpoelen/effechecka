@@ -1,13 +1,8 @@
-import java.net.URL
+package effechecka
 
-import akka.NotUsed
-import akka.event.{LoggingAdapter, Logging}
-import akka.http.scaladsl.Http
-import akka.http.scaladsl.model._
-import akka.http.scaladsl.server.Directives._
-import akka.stream._
-import effechecka._
 import akka.actor.ActorSystem
+import akka.event.Logging
+import akka.stream._
 import akka.stream.scaladsl._
 import spray.json._
 

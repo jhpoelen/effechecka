@@ -2,7 +2,9 @@ package effechecka
 
 import java.net.URL
 
+import akka.NotUsed
 import akka.event.{LoggingAdapter, Logging}
+import akka.http.scaladsl.marshalling.ToResponseMarshallable
 import akka.http.scaladsl.server.directives.ParameterDirectives.ParamDef
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
@@ -17,7 +19,7 @@ import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers.RawHeader
 import akka.http.scaladsl.model.headers._
 import akka.http.scaladsl.model.ws.{Message, TextMessage}
-import akka.stream.scaladsl.Flow
+import akka.stream.scaladsl.{Keep, Source, Flow}
 import akka.http.scaladsl.server.Directive0
 
 trait Protocols extends SprayJsonSupport with DefaultJsonProtocol {
@@ -37,7 +39,7 @@ trait Protocols extends SprayJsonSupport with DefaultJsonProtocol {
 trait Service extends Protocols
   with ChecklistFetcher
   with OccurrenceCollectionFetcher
-  with Subscriptions
+  with SubscriptionFeed
   with NotificationFeedSourceKafka
   with NotificationSender {
 
@@ -95,7 +97,8 @@ trait Service extends Protocols
             selectorParams.as(OccurrenceSelector) { ocSelector => {
               parameters('subscriber.as[String]) { subscriber =>
                 complete {
-                  subscribe(new URL(subscriber), ocSelector).toString
+                  handleSubscriptionEvent(ocSelector, new URL(subscriber), "subscribe")
+                  subscriber
                 }
               }
             }
@@ -106,7 +109,8 @@ trait Service extends Protocols
             selectorParams.as(OccurrenceSelector) { ocSelector => {
               parameters('subscriber.as[String]) { subscriber =>
                 complete {
-                  unsubscribe(new URL(subscriber), ocSelector).toString
+                  handleSubscriptionEvent(ocSelector, new URL(subscriber), "unsubscribe")
+                  subscriber
                 }
               }
             }
@@ -128,17 +132,20 @@ trait Service extends Protocols
               parameters('addedBefore.as[String] ?, 'addedAfter.as[String] ?) { (addedBefore, addedAfter) =>
                 val ocRequest = OccurrenceCollectionRequest(ocSelector, 1, addedBefore, addedAfter)
                 val occurrences: List[Occurrence] = occurrencesFor(ocRequest)
-                complete {
+
                   if (occurrences.nonEmpty) {
                     val subscribers = subscribersOf(ocSelector)
                     for (subscriber <- subscribers) {
-                      sendNotification(subscriber, ocRequest)
+                      handleSubscriptionEvent(ocSelector, subscriber, "notify")
                     }
-                    "change detected: sent notifications"
+                    complete {
+                      "change detected: sent notifications"
+                    }
                   } else {
-                    "no change: did not send notifications"
+                    complete {
+                      "no change: did not send notifications"
+                    }
                   }
-                }
               }
             }
             }
@@ -165,6 +172,11 @@ trait Service extends Protocols
         }
       }
     }
+
+  def handleSubscriptionEvent(ocSelector: OccurrenceSelector, subscriber: URL, action: String): NotUsed = {
+    Source.single(SubscriptionEvent(ocSelector, subscriber, action))
+      .to(subscriptionHandler("effechecka-subscription")).run()
+  }
 }
 
 object Main extends App with Service with Configure

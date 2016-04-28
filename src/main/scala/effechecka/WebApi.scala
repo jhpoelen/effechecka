@@ -182,7 +182,7 @@ trait Service extends Protocols
   }
 }
 
-object Main extends App with Service with Configure
+object WebApi extends App with Service with Configure
   with SubscriptionsCassandra
   with ChecklistFetcherCassandra
   with OccurrenceCollectionFetcherCassandra {

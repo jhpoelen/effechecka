@@ -41,23 +41,40 @@ object EmailUtils {
     s"If you no longer wish to receive these email, please visit ${unsubscribeUrlFor(event)} ."
   }
 
+  def emailHeader = {
+    """Hi!
+      |
+      |
+    """.stripMargin
+  }
+
+  def emailFooter = {
+    """
+      |
+      |Thanks!
+      |
+      |PS Fresh Data is an early stage prototype. Please share your feedback at https://github.com/gimmefreshdata/freshdata/issues/new .
+      |
+    """.stripMargin
+  }
+
   def emailFor(event: SubscriptionEvent): Email = {
     val to = event.subscriber.getPath
     event.action match {
       case "subscribe" => {
         Email(to = to,
           subject = "[freshdata] subscribed to freshdata search",
-          text = s"Hi!\nYou subscribed to the freshdata search available at ${urlFor(event.selector)}. \n${unsubscribeTextFor(event)}")
+          text = s"${emailHeader}You subscribed to the freshdata search available at ${urlFor(event.selector)}. \n\n${unsubscribeTextFor(event)} $emailFooter")
       }
       case "unsubscribe" => {
         Email(to = to,
           subject = "[freshdata] unsubscribed from freshdata search",
-          text = s"Hi!\nYou are not longer subscribed to the freshdata search available at ${urlFor(event.selector)}.")
+          text = s"${emailHeader}You are not longer subscribed to the freshdata search available at ${urlFor(event.selector)}. $emailFooter")
       }
       case "notify" => {
         Email(to = to,
           subject = "[freshdata] new data is available for your freshdata search",
-          text = s"Hi!\nThe freshdata search that you subscribed to has new data, please see ${urlFor(event.selector)} for more details. \n${unsubscribeTextFor(event)}")
+          text = s"${emailHeader}The freshdata search that you subscribed to has new data, please see ${urlFor(event.selector)} for more details. \n${unsubscribeTextFor(event)} $emailFooter")
       }
     }
   }

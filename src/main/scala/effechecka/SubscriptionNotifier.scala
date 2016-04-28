@@ -2,6 +2,8 @@ package effechecka
 
 import akka.actor.ActorSystem
 import akka.event.Logging
+import akka.http.scaladsl.Http
+import akka.http.scaladsl.model.HttpRequest
 import akka.stream._
 import akka.stream.scaladsl._
 import spray.json._
@@ -22,7 +24,7 @@ object SubscriptionNotifier extends App
   val logger = Logging(system, getClass)
 
 
-  def publishSubscriptionEventsForSelector = {
+  def whenDataAvailableScheduleNotificationForSubscribers = {
     import GraphDSL.Implicits._
 
     GraphDSL.create() { implicit builder =>
@@ -52,12 +54,12 @@ object SubscriptionNotifier extends App
     }
   }
 
-  def subscriberEventToMailgunRequest = {
+  def subscriberEventToMailgunRequest(apikey: String = "someApiKey") = {
     import GraphDSL.Implicits._
 
     GraphDSL.create() { implicit builder =>
       val generateHttpRequest = builder.add(Flow[Email].map(email => {
-        EmailUtils.mailgunRequestFor(email, "someApiKey")
+        EmailUtils.mailgunRequestFor(email, apikey)
       }))
 
       val generateEmail = builder.add(Flow[SubscriptionEvent]
@@ -82,4 +84,23 @@ object SubscriptionNotifier extends App
       SourceShape(parseSubscriptionEvent.out)
     }
   }
+
+  def deliverNotificationsToSubscribers(apiKey: String = "someApiKey") = {
+    import GraphDSL.Implicits._
+
+        GraphDSL.create() { implicit builder =>
+          val eventSource = builder.add(subscriberFeedToSubscriberEvent)
+          val toMailgunRequests = builder.add(subscriberEventToMailgunRequest(apiKey))
+          val sendRequest = builder.add(Sink.foreach[HttpRequest](
+            Http().singleRequest(_)
+          ))
+
+          eventSource ~> toMailgunRequests ~> sendRequest
+          ClosedShape
+        }
+  }
+
+  materializer.materialize(deliverNotificationsToSubscribers(config.getString("effechecka.mailgun.apikey")))
+  materializer.materialize(whenDataAvailableScheduleNotificationForSubscribers)
+
 }

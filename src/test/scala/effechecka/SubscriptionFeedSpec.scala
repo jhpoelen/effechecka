@@ -68,37 +68,31 @@ class SubscriptionFeedSpec extends TestKit(ActorSystem("KafkaIntegrationSpec"))
 
   "unsubscribe" in {
     val selector: OccurrenceSelector = OccurrenceSelector("taxa", "wkt", "traits")
+    val event = SubscriptionEvent(selector, new URL("mailto:foo@bar"), "subscribe")
+    val subscriber: Probe[SubscriptionEvent] = createTopicAndSubscribe(event)
+    val probe = TestSource.probe[SubscriptionEvent]
+      .toMat(subscriptionHandler(topic))(Keep.left)
+      .run()
+    probe.sendNext(event)
 
-    {
-      val event = SubscriptionEvent(selector, new URL("mailto:foo@bar"), "subscribe")
-      val subscriber: Probe[SubscriptionEvent] = createTopicAndSubscribe(event)
-      val probe = TestSource.probe[SubscriptionEvent]
-        .toMat(subscriptionHandler(topic))(Keep.left)
-        .run()
-      probe.sendNext(event)
+    subscriber
+      .request(1)
+      .expectNext(event)
 
-      subscriber
-        .request(1)
-        .expectNext(event)
+    subscribersOf(selector) should contain(new URL("mailto:foo@bar"))
 
-      subscribersOf(selector) should contain(new URL("mailto:foo@bar"))
+    val unsubscribeEvent = SubscriptionEvent(selector, new URL("mailto:foo@bar"), "unsubscribe")
+    probe.sendNext(unsubscribeEvent)
 
-      val unsubscribeEvent = SubscriptionEvent(selector, new URL("mailto:foo@bar"), "unsubscribe")
-      probe.sendNext(unsubscribeEvent)
+    subscriber
+      .request(1)
+      .expectNext(unsubscribeEvent)
 
-      subscriber
-        .request(1)
-        .expectNext(unsubscribeEvent)
-
-      subscribersOf(selector) shouldNot contain(new URL("mailto:foo@bar"))
-      subscriber.cancel()
-    }
-
-
+    subscribersOf(selector) shouldNot contain(new URL("mailto:foo@bar"))
+    subscriber.cancel()
   }
 
   def createTopicAndSubscribe(event: SubscriptionEvent): TestSubscriber.Probe[SubscriptionEvent] = {
-
     val settings = ProducerSettings(system, new StringSerializer, new StringSerializer)
       .withBootstrapServers("localhost:9092")
 
@@ -112,11 +106,9 @@ class SubscriptionFeedSpec extends TestKit(ActorSystem("KafkaIntegrationSpec"))
       .withProperty(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest")
       .withBootstrapServers("localhost:9092")
 
-    val subscriber = Consumer.plainSource(consumerSettings)
+    Consumer.plainSource(consumerSettings)
       .filterNot(_.value == initialMsg)
       .map(_.value.parseJson.convertTo[SubscriptionEvent])
       .runWith(TestSink.probe)
-
-    subscriber
   }
 }

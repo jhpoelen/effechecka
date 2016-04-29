@@ -30,7 +30,7 @@ object SubscriptionNotifier extends App
     GraphDSL.create() { implicit builder =>
 
       val incomingSelectorEvents = builder.add(feed)
-      val subscriptionEventFeed = builder.add(subscriptionHandler("effechecka-subsciption"))
+      val subscriptionEventFeed = builder.add(subscriptionHandler("effechecka-subscription"))
 
       val generateSubscriptionEvents = builder.add(Flow[String]
         .map(jsonString => jsonString.parseJson.convertTo[MonitorStatus])

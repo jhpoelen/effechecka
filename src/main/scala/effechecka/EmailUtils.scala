@@ -71,7 +71,7 @@ object EmailUtils {
       case "notify" => {
         Email(to = to,
           subject = "[freshdata] new data is available for your freshdata search",
-          text = s"${emailHeader}The freshdata search that you subscribed to has new data, please see ${urlFor(event.selector)} for more details. \n${unsubscribeTextFor(event)} $emailFooter")
+          text = s"${emailHeader}New data is available for a freshdata search you subscribed to. Please see ${urlFor(event.selector)} for more details. \n\n${unsubscribeTextFor(event)} $emailFooter")
       }
     }
   }

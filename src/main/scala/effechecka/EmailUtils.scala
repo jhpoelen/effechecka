@@ -42,10 +42,7 @@ object EmailUtils {
   }
 
   def emailHeader = {
-    """Hi!
-      |
-      |
-    """.stripMargin
+    "Hi!\n\n"
   }
 
   def emailFooter = {

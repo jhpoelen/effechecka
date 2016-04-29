@@ -61,7 +61,7 @@ class SubscriptionFeedSpec extends TestKit(ActorSystem("KafkaIntegrationSpec"))
 
     subscriber
       .request(1)
-      .expectNext(event)
+      .expectNext(element = event, d = 10.seconds)
 
     subscriber.cancel()
   }

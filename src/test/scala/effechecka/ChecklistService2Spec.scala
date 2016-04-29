@@ -72,13 +72,13 @@ class ChecklistService2Spec extends WordSpec with Matchers with ScalatestRouteTe
 
     "subscribe to monitor" in {
       Get("/subscribe?subscriber=mailto%3Afoo%40bar&taxonSelector=Animalia,Insecta&wktString=ENVELOPE(-150,-50,40,10)") ~> route ~> check {
-        responseAs[String] should be("mailto:foo@bar")
+        responseAs[String] should be("subscribed [mailto:foo@bar]")
       }
     }
 
     "unsubscribe to selector" in {
       Get("/unsubscribe?subscriber=mailto%3Afoo%40bar&taxonSelector=Animalia,Insecta&wktString=ENVELOPE(-150,-50,40,10)") ~> route ~> check {
-        responseAs[String] should be("mailto:foo@bar")
+        responseAs[String] should be("unsubscribed [mailto:foo@bar]")
       }
     }
 

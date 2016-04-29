@@ -101,7 +101,7 @@ trait Service extends Protocols
               parameters('subscriber.as[String]) { subscriber =>
                 complete {
                   handleSubscriptionEvent(ocSelector, new URL(subscriber), "subscribe")
-                  subscriber
+                  s"subscribed [$subscriber]"
                 }
               }
             }
@@ -113,7 +113,7 @@ trait Service extends Protocols
               parameters('subscriber.as[String]) { subscriber =>
                 complete {
                   handleSubscriptionEvent(ocSelector, new URL(subscriber), "unsubscribe")
-                  subscriber
+                  s"unsubscribed [$subscriber]"
                 }
               }
             }

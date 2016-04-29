@@ -20,7 +20,25 @@ object EmailUtils {
   }
 
   def urlFor(selector: OccurrenceSelector): URL = {
-    new URL("http://gimmefreshdata.github.io/?" + queryParamsFor(selector))
+    urlWithQuery(queryParamsFor(selector))
+  }
+
+  def urlWithQuery(query: String): URL = {
+    new URL(s"http://gimmefreshdata.github.io/?$query")
+  }
+
+  def urlFor(event: SubscriptionEvent): URL = {
+    val after = event.addedAfter match {
+      case Some(addedAfter) => s"&addedAfter=$addedAfter"
+      case _ => ""
+    }
+
+    val before = event.addedBefore match {
+      case Some(addedBefore) => s"&addedBefore=$addedBefore"
+      case _ => ""
+    }
+
+    urlWithQuery(s"${queryParamsFor(event.selector)}$after$before")
   }
 
   def encode(str: String) = {
@@ -29,8 +47,7 @@ object EmailUtils {
 
 
   def queryParamsFor(selector: OccurrenceSelector): String = {
-    val queryParams = s"taxonSelector=${encode(selector.taxonSelector)}&wktString=${encode(selector.wktString)}&traitSelector=${encode(selector.traitSelector)}"
-    queryParams
+    s"taxonSelector=${encode(selector.taxonSelector)}&wktString=${encode(selector.wktString)}&traitSelector=${encode(selector.traitSelector)}"
   }
 
   def unsubscribeUrlFor(event: SubscriptionEvent): URL = {
@@ -71,7 +88,7 @@ object EmailUtils {
       case "notify" => {
         Email(to = to,
           subject = "[freshdata] new data is available for your freshdata search",
-          text = s"${emailHeader}New data is available for a freshdata search you subscribed to. Please see ${urlFor(event.selector)} for more details. \n\n${unsubscribeTextFor(event)} $emailFooter")
+          text = s"${emailHeader}New data is available for a freshdata search you subscribed to. Please see ${urlFor(event)} for more details. \n\n${unsubscribeTextFor(event)} $emailFooter")
       }
     }
   }

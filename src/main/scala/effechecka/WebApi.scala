@@ -139,7 +139,7 @@ trait Service extends Protocols
                   if (occurrences.nonEmpty) {
                     val subscribers = subscribersOf(ocSelector)
                     for (subscriber <- subscribers) {
-                      handleSubscriptionEvent(ocSelector, subscriber, "notify")
+                      handleSubscriptionEvent(SubscriptionEvent(ocSelector, subscriber, "notify", addedBefore, addedAfter))
                     }
                     complete {
                       "change detected: sent notifications"
@@ -177,7 +177,11 @@ trait Service extends Protocols
     }
 
   def handleSubscriptionEvent(ocSelector: OccurrenceSelector, subscriber: URL, action: String): NotUsed = {
-    Source.single(SubscriptionEvent(ocSelector, subscriber, action))
+    handleSubscriptionEvent(SubscriptionEvent(ocSelector, subscriber, action))
+  }
+
+  def handleSubscriptionEvent(event: SubscriptionEvent): NotUsed = {
+    Source.single(event)
       .to(subscriptionHandler("effechecka-subscription")).run()
   }
 }

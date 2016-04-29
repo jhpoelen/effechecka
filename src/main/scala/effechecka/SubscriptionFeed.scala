@@ -13,7 +13,7 @@ import org.apache.kafka.common.serialization.StringSerializer
 import spray.json._
 
 
-case class SubscriptionEvent(selector: OccurrenceSelector, subscriber: URL, action: String)
+case class SubscriptionEvent(selector: OccurrenceSelector, subscriber: URL, action: String, addedBefore: Option[String] = None, addedAfter: Option[String] = None)
 
 trait SubscriptionProtocols extends Protocols {
 
@@ -28,7 +28,7 @@ trait SubscriptionProtocols extends Protocols {
     }
   }
 
-  implicit val selectorSubscriptionEventFormat = jsonFormat3(SubscriptionEvent)
+  implicit val selectorSubscriptionEventFormat = jsonFormat5(SubscriptionEvent)
 }
 
 

@@ -33,6 +33,21 @@ class EmailUtilsSpec extends TestKit(ActorSystem("KafkaIntegrationSpec"))
     EmailUtils.urlFor(selector) should be(new URL("http://gimmefreshdata.github.io/?taxonSelector=taxa&wktString=wkt&traitSelector=traits"))
   }
 
+  "url for subscription event added before" in {
+    val event: SubscriptionEvent = SubscriptionEvent(OccurrenceSelector("taxa", "wkt", "traits"), new URL("mailto:john@doe"), "notify", Some("2012-01-01"))
+    EmailUtils.urlFor(event) should be(new URL("http://gimmefreshdata.github.io/?taxonSelector=taxa&wktString=wkt&traitSelector=traits&addedBefore=2012-01-01"))
+  }
+
+  "url for subscription event added after" in {
+    val event: SubscriptionEvent = SubscriptionEvent(OccurrenceSelector("taxa", "wkt", "traits"), new URL("mailto:john@doe"), "notify", None, Some("2012-01-01"))
+    EmailUtils.urlFor(event) should be(new URL("http://gimmefreshdata.github.io/?taxonSelector=taxa&wktString=wkt&traitSelector=traits&addedAfter=2012-01-01"))
+  }
+
+  "url for subscription event no added before/after" in {
+    val event: SubscriptionEvent = SubscriptionEvent(OccurrenceSelector("taxa", "wkt", "traits"), new URL("mailto:john@doe"), "notify")
+    EmailUtils.urlFor(event) should be(new URL("http://gimmefreshdata.github.io/?taxonSelector=taxa&wktString=wkt&traitSelector=traits"))
+  }
+
   "unsubscribe text for event" in {
     val selector: OccurrenceSelector = OccurrenceSelector("taxa", "wkt", "traits")
     val event = SubscriptionEvent(selector, new URL("mailto:foo@bar"), "subscribe")

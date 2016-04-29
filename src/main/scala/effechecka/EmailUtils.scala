@@ -34,7 +34,7 @@ object EmailUtils {
   }
 
   def unsubscribeUrlFor(event: SubscriptionEvent): URL = {
-    new URL(s"http://c18node15.acis.ufl.edu/unsubscribe?subscriber=${encode(event.subscriber.toString)}&" + queryParamsFor(event.selector))
+    new URL(s"http://apihack-c18.idigbio.org/unsubscribe?subscriber=${encode(event.subscriber.toString)}&" + queryParamsFor(event.selector))
   }
 
   def unsubscribeTextFor(event: SubscriptionEvent): String = {

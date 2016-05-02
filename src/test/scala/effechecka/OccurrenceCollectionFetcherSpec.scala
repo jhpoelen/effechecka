@@ -8,7 +8,7 @@ class OccurrenceCollectionFetcherSpec extends WordSpec with Matchers with Occurr
   "Cassandra driver" should {
     "store and provide access to an occurrence collection" in {
       val selector: OccurrenceSelector = OccurrenceSelector("Insecta|Mammalia", "ENVELOPE(-150,-50,40,10)", "bodyMass greaterThan 2.7 kg")
-      val request = OccurrenceCollectionRequest(selector, 2)
+      val request = OccurrenceCollectionRequest(selector, Some(2))
       truncate
       insertRequest(OccurrenceSelector("Insecta", "wktString", ""))
       insertRequest(selector)
@@ -73,6 +73,6 @@ class OccurrenceCollectionFetcherSpec extends WordSpec with Matchers with Occurr
   }
 
   def occurrenceQuery(addedBefore: Option[String], addedAfter: Option[String]): OccurrenceCollectionRequest = {
-    OccurrenceCollectionRequest(OccurrenceSelector("Insecta|Mammalia", "ENVELOPE(-150,-50,40,10)", "bodyMass greaterThan 2.7 kg"), 2, addedBefore, addedAfter)
+    OccurrenceCollectionRequest(OccurrenceSelector("Insecta|Mammalia", "ENVELOPE(-150,-50,40,10)", "bodyMass greaterThan 2.7 kg"), Some(2), addedBefore, addedAfter)
   }
 }

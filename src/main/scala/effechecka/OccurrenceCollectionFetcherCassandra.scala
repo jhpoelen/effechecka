@@ -59,7 +59,10 @@ trait OccurrenceCollectionFetcherCassandra extends OccurrenceCollectionFetcher w
 
     val params = selectorParams(ocRequest.selector) ::: additionalClauses.map(_._2)
 
-    val queryWithLimit: String = query + s" LIMIT ${ocRequest.limit}"
+    val queryWithLimit = ocRequest.limit match {
+      case Some(limit) => query + s" LIMIT ${ocRequest.limit}"
+      case _ => query
+    }
 
     val results: ResultSet = session.execute(queryWithLimit, params: _*)
 

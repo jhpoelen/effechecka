@@ -37,7 +37,7 @@ object SubscriptionNotifier extends App
         .filter(_.status == "ready")
         .map(_.selector)
         .mapConcat(ocSelector => {
-          val ocRequest = OccurrenceCollectionRequest(ocSelector, 1)
+          val ocRequest = OccurrenceCollectionRequest(ocSelector, Some(1))
           if (occurrencesFor(ocRequest).hasNext) {
             subscribersOf(ocSelector).map(subscriber => SubscriptionEvent(ocSelector, subscriber, "notify"))
           } else {

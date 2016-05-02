@@ -64,9 +64,18 @@ class ChecklistService2Spec extends WordSpec with Matchers with ScalatestRouteTe
       }
     }
 
-    "return requested occurrenceColection" in {
+    "return requested occurrenceCollection" in {
       Get("/occurrences?taxonSelector=Animalia,Insecta&wktString=ENVELOPE(-150,-50,40,10)") ~> route ~> check {
         responseAs[OccurrenceCollection] shouldEqual OccurrenceCollection(OccurrenceSelector("Animalia,Insecta", "ENVELOPE(-150,-50,40,10)", ""), Some("ready"), List(anOccurrence))
+      }
+    }
+
+    "return requested occurrenceCollection csv" in {
+      Get("/occurrences.csv?taxonSelector=Animalia,Insecta&wktString=ENVELOPE(-150,-50,40,10)") ~> route ~> check {
+        responseAs[String] should be(
+          """taxon name,taxon path,lat,lng,eventStartDate,occurrenceId
+            |"mickey","Cartoona | mickey",12.1,32.1,1970-01-01T00:00:00.000Z,"recordId"
+            |""".stripMargin)
       }
     }
 

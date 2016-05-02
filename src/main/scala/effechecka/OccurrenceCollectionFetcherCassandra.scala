@@ -3,6 +3,7 @@ package effechecka
 import com.datastax.driver.core._
 import org.joda.time.DateTime
 import org.joda.time.DateTimeZone
+import scala.collection.JavaConversions
 import scala.collection.JavaConversions._
 import org.apache.spark.deploy.SparkSubmit
 import com.typesafe.config.Config
@@ -23,7 +24,7 @@ trait Fetcher {
 }
 
 trait OccurrenceCollectionFetcher {
-  def occurrencesFor(request: OccurrenceCollectionRequest): List[Occurrence]
+  def occurrencesFor(request: OccurrenceCollectionRequest): Iterator[Occurrence]
 
   def statusOf(selector: OccurrenceSelector): Option[String]
 
@@ -43,7 +44,7 @@ trait OccurrenceCollectionFetcherCassandra extends OccurrenceCollectionFetcher w
     new DateTime(dateString, DateTimeZone.UTC).toDate
   }
 
-  def occurrencesFor(ocRequest: OccurrenceCollectionRequest): List[Occurrence] = {
+  def occurrencesFor(ocRequest: OccurrenceCollectionRequest): Iterator[Occurrence] = {
     val afterClause = ocRequest.addedAfter match {
       case Some(addedAfter) => Some(s"added > ?", parseDate(addedAfter))
       case _ => None
@@ -62,8 +63,8 @@ trait OccurrenceCollectionFetcherCassandra extends OccurrenceCollectionFetcher w
 
     val results: ResultSet = session.execute(queryWithLimit, params: _*)
 
-    val items: List[Row] = results.iterator().toList
-    items.map(item => Occurrence(item.getString("taxon"), item.getDouble("lat"), item.getDouble("lng"), item.getDate("start").getTime, item.getDate("end").getTime, item.getString("id"), item.getDate("added").getTime, item.getString("source")))
+    JavaConversions.asScalaIterator(results.iterator())
+      .map(item => Occurrence(item.getString("taxon"), item.getDouble("lat"), item.getDouble("lng"), item.getDate("start").getTime, item.getDate("end").getTime, item.getString("id"), item.getDate("added").getTime, item.getString("source")))
   }
 
 

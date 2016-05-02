@@ -38,9 +38,7 @@ object SubscriptionNotifier extends App
         .map(_.selector)
         .mapConcat(ocSelector => {
           val ocRequest = OccurrenceCollectionRequest(ocSelector, 1)
-          val occurrences: List[Occurrence] = occurrencesFor(ocRequest)
-
-          if (occurrences.nonEmpty) {
+          if (occurrencesFor(ocRequest).hasNext) {
             subscribersOf(ocSelector).map(subscriber => SubscriptionEvent(ocSelector, subscriber, "notify"))
           } else {
             List()

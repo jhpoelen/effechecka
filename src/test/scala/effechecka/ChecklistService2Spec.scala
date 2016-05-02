@@ -35,7 +35,7 @@ trait OccurrenceCollectionFetcherStatic extends OccurrenceCollectionFetcher {
   val aMonitor = OccurrenceMonitor(OccurrenceSelector("Cartoona | mickey", "some wkt string", "some trait selector"), Some("some status"), Some(123))
   val anotherMonitor = OccurrenceMonitor(OccurrenceSelector("Cartoona | donald", "some wkt string", "some trait selector"), None, Some(123))
 
-  def occurrencesFor(checklist: OccurrenceCollectionRequest): List[Occurrence] = List(anOccurrence)
+  def occurrencesFor(checklist: OccurrenceCollectionRequest): Iterator[Occurrence] = List(anOccurrence).iterator
 
   def statusOf(selector: OccurrenceSelector): Option[String] = Some("ready")
 

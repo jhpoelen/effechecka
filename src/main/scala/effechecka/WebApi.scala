@@ -88,7 +88,7 @@ trait Service extends Protocols
                     case _ => (List(), statusOpt.get)
                   }
                   complete {
-                    OccurrenceCollection(ocSelector, Some(status), items)
+                    OccurrenceCollection(ocSelector, Some(status), items.toList)
                   }
                 }
               }
@@ -134,9 +134,7 @@ trait Service extends Protocols
             selectorParams.as(OccurrenceSelector) { ocSelector => {
               parameters('addedBefore.as[String] ?, 'addedAfter.as[String] ?) { (addedBefore, addedAfter) =>
                 val ocRequest = OccurrenceCollectionRequest(ocSelector, 1, addedBefore, addedAfter)
-                val occurrences: List[Occurrence] = occurrencesFor(ocRequest)
-
-                  if (occurrences.nonEmpty) {
+                  if (occurrencesFor(ocRequest).hasNext) {
                     val subscribers = subscribersOf(ocSelector)
                     for (subscriber <- subscribers) {
                       handleSubscriptionEvent(SubscriptionEvent(ocSelector, subscriber, "notify", addedBefore, addedAfter))

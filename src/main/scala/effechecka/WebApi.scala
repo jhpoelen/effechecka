@@ -193,7 +193,6 @@ trait Service extends Protocols
                   val occurrenceSource = Source.fromIterator[ByteString]({ () => occurrencesFor(ocRequest)
                     .map(occurrence => {
                       val lastTaxon = occurrence.taxon.split('|').reverse.head.trim
-                      val startTime: DateTime = DateTime(occurrence.start)
                       val dateString = ISODateTimeFormat.dateTime().withZoneUTC().print(occurrence.start)
                       ByteString(s""""$lastTaxon","${occurrence.taxon}",${occurrence.lat},${occurrence.lng},$dateString,"${occurrence.id}"\n""")
                     })

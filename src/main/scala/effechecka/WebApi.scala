@@ -189,17 +189,18 @@ trait Service extends Protocols
             val statusOpt: Option[String] = statusOf(ocSelector)
             statusOpt match {
               case Some("ready") => {
-                complete {
-                  val occurrenceSource = Source.fromIterator[ByteString]({ () => occurrencesFor(ocRequest)
-                    .map(occurrence => {
-                      val lastTaxon = occurrence.taxon.split('|').reverse.head.trim
-                      val dateString = ISODateTimeFormat.dateTime().withZoneUTC().print(occurrence.start)
-                      ByteString(s""""$lastTaxon","${occurrence.taxon}",${occurrence.lat},${occurrence.lng},$dateString,"${occurrence.id}"\n""")
+                encodeResponse {
+                  complete {
+                    val occurrenceSource = Source.fromIterator[ByteString]({ () => occurrencesFor(ocRequest)
+                      .map(occurrence => {
+                        val lastTaxon = occurrence.taxon.split('|').reverse.head.trim
+                        val dateString = ISODateTimeFormat.dateTime().withZoneUTC().print(occurrence.start)
+                        ByteString(s""""$lastTaxon","${occurrence.taxon}",${occurrence.lat},${occurrence.lng},$dateString,"${occurrence.id}"\n""")
+                      })
                     })
-                  })
-                  val header = Source.single[ByteString](ByteString("taxon name,taxon path,lat,lng,eventStartDate,occurrenceId\n"))
-
-                  HttpEntity(ContentTypes.`text/csv(UTF-8)`, Source.combine(header, occurrenceSource)(Concat[ByteString]))
+                    val header = Source.single[ByteString](ByteString("taxon name,taxon path,lat,lng,eventStartDate,occurrenceId\n"))
+                    HttpEntity(ContentTypes.`text/csv(UTF-8)`, Source.combine(header, occurrenceSource)(Concat[ByteString]))
+                  }
                 }
               }
               case _ => complete {

@@ -2,14 +2,12 @@ package effechecka
 
 import java.net.URL
 
+
+import akka.http.scaladsl.model.TransferEncodings.{gzip, deflate}
+import akka.http.scaladsl.model.headers.`Accept-Encoding`
 import org.scalatest.{Matchers, WordSpec}
-import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.testkit.ScalatestRouteTest
-import akka.http.scaladsl.server._
-import Directives._
 import akka.http.scaladsl.model.ContentType
-import akka.http.scaladsl.model.ContentTypes
-import akka.http.scaladsl.model.HttpCharset
 import akka.http.scaladsl.model.HttpCharsets
 import akka.http.scaladsl.model.MediaTypes
 

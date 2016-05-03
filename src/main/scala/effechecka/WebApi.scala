@@ -3,6 +3,8 @@ package effechecka
 import java.net.URL
 
 import akka.NotUsed
+import akka.http.scaladsl.server.directives.ParameterDirectives
+import ParameterDirectives.ParamMagnet
 import akka.event.{LoggingAdapter, Logging}
 import akka.util.ByteString
 import com.typesafe.config.Config
@@ -10,7 +12,6 @@ import com.typesafe.config.ConfigFactory
 import akka.http.scaladsl.{server, Http}
 import akka.http.scaladsl.server.Directives._
 import akka.stream.ActorMaterializer
-import org.joda.time.format.ISODateTimeFormat
 import spray.json._
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import akka.actor.ActorSystem
@@ -23,7 +24,7 @@ case class MonitorStatus(selector: OccurrenceSelector, status: String, percentCo
 
 
 trait Protocols extends SprayJsonSupport with DefaultJsonProtocol {
-  implicit val occurrenceSelector = jsonFormat3(OccurrenceSelector)
+  implicit val occurrenceSelector = jsonFormat6(OccurrenceSelector)
   implicit val monitorStatusFormat = jsonFormat4(MonitorStatus)
 
   implicit val checklistFormat = jsonFormat2(ChecklistRequest)
@@ -50,7 +51,7 @@ trait Service extends Protocols
   }
 
 
-  val selectorParams = parameters('taxonSelector.as[String], 'wktString.as[String], 'traitSelector.as[String] ? "")
+  val selectorParams = parameters('taxonSelector.as[String], 'wktString.as[String], 'traitSelector.as[String] ? "", 'sourceSelector.as[String] ?, 'observedBefore.as[String] ?, 'observedAfter.as[String] ?)
 
   val route =
     logRequestResult("checklist-service") {

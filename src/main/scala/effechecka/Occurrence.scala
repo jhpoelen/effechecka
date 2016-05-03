@@ -1,6 +1,10 @@
 package effechecka
 
-case class OccurrenceSelector(taxonSelector: String, wktString: String, traitSelector: String)
+case class OccurrenceSelector(taxonSelector: String,
+                              wktString: String,
+                              traitSelector: String,
+                              sourceSelector: Option[String] = None,
+                              observedBefore: Option[String] = None, observedAfter: Option[String] = None)
 
 case class OccurrenceCollectionRequest(selector: OccurrenceSelector, limit: Option[Int], addedBefore: Option[String] = None, addedAfter: Option[String] = None)
 case class Occurrence(taxon: String, lat: Double, lng: Double, start: Long, end: Long, id: String, added: Long, source: String)

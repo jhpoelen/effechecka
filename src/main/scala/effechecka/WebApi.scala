@@ -184,8 +184,8 @@ trait Service extends Protocols
     get {
       selectorParams.as(OccurrenceSelector) { ocSelector => {
         parameters('addedBefore.as[String] ?, 'addedAfter.as[String] ?) { (addedBefore, addedAfter) =>
-          parameters('limit.as[Int] ? 20) { limit =>
-            val ocRequest = OccurrenceCollectionRequest(selector = ocSelector, limit = None, addedBefore = addedBefore, addedAfter = addedAfter)
+          parameters('limit.as[Int] ?) { limit =>
+            val ocRequest = OccurrenceCollectionRequest(selector = ocSelector, limit = limit, addedBefore = addedBefore, addedAfter = addedAfter)
             val statusOpt: Option[String] = statusOf(ocSelector)
             statusOpt match {
               case Some("ready") => {

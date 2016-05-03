@@ -193,12 +193,10 @@ trait Service extends Protocols
                   complete {
                     val occurrenceSource = Source.fromIterator[ByteString]({ () => occurrencesFor(ocRequest)
                       .map(occurrence => {
-                        val lastTaxon = occurrence.taxon.split('|').reverse.head.trim
-                        val dateString = ISODateTimeFormat.dateTime().withZoneUTC().print(occurrence.start)
-                        ByteString(s""""$lastTaxon","${occurrence.taxon}",${occurrence.lat},${occurrence.lng},$dateString,"${occurrence.id}"\n""")
+                        ByteString(CsvUtils.toOccurrenceRow(occurrence))
                       })
                     })
-                    val header = Source.single[ByteString](ByteString("taxon name,taxon path,lat,lng,eventStartDate,occurrenceId\n"))
+                    val header = Source.single[ByteString](ByteString("taxon name,taxon path,lat,lng,eventStartDate,occurrenceId,firstAddedDate,source\n"))
                     HttpEntity(ContentTypes.`text/csv(UTF-8)`, Source.combine(header, occurrenceSource)(Concat[ByteString]))
                   }
                 }

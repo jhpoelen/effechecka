@@ -24,8 +24,7 @@ import spray.json._
 
 import scala.concurrent.duration._
 
-class EmailUtilsSpec extends TestKit(ActorSystem("KafkaIntegrationSpec"))
-  with WordSpecLike with Matchers with BeforeAndAfterAll with BeforeAndAfterEach
+class EmailUtilsSpec extends WordSpecLike with Matchers with BeforeAndAfterAll with BeforeAndAfterEach
   with ConversionCheckedTripleEquals with SubscriptionProtocols {
 
   "url for selector" in {
@@ -90,6 +89,5 @@ class EmailUtilsSpec extends TestKit(ActorSystem("KafkaIntegrationSpec"))
     httpRequest.headers should contain(Authorization(BasicHttpCredentials("api", "someApiKey")))
     httpRequest.method should be(HttpMethods.POST)
   }
-
 
 }

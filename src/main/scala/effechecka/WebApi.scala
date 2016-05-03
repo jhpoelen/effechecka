@@ -4,22 +4,18 @@ import java.net.URL
 
 import akka.NotUsed
 import akka.event.{LoggingAdapter, Logging}
-import akka.http.scaladsl.marshalling.ToResponseMarshallable
-import akka.http.scaladsl.server.directives.ParameterDirectives.ParamDef
 import akka.util.ByteString
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import akka.http.scaladsl.{server, Http}
-import akka.http.scaladsl.marshallers.xml.ScalaXmlSupport._
 import akka.http.scaladsl.server.Directives._
 import akka.stream.ActorMaterializer
+import org.joda.time.format.ISODateTimeFormat
 import spray.json._
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model._
-import akka.http.scaladsl.model.headers.RawHeader
 import akka.http.scaladsl.model.headers._
-import akka.http.scaladsl.model.ws.{Message, TextMessage}
 import akka.stream.scaladsl.{Concat, Keep, Source, Flow}
 import akka.http.scaladsl.server.Directive0
 
@@ -198,8 +194,8 @@ trait Service extends Protocols
                     .map(occurrence => {
                       val lastTaxon = occurrence.taxon.split('|').reverse.head.trim
                       val startTime: DateTime = DateTime(occurrence.start)
-                      val eventStartDate = startTime.toIsoDateTimeString() + ".%03dZ".format(startTime.clicks % 1000)
-                      ByteString(s""""$lastTaxon","${occurrence.taxon}",${occurrence.lat},${occurrence.lng},$eventStartDate,"${occurrence.id}"\n""")
+                      val dateString = ISODateTimeFormat.dateTime().withZoneUTC().print(occurrence.start)
+                      ByteString(s""""$lastTaxon","${occurrence.taxon}",${occurrence.lat},${occurrence.lng},$dateString,"${occurrence.id}"\n""")
                     })
                   })
                   val header = Source.single[ByteString](ByteString("taxon name,taxon path,lat,lng,eventStartDate,occurrenceId\n"))

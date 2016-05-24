@@ -113,12 +113,12 @@ trait Service extends Protocols
         } ~ path("notify") {
           get {
             selectorParams.as(OccurrenceSelector) { ocSelector => {
-              parameters('addedBefore.as[String] ?, 'addedAfter.as[String] ?) { (addedBefore, addedAfter) =>
-                val ocRequest = OccurrenceCollectionRequest(ocSelector, Some(1), addedBefore, addedAfter)
+              addedParams.as(DateTimeSelector) { added =>
+                val ocRequest = OccurrenceCollectionRequest(ocSelector, Some(1), added.before, added.after)
                 if (occurrencesFor(ocRequest).hasNext) {
                   val subscribers = subscribersOf(ocSelector)
                   for (subscriber <- subscribers) {
-                    handleSubscriptionEvent(SubscriptionEvent(ocSelector, subscriber, "notify", addedBefore, addedAfter))
+                    handleSubscriptionEvent(SubscriptionEvent(ocSelector, subscriber, "notify", added.before, added.after))
                   }
                   complete {
                     "change detected: sent notifications"
@@ -133,6 +133,13 @@ trait Service extends Protocols
             }
           }
         } ~ (path("monitors") & selectorParams.as(OccurrenceSelector)) { (ocSelector) => {
+          get {
+            complete {
+              monitorOf(ocSelector)
+            }
+          }
+        }
+        }~ (path("monitors") & selectorParams.as(OccurrenceSelector)) { (ocSelector) => {
           get {
             complete {
               monitorOf(ocSelector)
@@ -154,6 +161,8 @@ trait Service extends Protocols
         }
       }
     }
+
+  val addedParams = parameters('addedBefore.as[String] ?, 'addedAfter.as[String] ?)
 
   def handleOccurrences: server.Route = {
     get {
@@ -183,9 +192,9 @@ trait Service extends Protocols
   def handleOccurrencesCsv: server.Route = {
     get {
       selectorParams.as(OccurrenceSelector) { ocSelector => {
-        parameters('addedBefore.as[String] ?, 'addedAfter.as[String] ?) { (addedBefore, addedAfter) =>
+        addedParams.as(DateTimeSelector) { added =>
           parameters('limit.as[Int] ?) { limit =>
-            val ocRequest = OccurrenceCollectionRequest(selector = ocSelector, limit = limit, addedBefore = addedBefore, addedAfter = addedAfter)
+            val ocRequest = OccurrenceCollectionRequest(selector = ocSelector, limit = limit, addedBefore = added.before, addedAfter = added.after)
             val statusOpt: Option[String] = statusOf(ocSelector)
             statusOpt match {
               case Some("ready") => {

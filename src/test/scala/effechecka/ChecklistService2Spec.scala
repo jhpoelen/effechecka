@@ -30,10 +30,13 @@ trait SubscriptionsStatic extends Subscriptions {
 
 trait OccurrenceCollectionFetcherStatic extends OccurrenceCollectionFetcher {
   val anOccurrence = Occurrence("Cartoona | mickey", 12.1, 32.1, 123L, 124L, "recordId", 456L, "archiveId")
-  val aMonitor = OccurrenceMonitor(OccurrenceSelector("Cartoona | mickey", "some wkt string", "some trait selector"), Some("some status"), Some(123))
+  val aSelector: OccurrenceSelector = OccurrenceSelector("Cartoona | mickey", "some wkt string", "some trait selector")
+  val aMonitor = OccurrenceMonitor(aSelector, Some("some status"), Some(123))
   val anotherMonitor = OccurrenceMonitor(OccurrenceSelector("Cartoona | donald", "some wkt string", "some trait selector"), None, Some(123))
 
   def occurrencesFor(checklist: OccurrenceCollectionRequest): Iterator[Occurrence] = List(anOccurrence).iterator
+
+  def monitoredOccurrencesFor(source: String, added: DateTimeSelector, occLimit: Option[Int]): Iterator[String] = List("some id", "another id").iterator
 
   def statusOf(selector: OccurrenceSelector): Option[String] = Some("ready")
 
@@ -42,6 +45,8 @@ trait OccurrenceCollectionFetcherStatic extends OccurrenceCollectionFetcher {
   def monitors(): List[OccurrenceMonitor] = List(aMonitor, anotherMonitor)
 
   def monitorOf(selector: OccurrenceSelector): Option[OccurrenceMonitor] = Some(aMonitor)
+
+  def monitorsFor(source: String, id: String): Iterator[OccurrenceSelector] = List(aSelector).iterator
 }
 
 class ChecklistService2Spec extends WordSpec with Matchers with ScalatestRouteTest with Service
@@ -73,6 +78,16 @@ class ChecklistService2Spec extends WordSpec with Matchers with ScalatestRouteTe
         responseAs[String] should be(
           """taxon name,taxon path,lat,lng,eventStartDate,occurrenceId,firstAddedDate,source
             |"mickey","Cartoona | mickey",12.1,32.1,1970-01-01T00:00:00.123Z,"recordId",1970-01-01T00:00:00.456Z,"archiveId"
+            |""".stripMargin)
+      }
+    }
+
+    "return requested monitored occurrences csv" in {
+      Get("/monitoredOccurrences.csv?source=someSource") ~> route ~> check {
+        responseAs[String] should be(
+          """occurrenceId
+            |"some id"
+            |"another id"
             |""".stripMargin)
       }
     }
@@ -110,6 +125,12 @@ class ChecklistService2Spec extends WordSpec with Matchers with ScalatestRouteTe
     "return single monitor" in {
       Get("/monitors?taxonSelector=Animalia,Insecta&wktString=ENVELOPE(-150,-50,40,10)") ~> route ~> check {
         responseAs[OccurrenceMonitor] should be(OccurrenceMonitor(OccurrenceSelector("Cartoona | mickey", "some wkt string", "some trait selector"), Some("some status"), Some(123)))
+      }
+    }
+
+    "return monitors for" in {
+      Get("/monitors?source=someSource&id=someId") ~> route ~> check {
+        responseAs[List[OccurrenceSelector]] should contain(OccurrenceSelector("Cartoona | mickey","some wkt string","some trait selector"))
       }
     }
 

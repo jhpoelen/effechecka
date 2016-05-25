@@ -45,6 +45,25 @@ class OccurrenceCollectionFetcherSpec extends WordSpec with Matchers with Occurr
       monitorOf(OccurrenceSelector("Aves|Mammalia", expectedWktString, expectedTraitSelector)) should be(Some(OccurrenceMonitor(OccurrenceSelector("Aves|Mammalia", expectedWktString, expectedTraitSelector), None, Some(0))))
     }
 
+    "return monitored occurrences" in {
+      truncate
+      session.execute("INSERT INTO effechecka.occurrence_first_added_search (source, added, id) " +
+              "VALUES ('my source', '2016-01-04', 'some id')")
+
+      session.execute("INSERT INTO effechecka.occurrence_search (source, id, taxonselector, wktstring, traitSelector) " +
+              "VALUES ('my source', 'some id', 'Insecta|Mammalia', 'ENVELOPE(-150,-50,40,10)', 'bodyMass greaterThan 2.7 kg')")
+      val expectedWktString: String = "ENVELOPE(-150,-50,40,10)"
+      val expectedTraitSelector: String = "bodyMass greaterThan 2.7 kg"
+      val expectedTaxonSelector: String = "Insecta|Mammalia"
+      val occIter: Iterator[String] = monitoredOccurrencesFor("my source")
+      occIter.next() should be("some id")
+      occIter.hasNext should be(false)
+
+      val monitors: Iterator[OccurrenceSelector] = monitorsFor(source = "my source", id = "some id")
+      monitors.next() should be(OccurrenceSelector(expectedTaxonSelector, expectedWktString, expectedTraitSelector))
+      monitors.hasNext should be(false)
+    }
+
     "store and provide access to an occurrence collection within added constraints" in {
       val addedDateString: String = "'1970-01-01T00:00:00.000Z'"
       assertCountForAddedRange(Some("1971-01-01"), Some("1969-01-01"), addedDateString, 1)
@@ -57,6 +76,8 @@ class OccurrenceCollectionFetcherSpec extends WordSpec with Matchers with Occurr
   }
 
   def truncate: ResultSet = {
+    session.execute("TRUNCATE effechecka.occurrence_first_added_search")
+    session.execute("TRUNCATE effechecka.occurrence_search")
     session.execute("TRUNCATE effechecka.occurrence_collection_registry")
     session.execute("TRUNCATE effechecka.occurrence_collection")
   }
@@ -73,6 +94,6 @@ class OccurrenceCollectionFetcherSpec extends WordSpec with Matchers with Occurr
   }
 
   def occurrenceQuery(addedBefore: Option[String], addedAfter: Option[String]): OccurrenceCollectionRequest = {
-    OccurrenceCollectionRequest(OccurrenceSelector("Insecta|Mammalia", "ENVELOPE(-150,-50,40,10)", "bodyMass greaterThan 2.7 kg"), Some(2), addedBefore, addedAfter)
+    OccurrenceCollectionRequest(OccurrenceSelector("Insecta|Mammalia", "ENVELOPE(-150,-50,40,10)", "bodyMass greaterThan 2.7 kg"), Some(2), DateTimeSelector(addedBefore, addedAfter))
   }
 }

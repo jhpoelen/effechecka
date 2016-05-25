@@ -26,6 +26,8 @@ trait Fetcher {
 trait OccurrenceCollectionFetcher {
   def occurrencesFor(request: OccurrenceCollectionRequest): Iterator[Occurrence]
 
+  def monitoredOccurrencesFor(source: String, added: DateTimeSelector, occLimit: Option[Int]): Iterator[String]
+
   def statusOf(selector: OccurrenceSelector): Option[String]
 
   def request(selector: OccurrenceSelector): String
@@ -33,6 +35,8 @@ trait OccurrenceCollectionFetcher {
   def monitors(): List[OccurrenceMonitor]
 
   def monitorOf(selector: OccurrenceSelector): Option[OccurrenceMonitor]
+
+  def monitorsFor(source: String, id: String): Iterator[OccurrenceSelector]
 }
 
 trait OccurrenceCollectionFetcherCassandra extends OccurrenceCollectionFetcher with Fetcher {
@@ -45,11 +49,12 @@ trait OccurrenceCollectionFetcherCassandra extends OccurrenceCollectionFetcher w
   }
 
   def occurrencesFor(ocRequest: OccurrenceCollectionRequest): Iterator[Occurrence] = {
-    val afterClause = ocRequest.addedAfter match {
+    val added = ocRequest.added
+    val afterClause = added.after match {
       case Some(addedAfter) => Some(s"added > ?", parseDate(addedAfter))
       case _ => None
     }
-    val beforeClause = ocRequest.addedBefore match {
+    val beforeClause = added.before match {
       case Some(addedBefore) => Some(s"added < ?", parseDate(addedBefore))
       case _ => None
     }
@@ -68,6 +73,33 @@ trait OccurrenceCollectionFetcherCassandra extends OccurrenceCollectionFetcher w
 
     JavaConversions.asScalaIterator(results.iterator())
       .map(item => Occurrence(item.getString("taxon"), item.getDouble("lat"), item.getDouble("lng"), item.getDate("start").getTime, item.getDate("end").getTime, item.getString("id"), item.getDate("added").getTime, item.getString("source")))
+  }
+
+  def monitoredOccurrencesFor(source: String, added: DateTimeSelector = DateTimeSelector(), occLimit: Option[Int] = None): Iterator[String] = {
+    val afterClause = added.after match {
+      case Some(addedAfter) => Some(s"added > ?", parseDate(addedAfter))
+      case _ => None
+    }
+    val beforeClause = added.before match {
+      case Some(addedBefore) => Some(s"added < ?", parseDate(addedBefore))
+      case _ => None
+    }
+
+    val additionalClauses = List(beforeClause, afterClause).flatten
+    val monitoredOccurrencesSelect = s"SELECT id FROM effechecka.occurrence_first_added_search WHERE source = ? "
+    val query: String = (monitoredOccurrencesSelect :: additionalClauses.map(_._1)).mkString(" AND ")
+
+    val params = List(source) ::: additionalClauses.map(_._2)
+
+    val queryWithLimit = occLimit match {
+      case Some(limit) => query + s" LIMIT $limit"
+      case _ => query
+    }
+
+    val results: ResultSet = session.execute(queryWithLimit, params: _*)
+
+    JavaConversions.asScalaIterator(results.iterator())
+      .map(item => item.getString("id"))
   }
 
 
@@ -93,6 +125,19 @@ trait OccurrenceCollectionFetcherCassandra extends OccurrenceCollectionFetcher w
         Some(OccurrenceMonitor(selector, Option(item.getString("status")), Option(item.getInt("recordcount"))))
       }
       case None => None
+    }
+  }
+
+  def monitorsFor(source: String, id: String): Iterator[OccurrenceSelector] = {
+    val results: ResultSet = session.execute(s"SELECT taxonselector, wktstring, traitselector " +
+      s"FROM effechecka.occurrence_search " +
+      s"WHERE source = ? AND id = ?", List(source, id): _*)
+
+    if (results.iterator().hasNext) {
+      JavaConversions.asScalaIterator(results.iterator())
+        .map(item => OccurrenceSelector(item.getString("taxonselector"), item.getString("wktstring"), item.getString("traitselector")))
+    } else {
+      Iterator[OccurrenceSelector]()
     }
   }
 

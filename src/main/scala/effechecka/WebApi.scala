@@ -139,10 +139,11 @@ trait Service extends Protocols
           get {
             complete {
               monitorOf(ocSelector)
+
             }
           }
         }
-        } ~ path("monitors") {
+        } ~ path("monitors" | "monitorsForOccurrence") {
           parameters('source.as[String], 'id.as[String]) { (source, id) =>
             get {
               complete {

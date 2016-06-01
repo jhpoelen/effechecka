@@ -9,6 +9,9 @@ import HttpMethods._
 case class Email(to: String, subject: String, text: String)
 
 object EmailUtils {
+
+  var URL_DEFAULT =  "http://gimmefreshdata.github.io/"
+
   def mailgunRequestFor(email: Email, apiKey: String): HttpRequest = {
     HttpRequest(method = HttpMethods.POST,
       headers = List(Authorization(BasicHttpCredentials("api", apiKey))),
@@ -19,12 +22,12 @@ object EmailUtils {
         "subject" -> email.subject)).toEntity)
   }
 
-  def urlFor(selector: OccurrenceSelector): URL = {
-    urlWithQuery(queryParamsFor(selector))
+  def urlFor(selector: OccurrenceSelector, baseURL: String = URL_DEFAULT): URL = {
+    urlWithQuery(baseURL = baseURL, query = queryParamsFor(selector))
   }
 
-  def urlWithQuery(query: String): URL = {
-    new URL(s"http://gimmefreshdata.github.io/?$query")
+  def urlWithQuery(baseURL: String = URL_DEFAULT, query: String): URL = {
+    new URL(s"$baseURL?$query")
   }
 
   def urlFor(event: SubscriptionEvent): URL = {
@@ -38,7 +41,7 @@ object EmailUtils {
       case _ => ""
     }
 
-    urlWithQuery(s"${queryParamsFor(event.selector)}$after$before")
+    urlWithQuery(query = s"${queryParamsFor(event.selector)}$after$before")
   }
 
   def encode(str: String) = {

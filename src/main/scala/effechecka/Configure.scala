@@ -28,6 +28,9 @@ trait Configure {
     clusterSession.execute(s"CREATE TABLE IF NOT EXISTS effechecka.occurrence_search (source TEXT, id TEXT, $selectorColumns" +
           s", PRIMARY KEY((source), id, $selectors))")
 
+    clusterSession.execute(s"CREATE TABLE IF NOT EXISTS effechecka.selector (uuid UUID, $selectorColumns" +
+          s", PRIMARY KEY(uuid))")
+
 
     clusterSession.execute(s"CREATE TABLE IF NOT EXISTS effechecka.subscriptions ($selectorColumns, subscriber TEXT, PRIMARY KEY($selectorKey, subscriber))")
 

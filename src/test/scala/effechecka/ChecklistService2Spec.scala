@@ -1,6 +1,7 @@
 package effechecka
 
 import java.net.URL
+import java.util.UUID
 
 
 import akka.http.scaladsl.model.TransferEncodings.{gzip, deflate}
@@ -17,6 +18,20 @@ trait ChecklistFetcherStatic extends ChecklistFetcher {
   def statusOf(checklist: ChecklistRequest): Option[String] = Some("ready")
 
   def request(checklist: ChecklistRequest): String = "requested"
+}
+
+trait SelectorRegistryStatic extends SelectorRegistry {
+
+  def registerSelector(selector: OccurrenceSelector): UUID = UUID.fromString("c7483fed-ff5c-54b1-a436-37884e585f11")
+
+  def selectorFor(uuid: UUID): Option[OccurrenceSelector] = {
+    uuid.toString match {
+      case "c7483fed-ff5c-54b1-a436-37884e585f11" =>
+        Some(OccurrenceSelector("Animalia,Insecta", "ENVELOPE(-150,-50,40,10)", ""))
+      case _ =>
+        None
+    }
+  }
 }
 
 trait SubscriptionsStatic extends Subscriptions {
@@ -50,6 +65,7 @@ trait OccurrenceCollectionFetcherStatic extends OccurrenceCollectionFetcher {
 }
 
 class ChecklistService2Spec extends WordSpec with Matchers with ScalatestRouteTest with Service
+  with SelectorRegistryStatic
   with SubscriptionsStatic
   with ChecklistFetcherStatic
   with OccurrenceCollectionFetcherStatic {
@@ -67,8 +83,20 @@ class ChecklistService2Spec extends WordSpec with Matchers with ScalatestRouteTe
       }
     }
 
+    "return requested checklist uuid" in {
+      Get("/checklist?uuid=c7483fed-ff5c-54b1-a436-37884e585f11") ~> route ~> check {
+        responseAs[Checklist] shouldEqual Checklist(OccurrenceSelector("Animalia,Insecta", "ENVELOPE(-150,-50,40,10)", ""), "ready", List(ChecklistItem("donald", 1)))
+      }
+    }
+
     "return requested occurrenceCollection" in {
       Get("/occurrences?taxonSelector=Animalia,Insecta&wktString=ENVELOPE(-150,-50,40,10)") ~> route ~> check {
+        responseAs[OccurrenceCollection] shouldEqual OccurrenceCollection(OccurrenceSelector("Animalia,Insecta", "ENVELOPE(-150,-50,40,10)", ""), Some("ready"), List(anOccurrence))
+      }
+    }
+
+    "return requested occurrenceCollection uuid" in {
+      Get("/occurrences?uuid=c7483fed-ff5c-54b1-a436-37884e585f11") ~> route ~> check {
         responseAs[OccurrenceCollection] shouldEqual OccurrenceCollection(OccurrenceSelector("Animalia,Insecta", "ENVELOPE(-150,-50,40,10)", ""), Some("ready"), List(anOccurrence))
       }
     }
@@ -81,6 +109,16 @@ class ChecklistService2Spec extends WordSpec with Matchers with ScalatestRouteTe
             |""".stripMargin)
       }
     }
+
+    "return requested occurrenceCollection csv by uuid" in {
+      Get("/occurrences.csv?uuid=c7483fed-ff5c-54b1-a436-37884e585f11") ~> route ~> check {
+        responseAs[String] should be(
+          """taxon name,taxon path,lat,lng,eventStartDate,occurrenceId,firstAddedDate,source
+            |"mickey","Cartoona | mickey",12.1,32.1,1970-01-01T00:00:00.123Z,"recordId",1970-01-01T00:00:00.456Z,"archiveId"
+            |""".stripMargin)
+      }
+    }
+
 
     "return requested monitored occurrences csv" in {
       Get("/monitoredOccurrences.csv?source=someSource") ~> route ~> check {
@@ -98,8 +136,20 @@ class ChecklistService2Spec extends WordSpec with Matchers with ScalatestRouteTe
       }
     }
 
+    "subscribe to monitor uuid" in {
+      Get("/subscribe?subscriber=mailto%3Afoo%40bar&uuid=c7483fed-ff5c-54b1-a436-37884e585f11") ~> route ~> check {
+        responseAs[String] should be("subscribed [mailto:foo@bar]")
+      }
+    }
+
     "unsubscribe to selector" in {
       Get("/unsubscribe?subscriber=mailto%3Afoo%40bar&taxonSelector=Animalia,Insecta&wktString=ENVELOPE(-150,-50,40,10)") ~> route ~> check {
+        responseAs[String] should be("unsubscribed [mailto:foo@bar]")
+      }
+    }
+
+    "unsubscribe to selector uuid" in {
+      Get("/unsubscribe?subscriber=mailto%3Afoo%40bar&uuid=c7483fed-ff5c-54b1-a436-37884e585f11") ~> route ~> check {
         responseAs[String] should be("unsubscribed [mailto:foo@bar]")
       }
     }
@@ -110,8 +160,20 @@ class ChecklistService2Spec extends WordSpec with Matchers with ScalatestRouteTe
       }
     }
 
+    "refresh monitor uuid" in {
+      Get("/update?uuid=c7483fed-ff5c-54b1-a436-37884e585f11") ~> route ~> check {
+        responseAs[OccurrenceCollection] shouldEqual OccurrenceCollection(OccurrenceSelector("Animalia,Insecta", "ENVELOPE(-150,-50,40,10)", ""), Some("requested"), List())
+      }
+    }
+
     "send notification to subscribers" in {
       Get("/notify?addedAfter=2016-01-10&taxonSelector=Animalia,Insecta&wktString=ENVELOPE(-150,-50,40,10)") ~> route ~> check {
+        responseAs[String] should be("change detected: sent notifications")
+      }
+    }
+
+    "send notification to subscribers uuid" in {
+      Get("/notify?addedAfter=2016-01-10&uuid=c7483fed-ff5c-54b1-a436-37884e585f11") ~> route ~> check {
         responseAs[String] should be("change detected: sent notifications")
       }
     }
@@ -128,9 +190,15 @@ class ChecklistService2Spec extends WordSpec with Matchers with ScalatestRouteTe
       }
     }
 
+    "return single monitor uuid" in {
+      Get("/monitors?uuid=c7483fed-ff5c-54b1-a436-37884e585f11") ~> route ~> check {
+        responseAs[OccurrenceMonitor] should be(OccurrenceMonitor(OccurrenceSelector("Cartoona | mickey", "some wkt string", "some trait selector"), Some("some status"), Some(123)))
+      }
+    }
+
     "return monitors for" in {
       Get("/monitors?source=someSource&id=someId") ~> route ~> check {
-        responseAs[List[OccurrenceSelector]] should contain(OccurrenceSelector("Cartoona | mickey","some wkt string","some trait selector"))
+        responseAs[List[OccurrenceSelector]] should contain(OccurrenceSelector("Cartoona | mickey", "some wkt string", "some trait selector"))
       }
     }
 

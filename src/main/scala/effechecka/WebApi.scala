@@ -1,6 +1,7 @@
 package effechecka
 
 import java.net.URL
+import java.util.UUID
 
 import akka.NotUsed
 import akka.event.{LoggingAdapter, Logging}
@@ -17,7 +18,7 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers._
 import akka.stream.scaladsl.{Concat, Keep, Source, Flow}
-import akka.http.scaladsl.server.Directive0
+import akka.http.scaladsl.server.{Route, Directive1, Directive0}
 
 case class MonitorStatus(selector: OccurrenceSelector, status: String, percentComplete: Double, eta: Long)
 
@@ -40,6 +41,7 @@ trait Protocols extends SprayJsonSupport with DefaultJsonProtocol {
 
 trait Service extends Protocols
   with ChecklistFetcher
+  with SelectorRegistry
   with OccurrenceCollectionFetcher
   with SubscriptionFeed
   with NotificationFeedSourceKafka {
@@ -50,107 +52,37 @@ trait Service extends Protocols
     }
   }
 
+  val selectorValueParams: Directive1[OccurrenceSelector] = {
+    parameters('taxonSelector.as[String], 'wktString.as[String], 'traitSelector.as[String] ? "").tflatMap {
+      case (taxon: String, wkt: String, traits: String) => provide(OccurrenceSelector(taxon, wkt, traits))
+      case _ => reject
+    }
+  }
 
-  val selectorParams = parameters('taxonSelector.as[String], 'wktString.as[String], 'traitSelector.as[String] ? "")
+  val uuidParams: Directive1[OccurrenceSelector] = {
+    parameters('uuid.as[String]).flatMap {
+      case (uuid: String) => selectorFor(UUID.fromString(uuid)) match {
+        case Some(selector) => provide(selector)
+        case None => reject
+      }
+      case _ => reject
+    }
+  }
+
+
+  val selectorParams: Directive1[OccurrenceSelector] = {
+    uuidParams | selectorValueParams
+  }
+
 
   val route =
     logRequestResult("checklist-service") {
       addAccessControlHeaders {
-        path("checklist") {
-          get {
-            selectorParams.as(OccurrenceSelector) { ocSelector =>
-              parameters('limit.as[Int] ? 20) { limit =>
-                val checklist = ChecklistRequest(ocSelector, limit)
-                val statusOpt: Option[String] = statusOf(checklist)
-                val (items, status) = statusOpt match {
-                  case Some("ready") => (itemsFor(checklist), "ready")
-                  case None => (List(), request(checklist))
-                  case _ => (List(), statusOpt.get)
-                }
-                complete {
-                  Checklist(ocSelector, status, items)
-                }
-              }
-            }
-          }
-        } ~ path("monitoredOccurrences.csv") {
-          handleMonitoredOccurrencesCsv
-        } ~ path("occurrences.csv") {
-          handleOccurrencesCsv
-        } ~ path("occurrences") {
-          handleOccurrences
-        } ~ path("subscribe") {
-          get {
-            selectorParams.as(OccurrenceSelector) { ocSelector => {
-              parameters('subscriber.as[String]) { subscriber =>
-                complete {
-                  handleSubscriptionEvent(ocSelector, new URL(subscriber), "subscribe")
-                  s"subscribed [$subscriber]"
-                }
-              }
-            }
-            }
-          }
-        } ~ path("unsubscribe") {
-          get {
-            selectorParams.as(OccurrenceSelector) { ocSelector => {
-              parameters('subscriber.as[String]) { subscriber =>
-                complete {
-                  handleSubscriptionEvent(ocSelector, new URL(subscriber), "unsubscribe")
-                  s"unsubscribed [$subscriber]"
-                }
-              }
-            }
-            }
-          }
-        } ~ path("update") {
-          get {
-            selectorParams.as(OccurrenceSelector) { ocSelector => {
-              complete {
-                val status = request(ocSelector)
-                OccurrenceCollection(ocSelector, Option(status), List())
-              }
-            }
-            }
-          }
-        } ~ path("notify") {
-          get {
-            selectorParams.as(OccurrenceSelector) { ocSelector => {
-              addedParams.as(DateTimeSelector) { added =>
-                val ocRequest = OccurrenceCollectionRequest(ocSelector, Some(1), added)
-                if (occurrencesFor(ocRequest).hasNext) {
-                  val subscribers = subscribersOf(ocSelector)
-                  for (subscriber <- subscribers) {
-                    handleSubscriptionEvent(SubscriptionEvent(ocSelector, subscriber, "notify", added.before, added.after))
-                  }
-                  complete {
-                    "change detected: sent notifications"
-                  }
-                } else {
-                  complete {
-                    "no change: did not send notifications"
-                  }
-                }
-              }
-            }
-            }
-          }
-        } ~ (path("monitors") & selectorParams.as(OccurrenceSelector)) { ocSelector => {
-          get {
-            complete {
-              monitorOf(ocSelector)
-
-            }
-          }
-        }
-        } ~ path("monitors" | "monitorsForOccurrence") {
-          parameters('source.as[String], 'id.as[String]) { (source, id) =>
-            get {
-              complete {
-                monitorsFor(source, id).toList
-              }
-            }
-          }
+        selectorParams { ocSelector =>
+          registerSelector(ocSelector)
+          selectorRoutes(ocSelector)
+        } ~ parameters('source.as[String]) { source =>
+          usageRoutes(source)
         } ~ path("monitors") {
           get {
             complete {
@@ -167,74 +99,155 @@ trait Service extends Protocols
       }
     }
 
+  def usageRoutes(source: String): Route = {
+    path("monitoredOccurrences.csv") {
+      handleMonitoredOccurrencesCsv(source)
+    } ~ path("monitors" | " monitorsForOccurrence") {
+      parameters('id.as[String]) { id =>
+        get {
+          complete {
+            monitorsFor(source, id).toList
+          }
+        }
+      }
+    }
+  }
+
+  def selectorRoutes(ocSelector: OccurrenceSelector): Route = {
+    path("checklist") {
+      get {
+        parameters('limit.as[Int] ? 20) { limit =>
+          val checklist = ChecklistRequest(ocSelector, limit)
+          val statusOpt: Option[String] = statusOf(checklist)
+          val (items, status) = statusOpt match {
+            case Some("ready") => (itemsFor(checklist), "ready")
+            case None => {
+              (List(), request(checklist))
+            }
+            case _ => (List(), statusOpt.get)
+          }
+          complete {
+            Checklist(ocSelector, status, items)
+          }
+        }
+      }
+    } ~ path("occurrences.csv") {
+      handleOccurrencesCsv(ocSelector)
+    } ~ path("occurrences") {
+      handleOccurrences(ocSelector)
+    } ~ path("subscribe") {
+      get {
+        parameters('subscriber.as[String]) { subscriber =>
+          complete {
+            handleSubscriptionEvent(ocSelector, new URL(subscriber), "subscribe")
+            s"subscribed [$subscriber]"
+          }
+        }
+      }
+    } ~ path("unsubscribe") {
+      get {
+        parameters('subscriber.as[String]) { subscriber =>
+          complete {
+            handleSubscriptionEvent(ocSelector, new URL(subscriber), "unsubscribe")
+            s"unsubscribed [$subscriber]"
+          }
+        }
+      }
+    } ~ path("update") {
+      get {
+        complete {
+          val status = request(ocSelector)
+          OccurrenceCollection(ocSelector, Option(status), List())
+        }
+      }
+    } ~ path("notify") {
+      get {
+        addedParams.as(DateTimeSelector) { added =>
+          val ocRequest = OccurrenceCollectionRequest(ocSelector, Some(1), added)
+          if (occurrencesFor(ocRequest).hasNext) {
+            val subscribers = subscribersOf(ocSelector)
+            for (subscriber <- subscribers) {
+              handleSubscriptionEvent(SubscriptionEvent(ocSelector, subscriber, "notify", added.before, added.after))
+            }
+            complete {
+              "change detected: sent notifications"
+            }
+          } else {
+            complete {
+              "no change: did not send notifications"
+            }
+          }
+        }
+      }
+    } ~ path("monitors") {
+      get {
+        complete {
+          monitorOf(ocSelector)
+        }
+      }
+    }
+  }
+
   val addedParams = parameters('addedBefore.as[String] ?, 'addedAfter.as[String] ?)
 
-  def handleOccurrences: server.Route = {
+  def handleOccurrences(ocSelector: OccurrenceSelector): server.Route = {
     get {
-      selectorParams.as(OccurrenceSelector) {
-        ocSelector => {
-          addedParams.as(DateTimeSelector) {
-            added =>
-              parameters('limit.as[Int] ? 20) {
-                limit =>
-                  val ocRequest = OccurrenceCollectionRequest(ocSelector, Some(limit), added)
-                  val statusOpt: Option[String] = statusOf(ocSelector)
-                  complete {
-                    statusOpt match {
-                      case Some("ready") => {
-                        OccurrenceCollection(ocSelector, Some("ready"), occurrencesFor(ocRequest).toList)
-                      }
-                      case None =>
-                        OccurrenceCollection(ocSelector, Some(request(ocSelector)))
-                      case _ =>
-                        OccurrenceCollection(ocSelector, statusOpt)
-                    }
+      addedParams.as(DateTimeSelector) {
+        added =>
+          parameters('limit.as[Int] ? 20) {
+            limit =>
+              val ocRequest = OccurrenceCollectionRequest(ocSelector, Some(limit), added)
+              val statusOpt: Option[String] = statusOf(ocSelector)
+              complete {
+                statusOpt match {
+                  case Some("ready") => {
+                    OccurrenceCollection(ocSelector, Some("ready"), occurrencesFor(ocRequest).toList)
                   }
+                  case None =>
+                    OccurrenceCollection(ocSelector, Some(request(ocSelector)))
+                  case _ =>
+                    OccurrenceCollection(ocSelector, statusOpt)
+                }
               }
           }
-        }
       }
     }
   }
 
-  def handleOccurrencesCsv: server.Route = {
+  def handleOccurrencesCsv(ocSelector: OccurrenceSelector): server.Route = {
     get {
-      selectorParams.as(OccurrenceSelector) {
-        ocSelector => {
-          addedParams.as(DateTimeSelector) {
-            added =>
-              parameters('limit.as[Int] ?) {
-                limit =>
-                  val ocRequest = OccurrenceCollectionRequest(selector = ocSelector, limit = limit, added)
-                  val statusOpt: Option[String] = statusOf(ocSelector)
-                  statusOpt match {
-                    case Some("ready") => {
-                      encodeResponse {
-                        complete {
-                          val occurrenceSource = Source.fromIterator[ByteString]({
-                            () => occurrencesFor(ocRequest)
-                              .map(occurrence => {
-                                ByteString(CsvUtils.toOccurrenceRow(occurrence))
-                              })
+      addedParams.as(DateTimeSelector) {
+        added =>
+          parameters('limit.as[Int] ?) {
+            limit =>
+              val ocRequest = OccurrenceCollectionRequest(selector = ocSelector, limit = limit, added)
+              val statusOpt: Option[String] = statusOf(ocSelector)
+              statusOpt match {
+                case Some("ready") => {
+                  encodeResponse {
+                    complete {
+                      val occurrenceSource = Source.fromIterator[ByteString]({
+                        () => occurrencesFor(ocRequest)
+                          .map(occurrence => {
+                            ByteString(CsvUtils.toOccurrenceRow(occurrence))
                           })
-                          val header = Source.single[ByteString](ByteString("taxon name,taxon path,lat,lng,eventStartDate,occurrenceId,firstAddedDate,source\n"))
-                          HttpEntity(ContentTypes.`text/csv(UTF-8)`, Source.combine(header, occurrenceSource)(Concat[ByteString]))
-                        }
-                      }
-                    }
-                    case _ => complete {
-                      StatusCodes.NotFound
+                      })
+                      val header = Source.single[ByteString](ByteString("taxon name,taxon path,lat,lng,eventStartDate,occurrenceId,firstAddedDate,source\n"))
+                      HttpEntity(ContentTypes.`text/csv(UTF-8)`, Source.combine(header, occurrenceSource)(Concat[ByteString]))
                     }
                   }
-
+                }
+                case _ => complete {
+                  StatusCodes.NotFound
+                }
               }
+
           }
-        }
       }
     }
   }
 
-  def handleMonitoredOccurrencesCsv: server.Route = {
+  def handleMonitoredOccurrencesCsv(source: String): server.Route = {
     get {
       parameters('source.as[String]) {
         source => {
@@ -274,6 +287,7 @@ trait Service extends Protocols
 
 object WebApi extends App with Service with Configure
   with SubscriptionsCassandra
+  with SelectorRegistryCassandra
   with ChecklistFetcherCassandra
   with OccurrenceCollectionFetcherCassandra {
   implicit val system = ActorSystem("effechecka")

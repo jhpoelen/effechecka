@@ -53,7 +53,7 @@ object SubscriptionNotifier extends App
     }
   }
 
-  def subscriberEventToMailgunRequest(apikey: String = "someApiKey") = {
+  def subscriberEventToNotification(apikey: String = "someApiKey") = {
     import GraphDSL.Implicits._
 
     GraphDSL.create() { implicit builder =>
@@ -71,7 +71,7 @@ object SubscriptionNotifier extends App
         .filter(event => List("notify").contains(event.action))
         .map(event => {
           HttpRequest(method = HttpMethods.GET,
-            uri = EmailUtils.urlFor(selector = event.selector, baseURL = event.subscriber.toString).toString)
+            uri = EmailUtils.uuidUrlFor(selector = event.selector, baseURL = event.subscriber.toString).toString)
         }))
 
       val inbox = builder.add(Flow[SubscriptionEvent])
@@ -104,7 +104,7 @@ object SubscriptionNotifier extends App
 
     GraphDSL.create() { implicit builder =>
       val eventSource = builder.add(subscriberFeedToSubscriberEvent)
-      val toMailgunRequests = builder.add(subscriberEventToMailgunRequest(apiKey))
+      val toMailgunRequests = builder.add(subscriberEventToNotification(apiKey))
       val sendRequest = builder.add(Sink.foreach[HttpRequest](
         Http().singleRequest(_)
       ))

@@ -26,9 +26,9 @@ class OccurrenceCollectionFetcherSpec extends WordSpec with Matchers with Occurr
       occ.source should be("http://archive.url")
       occ.added should be(1328156581000L)
 
-      monitors() should contain(OccurrenceMonitor(OccurrenceSelector("Insecta|Mammalia", "ENVELOPE(-150,-50,40,10)", "bodyMass greaterThan 2.7 kg"), Some("requested"), Some(0)))
-      monitorOf(OccurrenceSelector("Insecta|Aves", "wktString", "")) should contain(OccurrenceMonitor(OccurrenceSelector("Insecta|Aves", "wktString", ""), Some("requested"), Some(0)))
-      monitorOf(OccurrenceSelector("Insecta", "wktString", "")) should contain(OccurrenceMonitor(OccurrenceSelector("Insecta", "wktString", ""), Some("requested"), Some(0)))
+      monitors() should contain(OccurrenceMonitor(OccurrenceSelector("Insecta|Mammalia", "ENVELOPE(-150,-50,40,10)", "bodyMass greaterThan 2.7 kg").withUUID, Some("requested"), Some(0)))
+      monitorOf(OccurrenceSelector("Insecta|Aves", "wktString", "")) should contain(OccurrenceMonitor(OccurrenceSelector("Insecta|Aves", "wktString", "").withUUID, Some("requested"), Some(0)))
+      monitorOf(OccurrenceSelector("Insecta", "wktString", "")) should contain(OccurrenceMonitor(OccurrenceSelector("Insecta", "wktString", "").withUUID, Some("requested"), Some(0)))
     }
 
     "occurrence selector with null status" in {
@@ -40,9 +40,10 @@ class OccurrenceCollectionFetcherSpec extends WordSpec with Matchers with Occurr
       val expectedWktString: String = "ENVELOPE(-150,-50,40,10)"
       val expectedTraitSelector: String = "bodyMass greaterThan 2.7 kg"
       val expectedTaxonSelector: String = "Insecta|Mammalia"
-      monitors() should contain(OccurrenceMonitor(OccurrenceSelector(expectedTaxonSelector, expectedWktString, expectedTraitSelector), None, Some(123)))
-      monitorOf(OccurrenceSelector("Insecta|Mammalia", expectedWktString, expectedTraitSelector)) should be(Some(OccurrenceMonitor(OccurrenceSelector("Insecta|Mammalia", expectedWktString, expectedTraitSelector), None, Some(123))))
-      monitorOf(OccurrenceSelector("Aves|Mammalia", expectedWktString, expectedTraitSelector)) should be(Some(OccurrenceMonitor(OccurrenceSelector("Aves|Mammalia", expectedWktString, expectedTraitSelector), None, Some(0))))
+      val expectedSelector: OccurrenceSelector = OccurrenceSelector(expectedTaxonSelector, expectedWktString, expectedTraitSelector)
+      monitors() should contain(OccurrenceMonitor(expectedSelector.withUUID, None, Some(123)))
+      monitorOf(OccurrenceSelector("Insecta|Mammalia", expectedWktString, expectedTraitSelector)) should be(Some(OccurrenceMonitor(OccurrenceSelector("Insecta|Mammalia", expectedWktString, expectedTraitSelector).withUUID, None, Some(123))))
+      monitorOf(OccurrenceSelector("Aves|Mammalia", expectedWktString, expectedTraitSelector)) should be(Some(OccurrenceMonitor(OccurrenceSelector("Aves|Mammalia", expectedWktString, expectedTraitSelector).withUUID, None, Some(0))))
     }
 
     "return monitored occurrences" in {
@@ -60,7 +61,7 @@ class OccurrenceCollectionFetcherSpec extends WordSpec with Matchers with Occurr
       occIter.hasNext should be(false)
 
       val monitors: Iterator[OccurrenceSelector] = monitorsFor(source = "my source", id = "some id")
-      monitors.next() should be(OccurrenceSelector(expectedTaxonSelector, expectedWktString, expectedTraitSelector))
+      monitors.next() should be(OccurrenceSelector(expectedTaxonSelector, expectedWktString, expectedTraitSelector).withUUID)
       monitors.hasNext should be(false)
     }
 

@@ -43,7 +43,7 @@ class SubscriptionNotifierSpec extends TestKit(ActorSystem("StreamIntegrationSpe
 
   def requestFor(event: SubscriptionEvent): HttpRequest = {
     val (pub, sub) = TestSource.probe[SubscriptionEvent]
-      .via(SubscriptionNotifier.subscriberEventToMailgunRequest())
+      .via(SubscriptionNotifier.subscriberEventToNotification())
       .toMat(TestSink.probe[HttpRequest])(Keep.both)
       .run()
 
@@ -53,9 +53,10 @@ class SubscriptionNotifierSpec extends TestKit(ActorSystem("StreamIntegrationSpe
   }
 
   "notify using webhook" in {
-    val event = SubscriptionEvent(OccurrenceSelector("taxa", "wkt", "traits"), new URL("http://some.site"), "notify")
+    val selector: OccurrenceSelector = OccurrenceSelector("taxa", "wkt", "traits")
+    val event = SubscriptionEvent(selector, new URL("http://some.site"), "notify")
     val actualRequest: HttpRequest = requestFor(event)
-    actualRequest.uri should be(Uri("http://some.site?taxonSelector=taxa&wktString=wkt&traitSelector=traits"))
+    actualRequest.uri should be(Uri(s"http://some.site?uuid=${UuidUtils.uuidFor(selector)}"))
     actualRequest.method should be(HttpMethods.GET)
   }
 

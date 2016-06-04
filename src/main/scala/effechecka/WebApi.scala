@@ -24,7 +24,7 @@ case class MonitorStatus(selector: OccurrenceSelector, status: String, percentCo
 
 
 trait Protocols extends SprayJsonSupport with DefaultJsonProtocol {
-  implicit val occurrenceSelector = jsonFormat3(OccurrenceSelector)
+  implicit val occurrenceSelector = jsonFormat4(OccurrenceSelector)
   implicit val monitorStatusFormat = jsonFormat4(MonitorStatus)
 
   implicit val checklistFormat = jsonFormat2(ChecklistRequest)

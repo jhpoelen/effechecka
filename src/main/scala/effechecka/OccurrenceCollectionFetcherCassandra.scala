@@ -113,7 +113,7 @@ trait OccurrenceCollectionFetcherCassandra extends OccurrenceCollectionFetcher w
 
   def asOccurrenceMonitor(item: Row): OccurrenceMonitor = {
     val selector = OccurrenceSelector(item.getString("taxonselector"), item.getString("wktstring"), item.getString("traitselector"))
-    OccurrenceMonitor(selector, Option(item.getString("status")), Option(item.getInt("recordcount")))
+    OccurrenceMonitor(selector.withUUID, Option(item.getString("status")), Option(item.getInt("recordcount")))
   }
 
   def monitorOf(selector: OccurrenceSelector): Option[OccurrenceMonitor] = {
@@ -122,7 +122,7 @@ trait OccurrenceCollectionFetcherCassandra extends OccurrenceCollectionFetcher w
     results.headOption match {
       case Some(item) => {
         val selector = OccurrenceSelector(item.getString("taxonselector"), item.getString("wktstring"), item.getString("traitselector"))
-        Some(OccurrenceMonitor(selector, Option(item.getString("status")), Option(item.getInt("recordcount"))))
+        Some(OccurrenceMonitor(selector.withUUID, Option(item.getString("status")), Option(item.getInt("recordcount"))))
       }
       case None => None
     }
@@ -135,7 +135,7 @@ trait OccurrenceCollectionFetcherCassandra extends OccurrenceCollectionFetcher w
 
     if (results.iterator().hasNext) {
       JavaConversions.asScalaIterator(results.iterator())
-        .map(item => OccurrenceSelector(item.getString("taxonselector"), item.getString("wktstring"), item.getString("traitselector")))
+        .map(item => OccurrenceSelector(item.getString("taxonselector"), item.getString("wktstring"), item.getString("traitselector")).withUUID)
     } else {
       Iterator[OccurrenceSelector]()
     }

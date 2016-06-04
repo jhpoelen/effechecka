@@ -10,7 +10,8 @@ case class Email(to: String, subject: String, text: String)
 
 object EmailUtils {
 
-  var URL_DEFAULT =  "http://gimmefreshdata.github.io/"
+  val BASE_URL_DEFAULT =  "http://apihack-c18.idigbio.org"
+  val URL_DEFAULT =  s"$BASE_URL_DEFAULT/view"
 
   def mailgunRequestFor(email: Email, apiKey: String): HttpRequest = {
     HttpRequest(method = HttpMethods.POST,
@@ -54,7 +55,7 @@ object EmailUtils {
   }
 
   def unsubscribeUrlFor(event: SubscriptionEvent): URL = {
-    new URL(s"http://apihack-c18.idigbio.org/unsubscribe?subscriber=${encode(event.subscriber.toString)}&" + queryParamsFor(event.selector))
+    new URL(s"$BASE_URL_DEFAULT/unsubscribe?subscriber=${encode(event.subscriber.toString)}&" + queryParamsFor(event.selector))
   }
 
   def unsubscribeTextFor(event: SubscriptionEvent): String = {

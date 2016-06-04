@@ -5,12 +5,10 @@ import java.util.UUID
 
 
 import akka.http.scaladsl.model.TransferEncodings.{gzip, deflate}
-import akka.http.scaladsl.model.headers.`Accept-Encoding`
+import akka.http.scaladsl.model.headers.{Location, `Accept-Encoding`}
 import org.scalatest.{Matchers, WordSpec}
 import akka.http.scaladsl.testkit.ScalatestRouteTest
-import akka.http.scaladsl.model.ContentType
-import akka.http.scaladsl.model.HttpCharsets
-import akka.http.scaladsl.model.MediaTypes
+import akka.http.scaladsl.model._
 
 trait ChecklistFetcherStatic extends ChecklistFetcher {
   def itemsFor(checklist: ChecklistRequest): List[ChecklistItem] = List(ChecklistItem("donald", 1))
@@ -74,6 +72,12 @@ class ChecklistService2Spec extends WordSpec with Matchers with ScalatestRouteTe
     "return a 'ping' response for GET requests to /ping" in {
       Get("/ping") ~> route ~> check {
         responseAs[String] shouldEqual "pong"
+      }
+    }
+
+    "redirect to checklist viewer by uuid" in {
+      Get("/view?uuid=c7483fed-ff5c-54b1-a436-37884e585f11") ~> route ~> check {
+        status shouldEqual StatusCodes.TemporaryRedirect
       }
     }
 

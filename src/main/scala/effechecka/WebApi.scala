@@ -114,7 +114,9 @@ trait Service extends Protocols
   }
 
   def selectorRoutes(ocSelector: OccurrenceSelector): Route = {
-    path("checklist") {
+    path("view") {
+      redirect("http://gimmefreshdata.github.io/?" + EmailUtils.queryParamsFor(ocSelector), StatusCodes.TemporaryRedirect)
+    } ~ path("checklist") {
       get {
         parameters('limit.as[Int] ? 20) { limit =>
           val checklist = ChecklistRequest(ocSelector, limit)

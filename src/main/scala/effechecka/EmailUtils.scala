@@ -27,6 +27,13 @@ object EmailUtils {
     urlWithQuery(baseURL = baseURL, query = queryParamsFor(selector))
   }
 
+  def uuidQuery(selector: OccurrenceSelector): String = s"uuid=${UuidUtils.uuidFor(selector)}"
+
+
+  def uuidUrlFor(selector: OccurrenceSelector, baseURL: String = URL_DEFAULT): URL = {
+    urlWithQuery(baseURL = baseURL, query = uuidQuery(selector))
+  }
+
   def urlWithQuery(baseURL: String = URL_DEFAULT, query: String): URL = {
     new URL(s"$baseURL?$query")
   }
@@ -42,7 +49,7 @@ object EmailUtils {
       case _ => ""
     }
 
-    urlWithQuery(query = s"${queryParamsFor(event.selector)}$after$before")
+    urlWithQuery(query = s"${uuidQuery(event.selector)}$after$before")
   }
 
   def encode(str: String) = {
@@ -55,7 +62,7 @@ object EmailUtils {
   }
 
   def unsubscribeUrlFor(event: SubscriptionEvent): URL = {
-    new URL(s"$BASE_URL_DEFAULT/unsubscribe?subscriber=${encode(event.subscriber.toString)}&" + queryParamsFor(event.selector))
+    new URL(s"$BASE_URL_DEFAULT/unsubscribe?subscriber=${encode(event.subscriber.toString)}&" + uuidQuery(event.selector))
   }
 
   def unsubscribeTextFor(event: SubscriptionEvent): String = {
@@ -82,17 +89,17 @@ object EmailUtils {
       case "subscribe" => {
         Email(to = to,
           subject = "[freshdata] subscribed to freshdata search",
-          text = s"${emailHeader}You subscribed to the freshdata search available at ${urlFor(event.selector)}. \n\n${unsubscribeTextFor(event)} $emailFooter")
+          text = s"${emailHeader}You subscribed to the freshdata search available at ${uuidUrlFor(event.selector)}. \n\n${unsubscribeTextFor(event)} $emailFooter")
       }
       case "unsubscribe" => {
         Email(to = to,
           subject = "[freshdata] unsubscribed from freshdata search",
-          text = s"${emailHeader}You are not longer subscribed to the freshdata search available at ${urlFor(event.selector)}. $emailFooter")
+          text = s"${emailHeader}You are not longer subscribed to the freshdata search available at ${uuidUrlFor(event.selector)}. $emailFooter")
       }
       case "notify" => {
         Email(to = to,
           subject = "[freshdata] new data is available for your freshdata search",
-          text = s"${emailHeader}New data is available for a freshdata search you subscribed to. Please see ${urlFor(event)} for more details. \n\n${unsubscribeTextFor(event)} $emailFooter")
+          text = s"${emailHeader}New data is available for a freshdata search you subscribed to. Please see ${uuidUrlFor(event.selector)} for more details. \n\n${unsubscribeTextFor(event)} $emailFooter")
       }
     }
   }

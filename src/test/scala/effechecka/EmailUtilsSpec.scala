@@ -32,19 +32,24 @@ class EmailUtilsSpec extends WordSpecLike with Matchers with BeforeAndAfterAll w
     EmailUtils.urlFor(selector) should be(new URL("http://apihack-c18.idigbio.org/view?taxonSelector=taxa&wktString=wkt&traitSelector=traits"))
   }
 
+  "uuid url for selector" in {
+    val selector: OccurrenceSelector = OccurrenceSelector("taxa", "wkt", "traits")
+    EmailUtils.uuidUrlFor(selector) should be(new URL("http://apihack-c18.idigbio.org/view?uuid=4fd9a47e-c8c2-53a0-bcc5-9fbbd3d86526"))
+  }
+
   "url for subscription event added before" in {
     val event: SubscriptionEvent = SubscriptionEvent(OccurrenceSelector("taxa", "wkt", "traits"), new URL("mailto:john@doe"), "notify", Some("2012-01-01"))
-    EmailUtils.urlFor(event) should be(new URL("http://apihack-c18.idigbio.org/view?taxonSelector=taxa&wktString=wkt&traitSelector=traits&addedBefore=2012-01-01"))
+    EmailUtils.urlFor(event) should be(new URL("http://apihack-c18.idigbio.org/view?uuid=4fd9a47e-c8c2-53a0-bcc5-9fbbd3d86526&addedBefore=2012-01-01"))
   }
 
   "url for subscription event added after" in {
     val event: SubscriptionEvent = SubscriptionEvent(OccurrenceSelector("taxa", "wkt", "traits"), new URL("mailto:john@doe"), "notify", None, Some("2012-01-01"))
-    EmailUtils.urlFor(event) should be(new URL("http://apihack-c18.idigbio.org/view?taxonSelector=taxa&wktString=wkt&traitSelector=traits&addedAfter=2012-01-01"))
+    EmailUtils.urlFor(event) should be(new URL("http://apihack-c18.idigbio.org/view?uuid=4fd9a47e-c8c2-53a0-bcc5-9fbbd3d86526&addedAfter=2012-01-01"))
   }
 
   "url for subscription event no added before/after" in {
     val event: SubscriptionEvent = SubscriptionEvent(OccurrenceSelector("taxa", "wkt", "traits"), new URL("mailto:john@doe"), "notify")
-    EmailUtils.urlFor(event) should be(new URL("http://apihack-c18.idigbio.org/view?taxonSelector=taxa&wktString=wkt&traitSelector=traits"))
+    EmailUtils.urlFor(event) should be(new URL("http://apihack-c18.idigbio.org/view?uuid=4fd9a47e-c8c2-53a0-bcc5-9fbbd3d86526"))
   }
 
   "unsubscribe text for event" in {
@@ -59,7 +64,7 @@ class EmailUtilsSpec extends WordSpecLike with Matchers with BeforeAndAfterAll w
     val email: Email = EmailUtils.emailFor(event)
     email.to should be("foo@bar")
     email.subject should be("[freshdata] subscribed to freshdata search")
-    email.text should include(EmailUtils.urlFor(selector).toString)
+    email.text should include(EmailUtils.uuidUrlFor(selector).toString)
     email.text should include(EmailUtils.unsubscribeUrlFor(event).toString)
   }
 
@@ -69,7 +74,7 @@ class EmailUtilsSpec extends WordSpecLike with Matchers with BeforeAndAfterAll w
     val email: Email = EmailUtils.emailFor(event)
     email.to should be("foo@bar")
     email.subject should be("[freshdata] unsubscribed from freshdata search")
-    email.text should include(EmailUtils.urlFor(selector).toString)
+    email.text should include(EmailUtils.uuidUrlFor(selector).toString)
   }
 
   "notify email" in {
@@ -78,7 +83,7 @@ class EmailUtilsSpec extends WordSpecLike with Matchers with BeforeAndAfterAll w
     val email: Email = EmailUtils.emailFor(event)
     email.to should be("foo@bar")
     email.subject should be("[freshdata] new data is available for your freshdata search")
-    email.text should include(EmailUtils.urlFor(selector).toString)
+    email.text should include(EmailUtils.uuidUrlFor(selector).toString)
     email.text should include(EmailUtils.unsubscribeUrlFor(event).toString)
   }
 

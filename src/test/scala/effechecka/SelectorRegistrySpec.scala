@@ -14,7 +14,7 @@ class SelectorRegistrySpec extends WordSpec with Matchers with SelectorRegistryC
       val selectorUuid: UUID = UuidUtils.uuidFor(selector)
       selectorFor(selectorUuid) should be(None)
       registerSelector(selector)
-      selectorFor(selectorUuid) should be(Some(selector))
+      selectorFor(selectorUuid) should be(Some(selector.withUUID))
     }
   }
 

@@ -22,7 +22,7 @@ trait SelectorRegistryCassandra extends SelectorRegistry with Fetcher {
       None
     } else {
       val row = results.one()
-      Some(OccurrenceSelector(taxonSelector = row.getString("taxonselector"), wktString = row.getString("wktstring"), traitSelector = row.getString("traitselector")))
+      Some(OccurrenceSelector(taxonSelector = row.getString("taxonselector"), wktString = row.getString("wktstring"), traitSelector = row.getString("traitselector")).withUUID)
     }
   }
 

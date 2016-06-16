@@ -32,6 +32,8 @@ trait OccurrenceCollectionFetcher {
 
   def request(selector: OccurrenceSelector): String
 
+  def requestAll(): String
+
   def monitors(): List[OccurrenceMonitor]
 
   def monitorOf(selector: OccurrenceSelector): Option[OccurrenceMonitor]
@@ -141,20 +143,27 @@ trait OccurrenceCollectionFetcherCassandra extends OccurrenceCollectionFetcher w
     }
   }
 
+  val sparkSubmitParams = Array("--master",
+            config.getString("effechecka.spark.master.url"),
+            "--class", "OccurrenceCollectionGenerator",
+            "--deploy-mode", "cluster",
+            "--executor-memory", "2g",
+            config.getString("effechecka.spark.job.jar"),
+            "-f", "cassandra",
+            "-c", "\"" + config.getString("effechecka.data.dir") + "gbif-idigbio.parquet" + "\"",
+            "-t", "\"" + config.getString("effechecka.data.dir") + "traitbank/*.csv" + "\"")
+
   def request(selector: OccurrenceSelector): String = {
-    SparkSubmit.main(Array("--master",
-      config.getString("effechecka.spark.master.url"),
-      "--class", "OccurrenceCollectionGenerator",
-      "--deploy-mode", "cluster",
-      "--executor-memory", "2g",
-      config.getString("effechecka.spark.job.jar"),
-      "-f", "cassandra",
-      "-c", "\"" + config.getString("effechecka.data.dir") + "gbif-idigbio.parquet" + "\"",
-      "-t", "\"" + config.getString("effechecka.data.dir") + "traitbank/*.csv" + "\"",
+    SparkSubmit.main(sparkSubmitParams ++ Array(
       "\"" + selector.taxonSelector.replace(',', '|') + "\"",
       "\"" + selector.wktString + "\"",
       "\"" + selector.traitSelector.replace(',', '|') + "\""))
     insertRequest(selector)
+  }
+
+  def requestAll(): String = {
+    SparkSubmit.main(sparkSubmitParams ++ Array("-a", "true"))
+    "all requested"
   }
 
   def statusOf(selector: OccurrenceSelector): Option[String] = {

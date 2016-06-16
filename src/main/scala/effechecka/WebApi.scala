@@ -81,6 +81,12 @@ trait Service extends Protocols
         selectorParams { ocSelector =>
           registerSelector(ocSelector)
           selectorRoutes(ocSelector)
+        } ~ path("updateAll") {
+          get {
+            complete {
+              requestAll()
+            }
+          }
         } ~ parameters('source.as[String]) { source =>
           usageRoutes(source)
         } ~ path("monitors") {

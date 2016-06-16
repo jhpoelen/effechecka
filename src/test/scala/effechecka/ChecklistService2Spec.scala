@@ -55,6 +55,8 @@ trait OccurrenceCollectionFetcherStatic extends OccurrenceCollectionFetcher {
 
   def request(selector: OccurrenceSelector): String = "requested"
 
+  def requestAll(): String = "all requested"
+
   def monitors(): List[OccurrenceMonitor] = List(aMonitor, anotherMonitor)
 
   def monitorOf(selector: OccurrenceSelector): Option[OccurrenceMonitor] = Some(aMonitor)
@@ -96,6 +98,12 @@ class ChecklistService2Spec extends WordSpec with Matchers with ScalatestRouteTe
     "return requested occurrenceCollection" in {
       Get("/occurrences?taxonSelector=Animalia,Insecta&wktString=ENVELOPE(-150,-50,40,10)") ~> route ~> check {
         responseAs[OccurrenceCollection] shouldEqual OccurrenceCollection(OccurrenceSelector("Animalia,Insecta", "ENVELOPE(-150,-50,40,10)", ""), Some("ready"), List(anOccurrence))
+      }
+    }
+
+    "return requested occurrenceCollection error" in {
+      Get("/occurrences?limit=20&taxonSelector=Animalia%2CInsecta&wktString=POLYGON%20((-150%2010%2C%20-150%2040%2C%20-50%2040%2C%20-50%2010%2C%20-150%2010))") ~> route ~> check {
+        responseAs[OccurrenceCollection] shouldEqual OccurrenceCollection(OccurrenceSelector("Animalia,Insecta", "POLYGON ((-150 10, -150 40, -50 40, -50 10, -150 10))", ""), Some("ready"), List(anOccurrence))
       }
     }
 
@@ -158,9 +166,9 @@ class ChecklistService2Spec extends WordSpec with Matchers with ScalatestRouteTe
       }
     }
 
-    "refresh monitor" in {
-      Get("/update?taxonSelector=Animalia,Insecta&wktString=ENVELOPE(-150,-50,40,10)") ~> route ~> check {
-        responseAs[OccurrenceCollection] shouldEqual OccurrenceCollection(OccurrenceSelector("Animalia,Insecta", "ENVELOPE(-150,-50,40,10)", ""), Some("requested"), List())
+    "refresh all monitors" in {
+      Get("/updateAll") ~> route ~> check {
+        responseAs[String] shouldEqual "all requested"
       }
     }
 

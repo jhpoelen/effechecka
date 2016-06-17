@@ -147,6 +147,8 @@ trait OccurrenceCollectionFetcherCassandra extends OccurrenceCollectionFetcher w
             config.getString("effechecka.spark.master.url"),
             "--class", "OccurrenceCollectionGenerator",
             "--deploy-mode", "cluster",
+            "--verbose",
+            "--driver-memory", config.getString("effechecka.spark.driver.memory"),
             "--executor-memory", config.getString("effechecka.spark.executor.memory"),
             config.getString("effechecka.spark.job.jar"),
             "-f", "cassandra",

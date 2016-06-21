@@ -31,6 +31,9 @@ trait Configure {
     clusterSession.execute(s"CREATE TABLE IF NOT EXISTS effechecka.selector (uuid UUID, $selectorColumns" +
           s", PRIMARY KEY(uuid))")
 
+    clusterSession.execute(s"CREATE TABLE IF NOT EXISTS effechecka.monitors ($selectorColumns, accessed_at TIMESTAMP" +
+          s", PRIMARY KEY($selectorKey))")
+
 
     clusterSession.execute(s"CREATE TABLE IF NOT EXISTS effechecka.subscriptions ($selectorColumns, subscriber TEXT, PRIMARY KEY($selectorKey, subscriber))")
 

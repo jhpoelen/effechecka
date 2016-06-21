@@ -27,9 +27,12 @@ trait SelectorRegistryCassandra extends SelectorRegistry with Fetcher {
   }
 
   def registerSelector(selector: OccurrenceSelector): UUID = {
+    val ttlSeconds: Long = config.getLong("effechecka.monitor.ttlSeconds")
     val selectorUuid: UUID = UuidUtils.uuidFor(selector)
     session.execute(s"INSERT INTO effechecka.selector (uuid, taxonselector, wktstring, traitSelector) VALUES (?,?,?,?)",
       selectorUuid, selector.taxonSelector, selector.wktString, selector.traitSelector)
+    session.execute(s"INSERT INTO effechecka.monitors (taxonselector, wktstring, traitSelector, accessed_at) VALUES (?,?,?,dateOf(NOW())) USING TTL $ttlSeconds",
+      selector.taxonSelector, selector.wktString, selector.traitSelector)
     selectorUuid
   }
 

@@ -41,6 +41,7 @@ trait Protocols extends SprayJsonSupport with DefaultJsonProtocol {
 
 trait Service extends Protocols
   with ChecklistFetcher
+  with Fetcher
   with SelectorRegistry
   with OccurrenceCollectionFetcher
   with SubscriptionFeed
@@ -54,7 +55,9 @@ trait Service extends Protocols
 
   val selectorValueParams: Directive1[OccurrenceSelector] = {
     parameters('taxonSelector.as[String], 'wktString.as[String], 'traitSelector.as[String] ? "").tflatMap {
-      case (taxon: String, wkt: String, traits: String) => provide(OccurrenceSelector(taxon, wkt, traits))
+      case (taxon: String, wkt: String, traits: String) => {
+        provide(OccurrenceSelector(normalizeSelector(taxon), wkt, normalizeSelector(traits)))
+      }
       case _ => reject
     }
   }
@@ -70,7 +73,7 @@ trait Service extends Protocols
   }
 
 
-  val selectorParams: Directive1[OccurrenceSelector] = {
+  val selectorParameters: Directive1[OccurrenceSelector] = {
     uuidParams | selectorValueParams
   }
 
@@ -78,7 +81,7 @@ trait Service extends Protocols
   val route =
     logRequestResult("checklist-service") {
       addAccessControlHeaders {
-        selectorParams { ocSelector =>
+        selectorParameters { ocSelector =>
           registerSelector(ocSelector)
           selectorRoutes(ocSelector)
         } ~ path("updateAll") {

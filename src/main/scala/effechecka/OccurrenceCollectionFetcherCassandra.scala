@@ -9,14 +9,14 @@ import org.apache.spark.deploy.SparkSubmit
 import com.typesafe.config.Config
 
 trait Fetcher {
-  def normalizeTaxonSelector(taxonSelector: String) = {
+  def normalizeSelector(taxonSelector: String) = {
     taxonSelector.replace(',', '|')
   }
 
   def selectorParams(selector: OccurrenceSelector): List[String] = {
-    List(normalizeTaxonSelector(selector.taxonSelector),
+    List(normalizeSelector(selector.taxonSelector),
       selector.wktString,
-      normalizeTaxonSelector(selector.traitSelector))
+      normalizeSelector(selector.traitSelector))
   }
 
   val selectorWhereClause: String = s"WHERE taxonSelector = ? AND wktString = ? AND traitSelector = ?"

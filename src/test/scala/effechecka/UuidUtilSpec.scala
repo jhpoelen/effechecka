@@ -21,9 +21,9 @@ class UuidUtilSpec extends WordSpecLike with Matchers {
   }
 
   "effechecka selector guid" in {
-    val selector = OccurrenceSelector("some taxa", "some wkt", "some trait")
+    val selector = OccurrenceSelector("Animalia|Insecta", "ENVELOPE(-150,-50,40,10)", "")
 
-    val expectedUUID: String = "c7483fed-ff5c-54b1-a436-37884e585f11"
+    val expectedUUID: String = "55e4b0a0-bcd9-566f-99bc-357439011d85"
 
     UuidUtils.uuidFor(selector) should be(UUID.fromString(expectedUUID))
 

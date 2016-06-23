@@ -20,7 +20,9 @@ trait ChecklistFetcherStatic extends ChecklistFetcher {
 
 trait SelectorRegistryStatic extends SelectorRegistry {
 
-  def registerSelector(selector: OccurrenceSelector): UUID = UUID.fromString("55e4b0a0-bcd9-566f-99bc-357439011d85")
+  def registerSelector(selector: OccurrenceSelector, ttlSeconds: Option[Int] = None): UUID = {
+    UUID.fromString("55e4b0a0-bcd9-566f-99bc-357439011d85")
+  }
 
   def selectorFor(uuid: UUID): Option[OccurrenceSelector] = {
     uuid.toString match {

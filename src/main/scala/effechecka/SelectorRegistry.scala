@@ -6,7 +6,7 @@ import com.datastax.driver.core._
 import com.typesafe.config.Config
 
 trait SelectorRegistry {
-  def registerSelector(selector: OccurrenceSelector): UUID
+  def registerSelector(selector: OccurrenceSelector, ttlSeconds: Option[Int] = None): UUID
 
   def selectorFor(uuid: UUID): Option[OccurrenceSelector]
 }
@@ -26,12 +26,12 @@ trait SelectorRegistryCassandra extends SelectorRegistry with Fetcher {
     }
   }
 
-  def registerSelector(selector: OccurrenceSelector): UUID = {
-    val ttlSeconds: Long = config.getLong("effechecka.monitor.ttlSeconds")
+  def registerSelector(selector: OccurrenceSelector, ttlSeconds: Option[Int] = None): UUID = {
+    val ttlSecondsValue: Int = ttlSeconds.getOrElse(config.getInt("effechecka.monitor.ttlSeconds"))
     val selectorUuid: UUID = UuidUtils.uuidFor(selector)
     session.execute(s"INSERT INTO effechecka.selector (uuid, taxonselector, wktstring, traitSelector) VALUES (?,?,?,?)",
       selectorUuid, selector.taxonSelector, selector.wktString, selector.traitSelector)
-    session.execute(s"INSERT INTO effechecka.monitors (taxonselector, wktstring, traitSelector, accessed_at) VALUES (?,?,?,dateOf(NOW())) USING TTL $ttlSeconds",
+    session.execute(s"INSERT INTO effechecka.monitors (taxonselector, wktstring, traitSelector, accessed_at) VALUES (?,?,?,dateOf(NOW())) USING TTL $ttlSecondsValue",
       selector.taxonSelector, selector.wktString, selector.traitSelector)
     selectorUuid
   }

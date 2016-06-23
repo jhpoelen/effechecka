@@ -6,12 +6,9 @@ import java.util.UUID
 import akka.NotUsed
 import akka.event.{LoggingAdapter, Logging}
 import akka.util.ByteString
-import com.typesafe.config.Config
-import com.typesafe.config.ConfigFactory
 import akka.http.scaladsl.{server, Http}
 import akka.http.scaladsl.server.Directives._
 import akka.stream.ActorMaterializer
-import org.joda.time.format.ISODateTimeFormat
 import spray.json._
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import akka.actor.ActorSystem
@@ -56,7 +53,9 @@ trait Service extends Protocols
   val selectorValueParams: Directive1[OccurrenceSelector] = {
     parameters('taxonSelector.as[String], 'wktString.as[String], 'traitSelector.as[String] ? "").tflatMap {
       case (taxon: String, wkt: String, traits: String) => {
-        provide(OccurrenceSelector(normalizeSelector(taxon), wkt, normalizeSelector(traits)))
+        provide(OccurrenceSelector(taxonSelector = normalizeSelector(taxon),
+          wktString = wkt,
+          traitSelector = normalizeSelector(traits)))
       }
       case _ => reject
     }
@@ -82,8 +81,10 @@ trait Service extends Protocols
     logRequestResult("checklist-service") {
       addAccessControlHeaders {
         selectorParameters { ocSelector =>
-          registerSelector(ocSelector)
-          selectorRoutes(ocSelector)
+          parameters('ttlSeconds.as[Int] ?) { ttlSeconds =>
+            registerSelector(ocSelector, ttlSeconds)
+            selectorRoutes(ocSelector)
+          }
         } ~ path("updateAll") {
           get {
             complete {

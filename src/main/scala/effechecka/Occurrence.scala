@@ -1,7 +1,5 @@
 package effechecka
 
-import java.util.UUID
-
 case class OccurrenceSelector(taxonSelector: String, wktString: String, traitSelector: String, uuid: Option[String] = None) {
   def withUUID = this.copy(uuid = Some(UuidUtils.uuidFor(this).toString))
 }

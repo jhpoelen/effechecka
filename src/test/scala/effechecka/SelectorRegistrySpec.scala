@@ -16,6 +16,15 @@ class SelectorRegistrySpec extends WordSpec with Matchers with SelectorRegistryC
       registerSelector(selector)
       selectorFor(selectorUuid) should be(Some(selector.withUUID))
     }
+
+    "register and find selector with ttl" in {
+      truncate
+      val selector: OccurrenceSelector = OccurrenceSelector("Insecta|Mammalia", "ENVELOPE(-150,-50,40,10)", "bodyMass greaterThan 2.7 kg")
+      val selectorUuid: UUID = UuidUtils.uuidFor(selector)
+      selectorFor(selectorUuid) should be(None)
+      registerSelector(selector, ttlSeconds = Some(10))
+      selectorFor(selectorUuid) should be(Some(selector.withUUID))
+    }
   }
 
   def truncate: ResultSet = {

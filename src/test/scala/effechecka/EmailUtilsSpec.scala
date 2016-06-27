@@ -29,27 +29,27 @@ class EmailUtilsSpec extends WordSpecLike with Matchers with BeforeAndAfterAll w
 
   "url for selector" in {
     val selector: OccurrenceSelector = OccurrenceSelector("taxa", "wkt", "traits")
-    EmailUtils.urlFor(selector) should be(new URL("http://apihack-c18.idigbio.org/view?taxonSelector=taxa&wktString=wkt&traitSelector=traits"))
+    EmailUtils.urlFor(selector) should be(new URL("http://api.effechecka.org/view?taxonSelector=taxa&wktString=wkt&traitSelector=traits"))
   }
 
   "uuid url for selector" in {
     val selector: OccurrenceSelector = OccurrenceSelector("taxa", "wkt", "traits")
-    EmailUtils.uuidUrlFor(selector) should be(new URL("http://apihack-c18.idigbio.org/view?uuid=4fd9a47e-c8c2-53a0-bcc5-9fbbd3d86526"))
+    EmailUtils.uuidUrlFor(selector) should be(new URL("http://api.effechecka.org/view?uuid=4fd9a47e-c8c2-53a0-bcc5-9fbbd3d86526"))
   }
 
   "url for subscription event added before" in {
     val event: SubscriptionEvent = SubscriptionEvent(OccurrenceSelector("taxa", "wkt", "traits"), new URL("mailto:john@doe"), "notify", Some("2012-01-01"))
-    EmailUtils.urlFor(event) should be(new URL("http://apihack-c18.idigbio.org/view?uuid=4fd9a47e-c8c2-53a0-bcc5-9fbbd3d86526&addedBefore=2012-01-01"))
+    EmailUtils.urlFor(event) should be(new URL("http://api.effechecka.org/view?uuid=4fd9a47e-c8c2-53a0-bcc5-9fbbd3d86526&addedBefore=2012-01-01"))
   }
 
   "url for subscription event added after" in {
     val event: SubscriptionEvent = SubscriptionEvent(OccurrenceSelector("taxa", "wkt", "traits"), new URL("mailto:john@doe"), "notify", None, Some("2012-01-01"))
-    EmailUtils.urlFor(event) should be(new URL("http://apihack-c18.idigbio.org/view?uuid=4fd9a47e-c8c2-53a0-bcc5-9fbbd3d86526&addedAfter=2012-01-01"))
+    EmailUtils.urlFor(event) should be(new URL("http://api.effechecka.org/view?uuid=4fd9a47e-c8c2-53a0-bcc5-9fbbd3d86526&addedAfter=2012-01-01"))
   }
 
   "url for subscription event no added before/after" in {
     val event: SubscriptionEvent = SubscriptionEvent(OccurrenceSelector("taxa", "wkt", "traits"), new URL("mailto:john@doe"), "notify")
-    EmailUtils.urlFor(event) should be(new URL("http://apihack-c18.idigbio.org/view?uuid=4fd9a47e-c8c2-53a0-bcc5-9fbbd3d86526"))
+    EmailUtils.urlFor(event) should be(new URL("http://api.effechecka.org/view?uuid=4fd9a47e-c8c2-53a0-bcc5-9fbbd3d86526"))
   }
 
   "unsubscribe text for event" in {

@@ -10,7 +10,7 @@ case class Email(to: String, subject: String, text: String)
 
 object EmailUtils {
 
-  val BASE_URL_DEFAULT =  "http://apihack-c18.idigbio.org"
+  val BASE_URL_DEFAULT =  "http://api.effechecka.org"
   val URL_DEFAULT =  s"$BASE_URL_DEFAULT/view"
 
   def mailgunRequestFor(email: Email, apiKey: String): HttpRequest = {

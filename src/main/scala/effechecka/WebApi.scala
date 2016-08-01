@@ -244,7 +244,7 @@ trait Service extends Protocols
                             ByteString(CsvUtils.toOccurrenceRow(occurrence))
                           })
                       })
-                      val header = Source.single[ByteString](ByteString("taxon name,taxon path,lat,lng,eventStartDate,occurrenceId,firstAddedDate,source\n"))
+                      val header = Source.single[ByteString](ByteString("taxonName,taxonPath,lat,lng,eventStartDate,occurrenceId,firstAddedDate,source,occurrenceUrl\n"))
                       HttpEntity(ContentTypes.`text/csv(UTF-8)`, Source.combine(header, occurrenceSource)(Concat[ByteString]))
                     }
                   }

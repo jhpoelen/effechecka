@@ -5,6 +5,7 @@ import java.util.UUID
 
 import akka.NotUsed
 import akka.event.{LoggingAdapter, Logging}
+import akka.http.scaladsl.model.ContentType.WithCharset
 import akka.util.ByteString
 import akka.http.scaladsl.{server, Http}
 import akka.http.scaladsl.server.Directives._
@@ -110,8 +111,8 @@ trait Service extends Protocols
     }
 
   def usageRoutes(source: String): Route = {
-    path("monitoredOccurrences.csv") {
-      handleMonitoredOccurrencesCsv(source)
+    path("monitoredOccurrences.tsv") {
+      handleMonitoredOccurrencesTsv(source)
     } ~ path("monitors" | " monitorsForOccurrence") {
       parameters('id.as[String]) { id =>
         get {
@@ -143,8 +144,8 @@ trait Service extends Protocols
           }
         }
       }
-    } ~ path("occurrences.csv") {
-      handleOccurrencesCsv(ocSelector)
+    } ~ path("occurrences.tsv") {
+      handleOccurrencesTsv(ocSelector)
     } ~ path("occurrences") {
       handleOccurrences(ocSelector)
     } ~ path("subscribe") {
@@ -226,7 +227,9 @@ trait Service extends Protocols
     }
   }
 
-  def handleOccurrencesCsv(ocSelector: OccurrenceSelector): server.Route = {
+  private val contentType: WithCharset = MediaTypes.`text/tab-separated-values` withCharset HttpCharsets.`UTF-8`
+
+  def handleOccurrencesTsv(ocSelector: OccurrenceSelector): server.Route = {
     get {
       addedParams.as(DateTimeSelector) {
         added =>
@@ -244,8 +247,8 @@ trait Service extends Protocols
                             ByteString(CsvUtils.toOccurrenceRow(occurrence))
                           })
                       })
-                      val header = Source.single[ByteString](ByteString("taxonName,taxonPath,lat,lng,eventStartDate,occurrenceId,firstAddedDate,source,occurrenceUrl\n"))
-                      HttpEntity(ContentTypes.`text/csv(UTF-8)`, Source.combine(header, occurrenceSource)(Concat[ByteString]))
+                      val header = Source.single[ByteString](ByteString(Seq("taxonName","taxonPath","lat","lng","eventStartDate","occurrenceId","firstAddedDate","source","occurrenceUrl").mkString("\t")))
+                      HttpEntity(contentType, Source.combine(header, occurrenceSource)(Concat[ByteString]))
                     }
                   }
                 }
@@ -259,7 +262,7 @@ trait Service extends Protocols
     }
   }
 
-  def handleMonitoredOccurrencesCsv(source: String): server.Route = {
+  def handleMonitoredOccurrencesTsv(source: String): server.Route = {
     get {
       parameters('source.as[String]) {
         source => {
@@ -272,11 +275,11 @@ trait Service extends Protocols
                       val monitoredOccurrenceSource = Source.fromIterator[ByteString]({
                         () => monitoredOccurrencesFor(source, added, limit)
                           .map(occurrenceId => {
-                            ByteString(s""""$occurrenceId"\n""")
+                            ByteString(s"\n$occurrenceId")
                           })
                       })
-                      val header = Source.single[ByteString](ByteString("occurrenceId\n"))
-                      HttpEntity(ContentTypes.`text/csv(UTF-8)`, Source.combine(header, monitoredOccurrenceSource)(Concat[ByteString]))
+                      val header = Source.single[ByteString](ByteString("occurrenceId"))
+                      HttpEntity(contentType, Source.combine(header, monitoredOccurrenceSource)(Concat[ByteString]))
                     }
                   }
               }

@@ -15,7 +15,8 @@ object CsvUtils {
     val dateString = toISO(occurrence.start)
 
     val occurrenceUrl = urlForOccurrenceId(occurrence).getOrElse("")
-    s""""$lastTaxon","${occurrence.taxon}",${occurrence.lat},${occurrence.lng},$dateString,"${occurrence.id}",${toISO(occurrence.added)},"${occurrence.source}","$occurrenceUrl"\n"""
+    Seq(lastTaxon, occurrence.taxon,occurrence.lat,occurrence.lng,dateString,occurrence.id,toISO(occurrence.added),occurrence.source,occurrenceUrl)
+      .mkString("\n", "\t", "")
   }
 
   def urlForOccurrenceId(occurrence: Occurrence): Option[URI] = {

@@ -115,32 +115,29 @@ class ChecklistService2Spec extends WordSpec with Matchers with ScalatestRouteTe
       }
     }
 
-    "return requested occurrenceCollection csv" in {
-      Get("/occurrences.csv?taxonSelector=Animalia,Insecta&wktString=ENVELOPE(-150,-50,40,10)") ~> route ~> check {
+    "return requested occurrenceCollection tsv" in {
+      Get("/occurrences.tsv?taxonSelector=Animalia,Insecta&wktString=ENVELOPE(-150,-50,40,10)") ~> route ~> check {
         responseAs[String] should be(
-          """taxon name,taxon path,lat,lng,eventStartDate,occurrenceId,firstAddedDate,source
-            |"mickey","Cartoona | mickey",12.1,32.1,1970-01-01T00:00:00.123Z,"recordId",1970-01-01T00:00:00.456Z,"archiveId"
-            |""".stripMargin)
+          "taxonName\ttaxonPath\tlat\tlng\teventStartDate\toccurrenceId\tfirstAddedDate\tsource\toccurrenceUrl\n" +
+            "mickey\tCartoona | mickey\t12.1\t32.1\t1970-01-01T00:00:00.123Z\trecordId\t1970-01-01T00:00:00.456Z\tarchiveId\t")
       }
     }
 
-    "return requested occurrenceCollection csv by uuid" in {
-      Get("/occurrences.csv?uuid=55e4b0a0-bcd9-566f-99bc-357439011d85") ~> route ~> check {
+    "return requested occurrenceCollection tsv by uuid" in {
+      Get("/occurrences.tsv?uuid=55e4b0a0-bcd9-566f-99bc-357439011d85") ~> route ~> check {
         responseAs[String] should be(
-          """taxon name,taxon path,lat,lng,eventStartDate,occurrenceId,firstAddedDate,source
-            |"mickey","Cartoona | mickey",12.1,32.1,1970-01-01T00:00:00.123Z,"recordId",1970-01-01T00:00:00.456Z,"archiveId"
-            |""".stripMargin)
+          "taxonName\ttaxonPath\tlat\tlng\teventStartDate\toccurrenceId\tfirstAddedDate\tsource\toccurrenceUrl\n" +
+            "mickey\tCartoona | mickey\t12.1\t32.1\t1970-01-01T00:00:00.123Z\trecordId\t1970-01-01T00:00:00.456Z\tarchiveId\t")
       }
     }
 
 
-    "return requested monitored occurrences csv" in {
-      Get("/monitoredOccurrences.csv?source=someSource") ~> route ~> check {
+    "return requested monitored occurrences tsv" in {
+      Get("/monitoredOccurrences.tsv?source=someSource") ~> route ~> check {
         responseAs[String] should be(
           """occurrenceId
-            |"some id"
-            |"another id"
-            |""".stripMargin)
+            |some id
+            |another id""".stripMargin)
       }
     }
 

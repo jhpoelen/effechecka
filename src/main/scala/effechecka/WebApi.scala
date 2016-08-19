@@ -92,6 +92,19 @@ trait Service extends Protocols
               requestAll()
             }
           }
+        } ~ path("notifyAll") {
+          get {
+            addedParams.as(DateTimeSelector) { added =>
+              val events = monitors().flatMap { monitor =>
+                generateSubscriptionEventsFor(ocSelector = monitor.selector, added = added)
+              }
+              events.foreach(handleSubscriptionEvent)
+              complete {
+                val selectorString = events.map(_.selector).mkString("[", ":", "]")
+                s"sent [${events.length}] notifications related occurrences added [$added] to monitors $selectorString"
+              }
+            }
+          }
         } ~ parameters('source.as[String]) { source =>
           usageRoutes(source)
         } ~ path("monitors") {
@@ -176,19 +189,10 @@ trait Service extends Protocols
     } ~ path("notify") {
       get {
         addedParams.as(DateTimeSelector) { added =>
-          val ocRequest = OccurrenceCollectionRequest(ocSelector, Some(1), added)
-          if (occurrencesFor(ocRequest).hasNext) {
-            val subscribers = subscribersOf(ocSelector)
-            for (subscriber <- subscribers) {
-              handleSubscriptionEvent(SubscriptionEvent(ocSelector, subscriber, "notify", added.before, added.after))
-            }
-            complete {
-              "change detected: sent notifications"
-            }
-          } else {
-            complete {
-              "no change: did not send notifications"
-            }
+          val events: List[SubscriptionEvent] = generateSubscriptionEventsFor(ocSelector, added)
+          events.foreach(handleSubscriptionEvent)
+          complete {
+            s"sent [${events.length}] notifications related to [$ocSelector] added [$added]"
           }
         }
       }
@@ -199,6 +203,16 @@ trait Service extends Protocols
         }
       }
     }
+  }
+
+  def generateSubscriptionEventsFor(ocSelector: OccurrenceSelector, added: DateTimeSelector): List[SubscriptionEvent] = {
+    val ocRequest = OccurrenceCollectionRequest(ocSelector, Some(1), added)
+    val events = if (occurrencesFor(ocRequest).hasNext) {
+      subscribersOf(ocSelector).map(SubscriptionEvent(ocSelector, _, "notify", added.before, added.after))
+    } else {
+      List()
+    }
+    events
   }
 
   val addedParams = parameters('addedBefore.as[String] ?, 'addedAfter.as[String] ?)
@@ -247,7 +261,7 @@ trait Service extends Protocols
                             ByteString(CsvUtils.toOccurrenceRow(occurrence))
                           })
                       })
-                      val header = Source.single[ByteString](ByteString(Seq("taxonName","taxonPath","lat","lng","eventStartDate","occurrenceId","firstAddedDate","source","occurrenceUrl").mkString("\t")))
+                      val header = Source.single[ByteString](ByteString(Seq("taxonName", "taxonPath", "lat", "lng", "eventStartDate", "occurrenceId", "firstAddedDate", "source", "occurrenceUrl").mkString("\t")))
                       HttpEntity(contentType, Source.combine(header, occurrenceSource)(Concat[ByteString]))
                     }
                   }

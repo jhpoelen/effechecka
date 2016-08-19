@@ -100,8 +100,9 @@ trait Service extends Protocols
               }
               events.foreach(handleSubscriptionEvent)
               complete {
-                val selectorString = events.map(_.selector).mkString("[", ":", "]")
-                s"sent [${events.length}] notifications related occurrences added [$added] to monitors $selectorString"
+                val selectors = events.map(_.selector).distinct
+                val selectorString = selectors.mkString("[", ":", "]")
+                s"sent [${events.length}] notification${if (events.length > 1) "s" else ""} related occurrences added [$added] to monitors $selectorString"
               }
             }
           }
@@ -122,6 +123,7 @@ trait Service extends Protocols
         }
       }
     }
+
 
   def usageRoutes(source: String): Route = {
     path("monitoredOccurrences.tsv") {
@@ -189,10 +191,12 @@ trait Service extends Protocols
     } ~ path("notify") {
       get {
         addedParams.as(DateTimeSelector) { added =>
-          val events: List[SubscriptionEvent] = generateSubscriptionEventsFor(ocSelector, added)
+          val events = generateSubscriptionEventsFor(ocSelector, added)
           events.foreach(handleSubscriptionEvent)
           complete {
-            s"sent [${events.length}] notifications related to [$ocSelector] added [$added]"
+            val selectors = events.map(_.selector).distinct
+            val selectorString = selectors.mkString("[", ":", "]")
+            s"sent [${events.length}] notification${if (events.length > 1) "s" else ""} related occurrences added [$added] to monitors $selectorString"
           }
         }
       }

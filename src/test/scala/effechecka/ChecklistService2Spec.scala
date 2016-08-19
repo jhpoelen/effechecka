@@ -179,13 +179,13 @@ class ChecklistService2Spec extends WordSpec with Matchers with ScalatestRouteTe
 
     "send notification to subscribers" in {
       Get("/notify?addedAfter=2016-01-10&taxonSelector=Animalia,Insecta&wktString=ENVELOPE(-150,-50,40,10)") ~> route ~> check {
-        responseAs[String] should be("change detected: sent notifications")
+        responseAs[String] should be("sent [1] notification related occurrences added [DateTimeSelector(None,Some(2016-01-10))] to monitors [OccurrenceSelector(Animalia|Insecta,ENVELOPE(-150,-50,40,10),,None)]")
       }
     }
 
     "send notification to subscribers uuid" in {
       Get("/notify?addedAfter=2016-01-10&uuid=55e4b0a0-bcd9-566f-99bc-357439011d85") ~> route ~> check {
-        responseAs[String] should be("change detected: sent notifications")
+        responseAs[String] should be("sent [1] notification related occurrences added [DateTimeSelector(None,Some(2016-01-10))] to monitors [OccurrenceSelector(Animalia|Insecta,ENVELOPE(-150,-50,40,10),,None)]")
       }
     }
 

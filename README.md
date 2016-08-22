@@ -1,9 +1,9 @@
 [![Build Status](https://travis-ci.org/jhpoelen/effechecka.svg?branch=master)](https://travis-ci.org/jhpoelen/effechecka)
 
 # effechecka
-Taxon checklist generator: creates a list of organisms that satisfy specified spatial, temporal or trait based constraints.
+Generates taxonomic checklist and monitors biodiversity data access.
 
-See gh_pages branch and http://jhpoelen.github.io/effechecka for a prototype of the checklist generator.
+See http://effehecka.org or http://gimmefreshdata.github.io for a prototypes using this service.
 
 # running
 ## standalone

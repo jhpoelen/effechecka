@@ -3,7 +3,7 @@
 # effechecka
 Generates taxonomic checklist and monitors biodiversity data access.
 
-See http://effehecka.org or http://gimmefreshdata.github.io for a prototypes using this service.
+See http://effehecka.org or http://gimmefreshdata.github.io for prototypes using this service.
 
 # running
 ## standalone

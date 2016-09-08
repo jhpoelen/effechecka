@@ -10,13 +10,17 @@ import akka.util.ByteString
 import akka.http.scaladsl.{server, Http}
 import akka.http.scaladsl.server.Directives._
 import akka.stream.ActorMaterializer
+import org.locationtech.spatial4j.context.jts.JtsSpatialContext
+import org.locationtech.spatial4j.io.WKTReader
 import spray.json._
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers._
 import akka.stream.scaladsl.{Concat, Keep, Source, Flow}
-import akka.http.scaladsl.server.{Route, Directive1, Directive0}
+import akka.http.scaladsl.server.{ValidationRejection, Route, Directive1, Directive0}
+
+import scala.util.Try
 
 case class MonitorStatus(selector: OccurrenceSelector, status: String, percentComplete: Double, eta: Long)
 
@@ -51,12 +55,32 @@ trait Service extends Protocols
     }
   }
 
+
+  def isValidSelector(occurrence: OccurrenceSelector): Boolean = {
+    Seq(validTaxonList _, validWktString _).forall(_(occurrence))
+  }
+
+  def validWktString(occurrence: OccurrenceSelector): Boolean = {
+    Try {
+      new WKTReader(JtsSpatialContext.GEO, null).parse(occurrence.wktString)
+    }.isSuccess
+  }
+
+  def validTaxonList(occurrence: OccurrenceSelector): Boolean = {
+    occurrence.taxonSelector.matches("""[\w,|\s]+""")
+  }
+
   val selectorValueParams: Directive1[OccurrenceSelector] = {
     parameters('taxonSelector.as[String], 'wktString.as[String], 'traitSelector.as[String] ? "").tflatMap {
       case (taxon: String, wkt: String, traits: String) => {
-        provide(OccurrenceSelector(taxonSelector = normalizeSelector(taxon),
+        val selector = OccurrenceSelector(taxonSelector = normalizeSelector(taxon),
           wktString = wkt,
-          traitSelector = normalizeSelector(traits)))
+          traitSelector = normalizeSelector(traits))
+        if (isValidSelector(selector)) {
+          provide(selector)
+        } else {
+          reject(ValidationRejection("this always fails"))
+        }
       }
       case _ => reject
     }

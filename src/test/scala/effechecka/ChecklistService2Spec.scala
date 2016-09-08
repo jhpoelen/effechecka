@@ -6,6 +6,7 @@ import java.util.UUID
 
 import akka.http.scaladsl.model.TransferEncodings.{gzip, deflate}
 import akka.http.scaladsl.model.headers.{Location, `Accept-Encoding`}
+import akka.http.scaladsl.server.ValidationRejection
 import org.scalatest.{Matchers, WordSpec}
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import akka.http.scaladsl.model._
@@ -100,6 +101,18 @@ class ChecklistService2Spec extends WordSpec with Matchers with ScalatestRouteTe
     "return requested occurrenceCollection" in {
       Get("/occurrences?taxonSelector=Animalia,Insecta&wktString=ENVELOPE(-150,-50,40,10)") ~> route ~> check {
         responseAs[OccurrenceCollection] shouldEqual OccurrenceCollection(OccurrenceSelector("Animalia|Insecta", "ENVELOPE(-150,-50,40,10)", ""), Some("ready"), List(anOccurrence))
+      }
+    }
+
+    "occurrenceCollection request invalid taxon" in {
+      Get("/occurrences?taxonSelector=%2Fetc%2Fpassword&wktString=ENVELOPE(-150,-50,40,10)") ~> route ~> check {
+        assertInstructiveHTML
+      }
+    }
+
+    "occurrenceCollection request invalid wktString" in {
+      Get("/occurrences?taxonSelector=Animalia,Insecta&wktString=DUCK(-150,-50,40,10)") ~> route ~> check {
+        assertInstructiveHTML
       }
     }
 
@@ -215,12 +228,14 @@ class ChecklistService2Spec extends WordSpec with Matchers with ScalatestRouteTe
 
     "handle GET requests to other paths by returning instructive html" in {
       Get("/donald") ~> route ~> check {
-        contentType shouldEqual ContentType(MediaTypes.`text/html`, HttpCharsets.`UTF-8`)
-        responseAs[String] should include("/checklist?taxonSelector=Animalia,Insecta&amp;wktString=ENVELOPE(-150,-50,40,10)")
-
+        assertInstructiveHTML
       }
     }
 
   }
 
+  def assertInstructiveHTML: Unit = {
+    contentType shouldEqual ContentType(MediaTypes.`text/html`, HttpCharsets.`UTF-8`)
+    responseAs[String] should include("/checklist?taxonSelector=Animalia,Insecta&amp;wktString=ENVELOPE(-150,-50,40,10)")
+  }
 }

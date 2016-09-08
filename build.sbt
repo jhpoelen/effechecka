@@ -14,7 +14,8 @@ libraryDependencies ++= {
   Seq(
     "joda-time" % "joda-time" % "2.9.3",
     "com.sun.jersey" % "jersey-client" % "1.9",
-    "com.sun.jersey" % "jersey-client" % "1.9",
+    "org.locationtech.spatial4j" % "spatial4j" % "0.6",
+    "com.vividsolutions" % "jts-core" % "1.14.0",
     "com.fasterxml.uuid" %  "java-uuid-generator" % "3.1.4",
     "com.typesafe.akka" %% "akka-actor" % akkaV,
     "com.typesafe.akka" %% "akka-stream" % akkaV,

@@ -106,13 +106,13 @@ class ChecklistService2Spec extends WordSpec with Matchers with ScalatestRouteTe
 
     "occurrenceCollection request invalid taxon" in {
       Get("/occurrences?taxonSelector=%2Fetc%2Fpassword&wktString=ENVELOPE(-150,-50,40,10)") ~> route ~> check {
-        assertInstructiveHTML
+        assertBadRequest
       }
     }
 
     "occurrenceCollection request invalid wktString" in {
       Get("/occurrences?taxonSelector=Animalia,Insecta&wktString=DUCK(-150,-50,40,10)") ~> route ~> check {
-        assertInstructiveHTML
+        assertBadRequest
       }
     }
 
@@ -228,14 +228,13 @@ class ChecklistService2Spec extends WordSpec with Matchers with ScalatestRouteTe
 
     "handle GET requests to other paths by returning instructive html" in {
       Get("/donald") ~> route ~> check {
-        assertInstructiveHTML
+        assertBadRequest
       }
     }
 
   }
 
-  def assertInstructiveHTML: Unit = {
-    contentType shouldEqual ContentType(MediaTypes.`text/html`, HttpCharsets.`UTF-8`)
-    responseAs[String] should include("/checklist?taxonSelector=Animalia,Insecta&amp;wktString=ENVELOPE(-150,-50,40,10)")
+  def assertBadRequest: Unit = {
+    status shouldEqual StatusCodes.BadRequest
   }
 }

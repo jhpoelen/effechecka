@@ -19,6 +19,7 @@ import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers._
 import akka.stream.scaladsl.{Concat, Keep, Source, Flow}
 import akka.http.scaladsl.server.{ValidationRejection, Route, Directive1, Directive0}
+import akka.http.scaladsl.model.StatusCode._
 
 import scala.util.Try
 
@@ -143,7 +144,7 @@ trait Service extends Protocols
         } ~ path("ping") {
           complete("pong")
         } ~ get {
-          getFromResource("web/index.html")
+          complete(HttpResponse(status = StatusCodes.BadRequest))
         }
       }
     }

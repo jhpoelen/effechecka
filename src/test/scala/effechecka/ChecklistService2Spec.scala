@@ -116,12 +116,6 @@ class ChecklistService2Spec extends WordSpec with Matchers with ScalatestRouteTe
       }
     }
 
-    "occurrenceCollection request invalid traitSelector" in {
-      Get("/occurrences?traitSelector=bodyMass%20%3E%2010%20kg&taxonSelector=Animalia,Insecta&wktString=ENVELOPE(-150,-50,40,10)") ~> route ~> check {
-        assertBadRequest
-      }
-    }
-
     "return requested occurrenceCollection error" in {
       Get("/occurrences?limit=20&taxonSelector=Animalia%2CInsecta&wktString=POLYGON%20((-150%2010%2C%20-150%2040%2C%20-50%2040%2C%20-50%2010%2C%20-150%2010))") ~> route ~> check {
         responseAs[OccurrenceCollection] shouldEqual OccurrenceCollection(OccurrenceSelector("Animalia|Insecta", "POLYGON ((-150 10, -150 40, -50 40, -50 10, -150 10))", ""), Some("ready"), List(anOccurrence))

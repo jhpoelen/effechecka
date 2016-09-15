@@ -58,7 +58,7 @@ trait Service extends Protocols
 
 
   def isValidSelector(occurrence: OccurrenceSelector): Boolean = {
-    Seq(validTaxonList _, validWktString _).forall(_(occurrence))
+    Seq(validTaxonList _, validWktString _, validTraitSelector _).forall(_(occurrence))
   }
 
   def validWktString(occurrence: OccurrenceSelector): Boolean = {
@@ -69,6 +69,18 @@ trait Service extends Protocols
 
   def validTaxonList(occurrence: OccurrenceSelector): Boolean = {
     occurrence.taxonSelector.matches("""[\w,|\s]+""")
+  }
+
+  def validTraitSelector(occurrence: OccurrenceSelector): Boolean = {
+    def atLeastOneSupportedTrait: Boolean = {
+      val traitMatcher = ".*(eventDate|source)+.*".r
+      occurrence.traitSelector match {
+        case traitMatcher(traits) => true
+        case _ => false
+      }
+
+    }
+    occurrence.traitSelector.trim.isEmpty || atLeastOneSupportedTrait
   }
 
   val selectorValueParams: Directive1[OccurrenceSelector] = {

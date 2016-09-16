@@ -46,6 +46,7 @@ trait Service extends Protocols
   with ChecklistFetcher
   with Fetcher
   with SelectorRegistry
+  with SelectorValidator
   with OccurrenceCollectionFetcher
   with SubscriptionFeed
   with NotificationFeedSourceKafka {
@@ -57,23 +58,6 @@ trait Service extends Protocols
   }
 
 
-  def validSelector(selector: OccurrenceSelector): Boolean = {
-    Seq(validTaxonList _, validWktString _).forall(_(selector))
-  }
-
-  def invalidSelector(selector: OccurrenceSelector): Boolean = {
-    !validSelector(selector);
-  }
-
-  def validWktString(occurrence: OccurrenceSelector): Boolean = {
-    Try {
-      new WKTReader(JtsSpatialContext.GEO, null).parse(occurrence.wktString)
-    }.isSuccess
-  }
-
-  def validTaxonList(occurrence: OccurrenceSelector): Boolean = {
-    occurrence.taxonSelector.matches("""[\w,|\s]+""")
-  }
 
   val selectorValueParams: Directive1[OccurrenceSelector] = {
     parameters('taxonSelector.as[String], 'wktString.as[String], 'traitSelector.as[String] ? "").tflatMap {
@@ -81,7 +65,7 @@ trait Service extends Protocols
         val selector = OccurrenceSelector(taxonSelector = normalizeSelector(taxon),
           wktString = wkt,
           traitSelector = normalizeSelector(traits))
-        if (validSelector(selector)) {
+        if (valid(selector)) {
           provide(selector)
         } else {
           reject(ValidationRejection("this always fails"))
@@ -148,7 +132,7 @@ trait Service extends Protocols
         } ~ path("ping") {
           complete("pong")
         } ~ path("scrub") {
-          val unregisteredSelectors = unregisterSelectors((selector: OccurrenceSelector) => invalidSelector(selector)).mkString("unregistered invalid selectors: [", ",", "]")
+          val unregisteredSelectors = unregisterSelectors((selector: OccurrenceSelector) => invalid(selector)).mkString("unregistered invalid selectors: [", ",", "]")
           complete(unregisteredSelectors)
         } ~ get {
           complete(HttpResponse(status = StatusCodes.BadRequest))

@@ -148,7 +148,8 @@ trait Service extends Protocols
         } ~ path("ping") {
           complete("pong")
         } ~ path("scrub") {
-          complete(unregisterSelectors((selector: OccurrenceSelector) => invalidSelector(selector)))
+          val unregisteredSelectors = unregisterSelectors((selector: OccurrenceSelector) => invalidSelector(selector)).mkString("unregistered invalid selectors: [", ",", "]")
+          complete(unregisteredSelectors)
         } ~ get {
           complete(HttpResponse(status = StatusCodes.BadRequest))
         }

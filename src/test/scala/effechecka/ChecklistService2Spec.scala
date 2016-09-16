@@ -20,15 +20,21 @@ trait ChecklistFetcherStatic extends ChecklistFetcher {
 }
 
 trait SelectorRegistryStatic extends SelectorRegistry {
+  val selector = OccurrenceSelector("Animalia|Insecta", "ENVELOPE(-150,-50,40,10)", "")
+
 
   def registerSelector(selector: OccurrenceSelector, ttlSeconds: Option[Int] = None): UUID = {
     UUID.fromString("55e4b0a0-bcd9-566f-99bc-357439011d85")
   }
 
+  def unregisterSelectors(filter: (OccurrenceSelector) => Boolean): List[OccurrenceSelector] = {
+    List(selector)
+  }
+
   def selectorFor(uuid: UUID): Option[OccurrenceSelector] = {
     uuid.toString match {
       case "55e4b0a0-bcd9-566f-99bc-357439011d85" =>
-        Some(OccurrenceSelector("Animalia|Insecta", "ENVELOPE(-150,-50,40,10)", ""))
+        Some(selector)
       case _ =>
         None
     }

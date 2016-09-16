@@ -57,8 +57,12 @@ trait Service extends Protocols
   }
 
 
-  def isValidSelector(occurrence: OccurrenceSelector): Boolean = {
-    Seq(validTaxonList _, validWktString _).forall(_(occurrence))
+  def validSelector(selector: OccurrenceSelector): Boolean = {
+    Seq(validTaxonList _, validWktString _).forall(_(selector))
+  }
+
+  def invalidSelector(selector: OccurrenceSelector): Boolean = {
+    !validSelector(selector);
   }
 
   def validWktString(occurrence: OccurrenceSelector): Boolean = {
@@ -77,7 +81,7 @@ trait Service extends Protocols
         val selector = OccurrenceSelector(taxonSelector = normalizeSelector(taxon),
           wktString = wkt,
           traitSelector = normalizeSelector(traits))
-        if (isValidSelector(selector)) {
+        if (validSelector(selector)) {
           provide(selector)
         } else {
           reject(ValidationRejection("this always fails"))
@@ -139,10 +143,19 @@ trait Service extends Protocols
               monitors()
             }
           }
+        } ~ path("scrub") {
+          get {
+            complete {
+              monitors()
+            }
+          }
         } ~ path("feed") {
           handleWebSocketMessages(NotificationFeed.pushToClient(feed))
         } ~ path("ping") {
           complete("pong")
+        } ~ path("scrub") {
+          val unregisteredSelectors = unregisterSelectors((selector: OccurrenceSelector) => invalidSelector(selector)).mkString("unregistered invalid selectors: [", ",", "]")
+          complete(unregisteredSelectors)
         } ~ get {
           complete(HttpResponse(status = StatusCodes.BadRequest))
         }

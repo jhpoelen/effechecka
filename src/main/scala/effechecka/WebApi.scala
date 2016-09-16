@@ -143,19 +143,12 @@ trait Service extends Protocols
               monitors()
             }
           }
-        } ~ path("scrub") {
-          get {
-            complete {
-              monitors()
-            }
-          }
         } ~ path("feed") {
           handleWebSocketMessages(NotificationFeed.pushToClient(feed))
         } ~ path("ping") {
           complete("pong")
         } ~ path("scrub") {
-          val unregisteredSelectors = unregisterSelectors((selector: OccurrenceSelector) => invalidSelector(selector)).mkString("unregistered invalid selectors: [", ",", "]")
-          complete(unregisteredSelectors)
+          complete(unregisterSelectors((selector: OccurrenceSelector) => invalidSelector(selector)))
         } ~ get {
           complete(HttpResponse(status = StatusCodes.BadRequest))
         }

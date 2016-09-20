@@ -35,7 +35,7 @@ trait Protocols extends SprayJsonSupport with DefaultJsonProtocol {
   implicit val checklist2Format = jsonFormat3(Checklist)
 
   implicit val dateTimeSelectorFormat = jsonFormat2(DateTimeSelector)
-  implicit val occurrenceRequestFormat = jsonFormat3(OccurrenceCollectionRequest)
+  implicit val occurrenceRequestFormat = jsonFormat3(OccurrenceRequest)
   implicit val occurrenceFormat = jsonFormat8(Occurrence)
   implicit val occurrenceCollection2Format = jsonFormat3(OccurrenceCollection)
   implicit val occurrenceMonitorFormat = jsonFormat3(OccurrenceMonitor)
@@ -113,7 +113,7 @@ trait Service extends Protocols
               }
               events.foreach(handleSubscriptionEvent)
               complete {
-                val selectors = events.map(_.selector).distinct
+                val selectors = events.map(_.request.selector).distinct
                 val selectorString = selectors.mkString("[", ":", "]")
                 s"sent [${events.length}] notification${if (events.length > 1) "s" else ""} related occurrences added [$added] to monitors $selectorString"
               }
@@ -210,7 +210,7 @@ trait Service extends Protocols
           val events = generateSubscriptionEventsFor(ocSelector, added)
           events.foreach(handleSubscriptionEvent)
           complete {
-            val selectors = events.map(_.selector).distinct
+            val selectors = events.map(_.request.selector).distinct
             val selectorString = selectors.mkString("[", ":", "]")
             s"sent [${events.length}] notification${if (events.length > 1) "s" else ""} related occurrences added [$added] to monitors $selectorString"
           }
@@ -226,9 +226,9 @@ trait Service extends Protocols
   }
 
   def generateSubscriptionEventsFor(ocSelector: OccurrenceSelector, added: DateTimeSelector): List[SubscriptionEvent] = {
-    val ocRequest = OccurrenceCollectionRequest(ocSelector, Some(1), added)
+    val ocRequest = OccurrenceRequest(ocSelector, Some(1), added)
     val events = if (occurrencesFor(ocRequest).hasNext) {
-      subscribersOf(ocSelector).map(SubscriptionEvent(ocSelector, _, "notify", added.before, added.after))
+      subscribersOf(ocSelector).map(SubscriptionEvent(ocRequest, _, "notify"))
     } else {
       List()
     }
@@ -243,7 +243,7 @@ trait Service extends Protocols
         added =>
           parameters('limit.as[Int] ? 20) {
             limit =>
-              val ocRequest = OccurrenceCollectionRequest(ocSelector, Some(limit), added)
+              val ocRequest = OccurrenceRequest(ocSelector, Some(limit), added)
               val statusOpt: Option[String] = statusOf(ocSelector)
               complete {
                 statusOpt match {
@@ -269,7 +269,7 @@ trait Service extends Protocols
         added =>
           parameters('limit.as[Int] ?) {
             limit =>
-              val ocRequest = OccurrenceCollectionRequest(selector = ocSelector, limit = limit, added)
+              val ocRequest = OccurrenceRequest(selector = ocSelector, limit = limit, added)
               val statusOpt: Option[String] = statusOf(ocSelector)
               statusOpt match {
                 case Some("ready") => {
@@ -325,7 +325,7 @@ trait Service extends Protocols
   }
 
   def handleSubscriptionEvent(ocSelector: OccurrenceSelector, subscriber: URL, action: String): NotUsed = {
-    handleSubscriptionEvent(SubscriptionEvent(ocSelector, subscriber, action))
+    handleSubscriptionEvent(SubscriptionEvent(OccurrenceRequest(ocSelector), subscriber, action))
   }
 
   def handleSubscriptionEvent(event: SubscriptionEvent): NotUsed = {

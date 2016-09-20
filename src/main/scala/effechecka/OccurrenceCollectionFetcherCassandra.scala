@@ -24,7 +24,7 @@ trait Fetcher {
 }
 
 trait OccurrenceCollectionFetcher {
-  def occurrencesFor(request: OccurrenceCollectionRequest): Iterator[Occurrence]
+  def occurrencesFor(request: OccurrenceRequest): Iterator[Occurrence]
 
   def monitoredOccurrencesFor(source: String, added: DateTimeSelector, occLimit: Option[Int]): Iterator[String]
 
@@ -50,7 +50,7 @@ trait OccurrenceCollectionFetcherCassandra extends OccurrenceCollectionFetcher w
     new DateTime(dateString, DateTimeZone.UTC).toDate
   }
 
-  def occurrencesFor(ocRequest: OccurrenceCollectionRequest): Iterator[Occurrence] = {
+  def occurrencesFor(ocRequest: OccurrenceRequest): Iterator[Occurrence] = {
     val added = ocRequest.added
     val afterClause = added.after match {
       case Some(addedAfter) => Some(s"added > ?", parseDate(addedAfter))

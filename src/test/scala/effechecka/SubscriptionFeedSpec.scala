@@ -51,7 +51,8 @@ class SubscriptionFeedSpec extends TestKit(ActorSystem("KafkaIntegrationSpec"))
   val initialMsg = "some initial test message to establish topic"
 
   "subscribe" in {
-    val event = SubscriptionEvent(OccurrenceSelector("taxa", "wkt", "traits"), new URL("mailto:foo@bar"), "subscribe")
+    val req = OccurrenceRequest(OccurrenceSelector("taxa", "wkt", "traits"))
+    val event = SubscriptionEvent(req, new URL("mailto:foo@bar"), "subscribe")
 
     val subscriber: Probe[SubscriptionEvent] = createTopicAndSubscribe(event)
     val probe = TestSource.probe[SubscriptionEvent]
@@ -68,7 +69,8 @@ class SubscriptionFeedSpec extends TestKit(ActorSystem("KafkaIntegrationSpec"))
 
   "unsubscribe" in {
     val selector: OccurrenceSelector = OccurrenceSelector("taxa", "wkt", "traits")
-    val event = SubscriptionEvent(selector, new URL("mailto:foo@bar"), "subscribe")
+    val req: OccurrenceRequest = OccurrenceRequest(selector)
+    val event = SubscriptionEvent(req, new URL("mailto:foo@bar"), "subscribe")
     val subscriber: Probe[SubscriptionEvent] = createTopicAndSubscribe(event)
 
     val probe = TestSource.probe[SubscriptionEvent]
@@ -82,7 +84,7 @@ class SubscriptionFeedSpec extends TestKit(ActorSystem("KafkaIntegrationSpec"))
 
     subscribersOf(selector) should contain(new URL("mailto:foo@bar"))
 
-    val unsubscribeEvent = SubscriptionEvent(selector, new URL("mailto:foo@bar"), "unsubscribe")
+    val unsubscribeEvent = SubscriptionEvent(req, new URL("mailto:foo@bar"), "unsubscribe")
     probe.sendNext(unsubscribeEvent)
 
     subscriber

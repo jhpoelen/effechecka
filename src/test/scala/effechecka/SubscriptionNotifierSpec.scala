@@ -33,8 +33,7 @@ class SubscriptionNotifierSpec extends TestKit(ActorSystem("StreamIntegrationSpe
 
 
   "notify using mailgun" in {
-    val event = SubscriptionEvent(OccurrenceSelector("taxa", "wkt", "traits"), new URL("mailto:foo@bar"), "notify")
-
+    val event = SubscriptionEvent(OccurrenceRequest(OccurrenceSelector("taxa", "wkt", "traits")), new URL("mailto:foo@bar"), "notify")
     val actualRequest: HttpRequest = requestFor(event)
     actualRequest.uri should be(Uri("https://api.mailgun.net/v3/effechecka.org/messages"))
     actualRequest.method should be(HttpMethods.POST)
@@ -54,7 +53,7 @@ class SubscriptionNotifierSpec extends TestKit(ActorSystem("StreamIntegrationSpe
 
   "notify using webhook" in {
     val selector: OccurrenceSelector = OccurrenceSelector("taxa", "wkt", "traits")
-    val event = SubscriptionEvent(selector, new URL("http://some.site"), "notify")
+    val event = SubscriptionEvent(OccurrenceRequest(selector), new URL("http://some.site"), "notify")
     val actualRequest: HttpRequest = requestFor(event)
     actualRequest.uri should be(Uri(s"http://some.site?uuid=${UuidUtils.uuidFor(selector)}"))
     actualRequest.method should be(HttpMethods.GET)

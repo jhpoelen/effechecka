@@ -8,7 +8,7 @@ class OccurrenceCollectionFetcherSpec extends WordSpec with Matchers with Occurr
   "Cassandra driver" should {
     "store and provide access to an occurrence collection" in {
       val selector: OccurrenceSelector = OccurrenceSelector("Insecta|Mammalia", "ENVELOPE(-150,-50,40,10)", "bodyMass greaterThan 2.7 kg")
-      val request = OccurrenceCollectionRequest(selector, Some(2))
+      val request = OccurrenceRequest(selector, Some(2))
       truncate
       insertRequest(OccurrenceSelector("Insecta", "wktString", ""))
       insertRequest(selector)
@@ -84,7 +84,7 @@ class OccurrenceCollectionFetcherSpec extends WordSpec with Matchers with Occurr
   }
 
   def assertCountForAddedRange(addedBefore: Option[String], addedAfter: Option[String], addedDateString: String, expectedOccurrenceCount: Int): Unit = {
-    val request: OccurrenceCollectionRequest = occurrenceQuery(addedBefore, addedAfter)
+    val request: OccurrenceRequest = occurrenceQuery(addedBefore, addedAfter)
     session.execute("TRUNCATE effechecka.occurrence_collection")
     insertRequest(request.selector)
 
@@ -94,7 +94,7 @@ class OccurrenceCollectionFetcherSpec extends WordSpec with Matchers with Occurr
     occurrenceCollection.length should be(expectedOccurrenceCount)
   }
 
-  def occurrenceQuery(addedBefore: Option[String], addedAfter: Option[String]): OccurrenceCollectionRequest = {
-    OccurrenceCollectionRequest(OccurrenceSelector("Insecta|Mammalia", "ENVELOPE(-150,-50,40,10)", "bodyMass greaterThan 2.7 kg"), Some(2), DateTimeSelector(addedBefore, addedAfter))
+  def occurrenceQuery(addedBefore: Option[String], addedAfter: Option[String]): OccurrenceRequest = {
+    OccurrenceRequest(OccurrenceSelector("Insecta|Mammalia", "ENVELOPE(-150,-50,40,10)", "bodyMass greaterThan 2.7 kg"), Some(2), DateTimeSelector(addedBefore, addedAfter))
   }
 }

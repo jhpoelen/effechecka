@@ -38,9 +38,9 @@ object SubscriptionNotifier extends App
         .filter(_.status == "ready")
         .map(_.selector)
         .mapConcat(ocSelector => {
-          val ocRequest = OccurrenceCollectionRequest(ocSelector, Some(1))
+          val ocRequest = OccurrenceRequest(ocSelector, Some(1))
           if (occurrencesFor(ocRequest).hasNext) {
-            subscribersOf(ocSelector).map(subscriber => SubscriptionEvent(ocSelector, subscriber, "notify"))
+            subscribersOf(ocSelector).map(subscriber => SubscriptionEvent(ocRequest, subscriber, "notify"))
           } else {
             List()
           }
@@ -71,7 +71,7 @@ object SubscriptionNotifier extends App
         .filter(event => List("notify").contains(event.action))
         .map(event => {
           HttpRequest(method = HttpMethods.GET,
-            uri = EmailUtils.uuidUrlFor(selector = event.selector, baseURL = event.subscriber.toString).toString)
+            uri = EmailUtils.uuidUrlFor(event = event, baseURL = event.subscriber.toString).toString)
         }))
 
       val inbox = builder.add(Flow[SubscriptionEvent])

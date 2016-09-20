@@ -10,8 +10,8 @@ case class Email(to: String, subject: String, text: String)
 
 object EmailUtils {
 
-  val BASE_URL_DEFAULT =  "http://api.effechecka.org"
-  val URL_DEFAULT =  s"$BASE_URL_DEFAULT/view"
+  val BASE_URL_DEFAULT = "http://api.effechecka.org"
+  val URL_DEFAULT = s"$BASE_URL_DEFAULT/view"
 
   def mailgunRequestFor(email: Email, apiKey: String): HttpRequest = {
     HttpRequest(method = HttpMethods.POST,
@@ -29,9 +29,8 @@ object EmailUtils {
 
   def uuidQuery(selector: OccurrenceSelector): String = s"uuid=${UuidUtils.uuidFor(selector)}"
 
-
-  def uuidUrlFor(selector: OccurrenceSelector, baseURL: String = URL_DEFAULT): URL = {
-    urlWithQuery(baseURL = baseURL, query = uuidQuery(selector))
+  def uuidUrlFor(event: SubscriptionEvent, baseURL: String = URL_DEFAULT): URL = {
+    urlWithQuery(baseURL = baseURL, query = uuidQueryFor(event))
   }
 
   def urlWithQuery(baseURL: String = URL_DEFAULT, query: String): URL = {
@@ -39,17 +38,21 @@ object EmailUtils {
   }
 
   def urlFor(event: SubscriptionEvent): URL = {
-    val after = event.addedAfter match {
+    uuidUrlFor(event)
+  }
+
+  def uuidQueryFor(event: SubscriptionEvent): String = {
+    val after = event.request.added.after match {
       case Some(addedAfter) => s"&addedAfter=$addedAfter"
       case _ => ""
     }
 
-    val before = event.addedBefore match {
+    val before = event.request.added.before match {
       case Some(addedBefore) => s"&addedBefore=$addedBefore"
       case _ => ""
     }
 
-    urlWithQuery(query = s"${uuidQuery(event.selector)}$after$before")
+    s"${uuidQuery(event.request.selector)}$after$before"
   }
 
   def encode(str: String) = {
@@ -62,7 +65,7 @@ object EmailUtils {
   }
 
   def unsubscribeUrlFor(event: SubscriptionEvent): URL = {
-    new URL(s"$BASE_URL_DEFAULT/unsubscribe?subscriber=${encode(event.subscriber.toString)}&" + uuidQuery(event.selector))
+    new URL(s"$BASE_URL_DEFAULT/unsubscribe?subscriber=${encode(event.subscriber.toString)}&" + uuidQuery(event.request.selector))
   }
 
   def unsubscribeTextFor(event: SubscriptionEvent): String = {
@@ -83,23 +86,24 @@ object EmailUtils {
     """.stripMargin
   }
 
+
   def emailFor(event: SubscriptionEvent): Email = {
     val to = event.subscriber.getPath
     event.action match {
       case "subscribe" => {
         Email(to = to,
           subject = "[freshdata] subscribed to freshdata search",
-          text = s"${emailHeader}You subscribed to the freshdata search available at ${uuidUrlFor(event.selector)}. \n\n${unsubscribeTextFor(event)} $emailFooter")
+          text = s"${emailHeader}You subscribed to the freshdata search available at ${uuidUrlFor(event)}. \n\n${unsubscribeTextFor(event)} $emailFooter")
       }
       case "unsubscribe" => {
         Email(to = to,
           subject = "[freshdata] unsubscribed from freshdata search",
-          text = s"${emailHeader}You are not longer subscribed to the freshdata search available at ${uuidUrlFor(event.selector)}. $emailFooter")
+          text = s"${emailHeader}You are not longer subscribed to the freshdata search available at ${urlFor(event)}. $emailFooter")
       }
       case "notify" => {
         Email(to = to,
           subject = "[freshdata] new data is available for your freshdata search",
-          text = s"${emailHeader}New data is available for a freshdata search you subscribed to. Please see ${uuidUrlFor(event.selector)} for more details. \n\n${unsubscribeTextFor(event)} $emailFooter")
+          text = s"${emailHeader}New data is available for a freshdata search you subscribed to. Please see ${urlFor(event)} for more details. \n\n${unsubscribeTextFor(event)} $emailFooter")
       }
     }
   }

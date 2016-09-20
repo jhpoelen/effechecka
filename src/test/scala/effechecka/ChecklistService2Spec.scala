@@ -56,7 +56,7 @@ trait OccurrenceCollectionFetcherStatic extends OccurrenceCollectionFetcher {
   val aMonitor = OccurrenceMonitor(aSelector, Some("some status"), Some(123))
   val anotherMonitor = OccurrenceMonitor(OccurrenceSelector("Cartoona | donald", "some wkt string", "some trait selector"), None, Some(123))
 
-  def occurrencesFor(checklist: OccurrenceCollectionRequest): Iterator[Occurrence] = List(anOccurrence).iterator
+  def occurrencesFor(checklist: OccurrenceRequest): Iterator[Occurrence] = List(anOccurrence).iterator
 
   def monitoredOccurrencesFor(source: String, added: DateTimeSelector, occLimit: Option[Int]): Iterator[String] = List("some id", "another id").iterator
 

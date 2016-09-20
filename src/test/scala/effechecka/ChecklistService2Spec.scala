@@ -5,7 +5,7 @@ import java.util.UUID
 
 
 import akka.http.scaladsl.model.TransferEncodings.{gzip, deflate}
-import akka.http.scaladsl.model.headers.{Location, `Accept-Encoding`}
+import akka.http.scaladsl.model.headers.{`Access-Control-Allow-Origin`, Location, `Accept-Encoding`}
 import akka.http.scaladsl.server.ValidationRejection
 import org.scalatest.{Matchers, WordSpec}
 import akka.http.scaladsl.testkit.ScalatestRouteTest
@@ -88,7 +88,25 @@ class ChecklistService2Spec extends WordSpec with Matchers with ScalatestRouteTe
 
     "redirect to checklist viewer by uuid" in {
       Get("/view?uuid=55e4b0a0-bcd9-566f-99bc-357439011d85") ~> route ~> check {
-        status shouldEqual StatusCodes.TemporaryRedirect
+        val uri = "http://gimmefreshdata.github.io/?taxonSelector=Animalia%7CInsecta&wktString=ENVELOPE%28-150%2C-50%2C40%2C10%29&traitSelector="
+        response shouldEqual HttpResponse(
+          status = StatusCodes.TemporaryRedirect,
+          entity = HttpEntity(
+            ContentTypes.`text/html(UTF-8)`,
+            s"""The request should be repeated with <a href="$uri">this URI</a>, but future requests can still use the original URI."""),
+          headers = `Access-Control-Allow-Origin`.* :: Location(uri) :: Nil)
+      }
+    }
+
+    "redirect to checklist viewer by uuid with added" in {
+      Get("/view?uuid=55e4b0a0-bcd9-566f-99bc-357439011d85&addedAfter=2017-01-01") ~> route ~> check {
+        val uri = "http://gimmefreshdata.github.io/?taxonSelector=Animalia%7CInsecta&wktString=ENVELOPE%28-150%2C-50%2C40%2C10%29&traitSelector=&addedAfter=2017-01-01"
+        response shouldEqual HttpResponse(
+          status = StatusCodes.TemporaryRedirect,
+          entity = HttpEntity(
+            ContentTypes.`text/html(UTF-8)`,
+            s"""The request should be repeated with <a href="$uri">this URI</a>, but future requests can still use the original URI."""),
+          headers = `Access-Control-Allow-Origin`.* :: Location(uri) :: Nil)
       }
     }
 

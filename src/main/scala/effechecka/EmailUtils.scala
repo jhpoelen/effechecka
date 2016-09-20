@@ -42,17 +42,21 @@ object EmailUtils {
   }
 
   def uuidQueryFor(event: SubscriptionEvent): String = {
-    val after = event.request.added.after match {
-      case Some(addedAfter) => s"&addedAfter=$addedAfter"
-      case _ => ""
-    }
-
-    val before = event.request.added.before match {
-      case Some(addedBefore) => s"&addedBefore=$addedBefore"
-      case _ => ""
-    }
-
+    val (after: String, before: String) = queryAfterBefore(event.request.added)
     s"${uuidQuery(event.request.selector)}$after$before"
+  }
+
+  def queryAfterBefore(added: DateTimeSelector): (String, String) = {
+    val after = added.after match {
+      case Some(addedAfter) => s"&addedAfter=${encode(addedAfter)}"
+      case _ => ""
+    }
+
+    val before = added.before match {
+      case Some(addedBefore) => s"&addedBefore=${encode(addedBefore)}"
+      case _ => ""
+    }
+    (after, before)
   }
 
   def encode(str: String) = {
@@ -60,8 +64,12 @@ object EmailUtils {
   }
 
 
-  def queryParamsFor(selector: OccurrenceSelector): String = {
-    s"taxonSelector=${encode(selector.taxonSelector)}&wktString=${encode(selector.wktString)}&traitSelector=${encode(selector.traitSelector)}"
+  def queryParamsFor(selector: OccurrenceSelector, added: DateTimeSelector = DateTimeSelector()): String = {
+    val (after, before) = queryAfterBefore(added)
+    val taxonSelector: String = encode(selector.taxonSelector)
+    val wktString: String = encode(selector.wktString)
+    val traitSelector: String = encode(selector.traitSelector)
+    s"taxonSelector=$taxonSelector&wktString=$wktString&traitSelector=$traitSelector$after$before"
   }
 
   def unsubscribeUrlFor(event: SubscriptionEvent): URL = {

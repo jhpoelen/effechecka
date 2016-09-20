@@ -157,7 +157,9 @@ trait Service extends Protocols
 
   def selectorRoutes(ocSelector: OccurrenceSelector): Route = {
     path("view") {
-      redirect("http://gimmefreshdata.github.io/?" + EmailUtils.queryParamsFor(ocSelector), StatusCodes.TemporaryRedirect)
+      addedParams.as(DateTimeSelector) { added =>
+        redirect("http://gimmefreshdata.github.io/?" + EmailUtils.queryParamsFor(ocSelector, added), StatusCodes.TemporaryRedirect)
+      }
     } ~ path("checklist") {
       get {
         parameters('limit.as[Int] ? 20) { limit =>

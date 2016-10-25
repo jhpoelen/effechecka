@@ -15,5 +15,9 @@ class SelectorValidatorSpec extends WordSpecLike with Matchers with SelectorVali
     valid(someValidSelector) should be(true)
   }
 
+  "valid empty taxon selector" in {
+    valid(someValidSelector.copy(taxonSelector = "")) should be(true)
+  }
+
 
 }

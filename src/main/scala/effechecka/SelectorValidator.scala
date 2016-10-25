@@ -22,7 +22,7 @@ trait SelectorValidator {
     }
 
     def validTaxonList(occurrence: OccurrenceSelector): Boolean = {
-      occurrence.taxonSelector.matches("""[a-zA-Z,|\s]+""")
+      occurrence.taxonSelector.matches("""[a-zA-Z,|\s]*""")
     }
 
 }

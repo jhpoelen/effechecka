@@ -60,7 +60,7 @@ trait Service extends Protocols
 
 
   val selectorValueParams: Directive1[OccurrenceSelector] = {
-    parameters('taxonSelector.as[String], 'wktString.as[String], 'traitSelector.as[String] ? "").tflatMap {
+    parameters('taxonSelector.as[String] ? "", 'wktString.as[String], 'traitSelector.as[String] ? "").tflatMap {
       case (taxon: String, wkt: String, traits: String) => {
         val selector = OccurrenceSelector(taxonSelector = normalizeSelector(taxon),
           wktString = wkt,

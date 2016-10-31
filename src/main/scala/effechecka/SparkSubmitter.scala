@@ -10,7 +10,7 @@ trait SparkSubmitter {
   val sparkSubmitParamsCore = Array("--master",
     config.getString("effechecka.spark.master.url"),
     "--deploy-mode", "cluster",
-    "--java-driver-option", "log4j.properties",
+    "--java-driver-options", "-Dlog4j.configuration=log4j.properties",
     "--verbose",
     "--driver-memory", config.getString("effechecka.spark.driver.memory"),
     "--executor-memory", config.getString("effechecka.spark.executor.memory"))

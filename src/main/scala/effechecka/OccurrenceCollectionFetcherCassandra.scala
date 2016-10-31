@@ -5,7 +5,6 @@ import org.joda.time.DateTime
 import org.joda.time.DateTimeZone
 import scala.collection.JavaConversions
 import scala.collection.JavaConversions._
-import org.apache.spark.deploy.SparkSubmit
 import com.typesafe.config.Config
 
 trait Fetcher {
@@ -41,7 +40,7 @@ trait OccurrenceCollectionFetcher {
   def monitorsFor(source: String, id: String): Iterator[OccurrenceSelector]
 }
 
-trait OccurrenceCollectionFetcherCassandra extends OccurrenceCollectionFetcher with Fetcher {
+trait OccurrenceCollectionFetcherCassandra extends OccurrenceCollectionFetcher with Fetcher with SparkSubmitter {
   implicit def session: Session
 
   implicit def config: Config
@@ -143,29 +142,15 @@ trait OccurrenceCollectionFetcherCassandra extends OccurrenceCollectionFetcher w
     }
   }
 
-  val sparkSubmitParams = Array("--master",
-            config.getString("effechecka.spark.master.url"),
-            "--class", "OccurrenceCollectionGenerator",
-            "--deploy-mode", "cluster",
-            "--verbose",
-            "--driver-memory", config.getString("effechecka.spark.driver.memory"),
-            "--executor-memory", config.getString("effechecka.spark.executor.memory"),
-            config.getString("effechecka.spark.job.jar"),
-            "-f", "cassandra",
-            "-c", "\"" + config.getString("effechecka.data.dir") + "gbif-idigbio.parquet" + "\"",
-            "-t", "\"" + config.getString("effechecka.data.dir") + "traitbank/*.csv" + "\"")
 
   def request(selector: OccurrenceSelector): String = {
-    SparkSubmit.main(sparkSubmitParams ++ Array(
-      "\"" + selector.taxonSelector.replace(',', '|') + "\"",
-      "\"" + selector.wktString + "\"",
-      "\"" + selector.traitSelector.replace(',', '|') + "\""))
+    submitOccurrenceCollectionRequest(selector)
     insertRequest(selector)
   }
 
   def requestAll(): String = {
-    SparkSubmit.main(sparkSubmitParams ++ Array("-a", "true"))
-    "all requested"
+    submitOccurrenceCollectionsRefreshRequest()
+"all requested"
   }
 
   def statusOf(selector: OccurrenceSelector): Option[String] = {

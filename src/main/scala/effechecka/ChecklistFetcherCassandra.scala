@@ -2,7 +2,6 @@ package effechecka
 
 import com.datastax.driver.core._
 import scala.collection.JavaConversions._
-import org.apache.spark.deploy.SparkSubmit
 import com.typesafe.config.Config
 
 trait ChecklistFetcher {
@@ -11,7 +10,7 @@ trait ChecklistFetcher {
   def request(checklist: ChecklistRequest): String
 }
 
-trait ChecklistFetcherCassandra extends ChecklistFetcher with Fetcher {
+trait ChecklistFetcherCassandra extends ChecklistFetcher with Fetcher with SparkSubmitter {
   implicit def session: Session
   implicit def config: Config
 
@@ -23,17 +22,7 @@ trait ChecklistFetcherCassandra extends ChecklistFetcher with Fetcher {
   }
 
   def request(checklist: ChecklistRequest): String = {
-    SparkSubmit.main(Array("--master",
-      config.getString("effechecka.spark.master.url"),
-      "--class", "ChecklistGenerator",
-      "--deploy-mode", "cluster",
-      config.getString("effechecka.spark.job.jar"),
-      "-f", "cassandra",
-      "-c", "\"" + config.getString("effechecka.data.dir") + "gbif-idigbio.parquet" + "\"",
-      "-t", "\"" + config.getString("effechecka.data.dir") + "traitbank/*.csv" + "\"",
-      "\"" + checklist.selector.taxonSelector.replace(',', '|') +"\"",
-      "\"" + checklist.selector.wktString + "\"",
-      "\"" + checklist.selector.traitSelector.replace(',', '|') + "\""))
+    submitChecklistRequest(checklist)
     insertRequest(checklist)
   }
 

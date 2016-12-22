@@ -16,9 +16,9 @@ object EmailUtils {
   def mailgunRequestFor(email: Email, apiKey: String): HttpRequest = {
     HttpRequest(method = HttpMethods.POST,
       headers = List(Authorization(BasicHttpCredentials("api", apiKey))),
-      uri = s"https://api.mailgun.net/v3/effechecka.org/messages",
+      uri = s"https://api.mailgun.net/v3/fd.eol.org/messages",
       entity = FormData(Map[String, String]("to" -> email.to.toString,
-        "from" -> "FreshData Notification (noreply) <noreply@effechecka.org>",
+        "from" -> "FreshData Notification (noreply) <noreply@fd.eol.org>",
         "text" -> email.text,
         "subject" -> email.subject)).toEntity)
   }

@@ -101,7 +101,7 @@ class EmailUtilsSpec extends WordSpecLike with Matchers with BeforeAndAfterAll w
   "mailgun request for email" in {
     val anEmail = Email(to = "john@doe", subject = "hello!", text = "some text")
     val httpRequest: HttpRequest = EmailUtils.mailgunRequestFor(anEmail, "someApiKey")
-    httpRequest.uri.toString should be("https://api.mailgun.net/v3/effechecka.org/messages")
+    httpRequest.uri.toString should be("https://api.mailgun.net/v3/fd.eol.org/messages")
     httpRequest.headers should contain(Authorization(BasicHttpCredentials("api", "someApiKey")))
     httpRequest.method should be(HttpMethods.POST)
   }

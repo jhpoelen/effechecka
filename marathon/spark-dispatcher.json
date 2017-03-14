@@ -6,5 +6,16 @@
     "instances": 1,
     "uris": [
       "http://d3kbcqa49mib13.cloudfront.net/spark-2.0.1-bin-hadoop2.7.tgz"
+    ],
+    "healthChecks": [ 
+      {
+        "path": "/",
+        "port": 8081,
+        "protocol": "HTTP",
+        "gracePeriodSeconds": 300,
+        "intervalSeconds": 60,
+        "timeoutSeconds": 20,
+        "maxConsecutiveFailures": 3
+      }
     ]
 }

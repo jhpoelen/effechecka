@@ -1,0 +1,10 @@
+{
+    "id": "spark-mesos-cluster-dispatcher", 
+    "cmd": "cd spark-2.0.1-bin-hadoop2.7 && chmod u+x bin/spark-class && echo spark.mesos.maxDrivers=1 > conf/spark-defaults.conf && bin/spark-class org.apache.spark.deploy.mesos.MesosClusterDispatcher --master mesos://127.0.0.1:5050",
+    "cpus": 1,
+    "mem": 1024.0,
+    "instances": 1,
+    "uris": [
+      "http://d3kbcqa49mib13.cloudfront.net/spark-2.0.1-bin-hadoop2.7.tgz"
+    ]
+}

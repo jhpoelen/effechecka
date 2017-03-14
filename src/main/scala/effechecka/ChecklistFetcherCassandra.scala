@@ -42,7 +42,8 @@ trait ChecklistFetcherCassandra extends ChecklistFetcher with Fetcher with Spark
 
   def insertRequest(checklist: ChecklistRequest): String = {
     val values = (selectorParams(checklist.selector) ::: List("requested")).map("'" + _ + "'").mkString(",")
-    session.execute(s"INSERT INTO effechecka.checklist_registry (taxonselector, wktstring, traitSelector, status) VALUES ($values) using TTL 7200")
+    val requestQuietTime = config.getInt("effechecka.request.quietTimeSeconds")
+    session.execute(s"INSERT INTO effechecka.checklist_registry (taxonselector, wktstring, traitSelector, status) VALUES ($values) using TTL $requestQuietTime")
     "requested"
   }
 

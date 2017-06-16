@@ -13,7 +13,6 @@ libraryDependencies ++= {
   val scalaTestV = "3.0.1"
   Seq(
     "joda-time" % "joda-time" % "2.9.3",
-    "com.sun.jersey" % "jersey-client" % "1.9",
     "org.locationtech.spatial4j" % "spatial4j" % "0.6",
     "com.vividsolutions" % "jts-core" % "1.14.0",
     "com.fasterxml.uuid" %  "java-uuid-generator" % "3.1.4",

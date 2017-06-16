@@ -29,15 +29,6 @@ libraryDependencies ++= {
       ExclusionRule("org.typesafe.akka")
       ),
     "com.datastax.cassandra" % "cassandra-driver-core" % cassandraDriverV,
-    "org.apache.spark" %% "spark-core" % sparkV excludeAll(
-      // only using the submit job functionality at this point
-      ExclusionRule("io.dropwizard.metrics"),
-      ExclusionRule("org.apache.mesos"),
-      ExclusionRule("org.typesafe.akka"),
-      ExclusionRule("org.tachyonproject"),
-      ExclusionRule("org.apache.avro"),
-      ExclusionRule("org.apache.spark", "spark-unsafe"),
-      ExclusionRule("org.apache.zookeeper")),
     "org.scalatest" %% "scalatest" % scalaTestV % "test"
   )
 }

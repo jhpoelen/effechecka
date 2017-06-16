@@ -1,8 +1,15 @@
 package effechecka
 
-import org.scalatest.{Matchers, WordSpec, Ignore}
+import akka.actor.ActorSystem
+import akka.stream.ActorMaterializer
+import akka.testkit.TestKit
+import org.scalatest.{Matchers, WordSpecLike}
 
-class ChecklistFetcherSpec extends WordSpec with Matchers with ChecklistFetcherCassandra with Configure {
+class ChecklistFetcherSpec extends TestKit(ActorSystem("SparkIntegrationTest"))
+  with WordSpecLike with Matchers with ChecklistFetcherCassandra with Configure {
+
+  implicit val materializer = ActorMaterializer()(system)
+  implicit val ec = system.dispatcher
 
   // needs running cassandra
   "Cassandra driver" should {

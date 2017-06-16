@@ -1,9 +1,16 @@
 package effechecka
 
+import akka.actor.ActorSystem
+import akka.stream.ActorMaterializer
+import akka.testkit.TestKit
 import com.datastax.driver.core.ResultSet
-import org.scalatest.{Matchers, WordSpec}
+import org.scalatest.{Matchers, WordSpecLike}
 
-class OccurrenceCollectionFetcherSpec extends WordSpec with Matchers with OccurrenceCollectionFetcherCassandra with Configure {
+class OccurrenceCollectionFetcherSpec  extends TestKit(ActorSystem("SparkIntegrationTest"))
+  with WordSpecLike with Matchers with OccurrenceCollectionFetcherCassandra with Configure {
+
+  implicit val materializer = ActorMaterializer()(system)
+  implicit val ec = system.dispatcher
 
   "Cassandra driver" should {
     "store and provide access to an occurrence collection" in {

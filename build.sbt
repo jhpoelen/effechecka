@@ -9,7 +9,7 @@ scalacOptions := Seq("-unchecked", "-deprecation", "-encoding", "utf8")
 libraryDependencies ++= {
   val akkaV = "2.4.18"
   val akkaHttpV = "10.0.7"
-  val cassandraDriverV = "2.1.6"
+  val cassandraDriverV = "2.1.10.3"
   val scalaTestV = "3.0.1"
   Seq(
     "joda-time" % "joda-time" % "2.9.3",

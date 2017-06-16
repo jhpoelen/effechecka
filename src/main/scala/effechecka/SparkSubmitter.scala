@@ -44,7 +44,7 @@ trait SparkSubmitter {
     val argSelectorTaxon = selector.taxonSelector.replace(',', '|')
     val argSelectorWktString = selector.wktString
     val argSelectorTrait = selector.traitSelector.replace(',', '|')
-    List(argSelectorTaxon, argSelectorWktString, argSelectorTrait).map("\"" + _ + "\"").mkString(", ")
+    List(argSelectorTaxon, argSelectorWktString, argSelectorTrait).map(""""\"""" + _ + """\""""").mkString(", ")
   }
 
   def requestFor(args: String, sparkJobMainClass: String) = {
@@ -53,7 +53,7 @@ trait SparkSubmitter {
     val dataPathTraits = config.getString("effechecka.data.dir") + "traitbank/*.csv"
     val sparkJobRequest = s"""{
                              |      "action" : "CreateSubmissionRequest",
-                             |      "appArgs" : [ "-f", "cassandra","-c","$dataPathOccurrences","-t", "$dataPathTraits", $args],
+                             |      "appArgs" : [ "-f", "cassandra","-c","\\"$dataPathOccurrences\\"","-t", "\\"$dataPathTraits\\"", $args],
                              |      "appResource" : "$sparkJobJar",
                              |      "clientSparkVersion" : "2.0.1",
                              |      "environmentVariables" : {
@@ -71,6 +71,8 @@ trait SparkSubmitter {
                              |        "spark.task.maxFailures" : 1
                              |      }
                              |    }""".stripMargin
+
+    println(sparkJobRequest)
     val payload = HttpEntity(contentType = ContentTypes.`application/json`, string = sparkJobRequest)
     val uri = s"""http://${config.getString("effechecka.spark.master.host")}:${config.getString("effechecka.spark.master.port")}/v1/submissions/create"""
     HttpRequest(uri = uri, method = HttpMethods.POST, entity = payload)

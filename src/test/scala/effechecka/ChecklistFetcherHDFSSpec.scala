@@ -24,7 +24,7 @@ class ChecklistFetcherHDFSSpec extends WordSpec with Matchers with ChecklistFetc
       val pathForRequest = pathFor(req.selector)
       pathForRequest shouldBe "occurrencesForMonitor/55/e4/b0/55e4b0a0-bcd9-566f-99bc-357439011d85/checklist/"
 
-      FileIO.fromFile(new java.io.File(getClass.getResource("/hdfs-layout/" + pathForRequest + "20.tsv/checklist20.tsv").toURI))
+      FileIO.fromPath(new java.io.File(getClass.getResource("/hdfs-layout/" + pathForRequest + "20.tsv/checklist20.tsv").toURI).toPath)
         .to(Sink.ignore)
     }
   }

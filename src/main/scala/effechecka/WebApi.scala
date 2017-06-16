@@ -23,12 +23,8 @@ import akka.http.scaladsl.model.StatusCode._
 
 import scala.util.Try
 
-case class MonitorStatus(selector: OccurrenceSelector, status: String, percentComplete: Double, eta: Long)
-
-
 trait Protocols extends SprayJsonSupport with DefaultJsonProtocol {
   implicit val occurrenceSelector = jsonFormat4(OccurrenceSelector)
-  implicit val monitorStatusFormat = jsonFormat4(MonitorStatus)
 
   implicit val checklistFormat = jsonFormat2(ChecklistRequest)
   implicit val itemFormat = jsonFormat2(ChecklistItem)
@@ -47,9 +43,7 @@ trait Service extends Protocols
   with Fetcher
   with SelectorRegistry
   with SelectorValidator
-  with OccurrenceCollectionFetcher
-  with SubscriptionFeed
-  with NotificationFeedSourceKafka {
+  with OccurrenceCollectionFetcher {
 
   private def addAccessControlHeaders: Directive0 = {
     mapResponseHeaders { headers =>
@@ -105,20 +99,6 @@ trait Service extends Protocols
               requestAll()
             }
           }
-        } ~ path("notifyAll") {
-          get {
-            addedParams.as(DateTimeSelector) { added =>
-              val events = monitors().flatMap { monitor =>
-                generateSubscriptionEventsFor(ocSelector = monitor.selector, added = added)
-              }
-              events.foreach(handleSubscriptionEvent)
-              complete {
-                val selectors = events.map(_.request.selector).distinct
-                val selectorString = selectors.mkString("[", ":", "]")
-                s"sent [${events.length}] notification${if (events.length > 1) "s" else ""} related occurrences added [$added] to monitors $selectorString"
-              }
-            }
-          }
         } ~ parameters('source.as[String]) { source =>
           usageRoutes(source)
         } ~ path("monitors") {
@@ -127,8 +107,6 @@ trait Service extends Protocols
               monitors()
             }
           }
-        } ~ path("feed") {
-          handleWebSocketMessages(NotificationFeed.pushToClient(feed))
         } ~ path("ping") {
           complete("pong")
         } ~ path("scrub") {
@@ -181,41 +159,11 @@ trait Service extends Protocols
       handleOccurrencesTsv(ocSelector)
     } ~ path("occurrences") {
       handleOccurrences(ocSelector)
-    } ~ path("subscribe") {
-      get {
-        parameters('subscriber.as[String]) { subscriber =>
-          complete {
-            handleSubscriptionEvent(ocSelector, new URL(subscriber), "subscribe")
-            s"subscribed [$subscriber]"
-          }
-        }
-      }
-    } ~ path("unsubscribe") {
-      get {
-        parameters('subscriber.as[String]) { subscriber =>
-          complete {
-            handleSubscriptionEvent(ocSelector, new URL(subscriber), "unsubscribe")
-            s"unsubscribed [$subscriber]"
-          }
-        }
-      }
     } ~ path("update") {
       get {
         complete {
           val status = request(ocSelector)
           OccurrenceCollection(ocSelector, Option(status), List())
-        }
-      }
-    } ~ path("notify") {
-      get {
-        addedParams.as(DateTimeSelector) { added =>
-          val events = generateSubscriptionEventsFor(ocSelector, added)
-          events.foreach(handleSubscriptionEvent)
-          complete {
-            val selectors = events.map(_.request.selector).distinct
-            val selectorString = selectors.mkString("[", ":", "]")
-            s"sent [${events.length}] notification${if (events.length > 1) "s" else ""} related occurrences added [$added] to monitors $selectorString"
-          }
         }
       }
     } ~ path("monitors") {
@@ -225,16 +173,6 @@ trait Service extends Protocols
         }
       }
     }
-  }
-
-  def generateSubscriptionEventsFor(ocSelector: OccurrenceSelector, added: DateTimeSelector): List[SubscriptionEvent] = {
-    val ocRequest = OccurrenceRequest(ocSelector, Some(1), added)
-    val events = if (occurrencesFor(ocRequest).hasNext) {
-      subscribersOf(ocSelector).map(SubscriptionEvent(ocRequest, _, "notify"))
-    } else {
-      List()
-    }
-    events
   }
 
   val addedParams = parameters('addedBefore.as[String] ?, 'addedAfter.as[String] ?)
@@ -326,18 +264,10 @@ trait Service extends Protocols
     }
   }
 
-  def handleSubscriptionEvent(ocSelector: OccurrenceSelector, subscriber: URL, action: String): NotUsed = {
-    handleSubscriptionEvent(SubscriptionEvent(OccurrenceRequest(ocSelector), subscriber, action))
-  }
 
-  def handleSubscriptionEvent(event: SubscriptionEvent): NotUsed = {
-    Source.single(event)
-      .to(subscriptionHandler("effechecka-subscription")).run()
-  }
 }
 
 object WebApi extends App with Service with Configure
-  with SubscriptionsCassandra
   with SelectorRegistryCassandra
   with ChecklistFetcherCassandra
   with OccurrenceCollectionFetcherCassandra {

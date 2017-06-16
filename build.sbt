@@ -24,9 +24,6 @@ libraryDependencies ++= {
     "com.typesafe.akka" %% "akka-http-spray-json-experimental" % akkaV,
     "com.typesafe.akka" %% "akka-http-testkit" % akkaV % "test",
     "com.typesafe.akka" %% "akka-stream-testkit" % akkaV % "test",
-    "com.typesafe.akka" %% "akka-stream-kafka" % "0.11-M2" excludeAll (
-      ExclusionRule("org.typesafe.akka")
-      ),
     "com.datastax.cassandra" % "cassandra-driver-core" % cassandraDriverV,
     "org.scalatest" %% "scalatest" % scalaTestV % "test"
   )

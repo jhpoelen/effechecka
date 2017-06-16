@@ -178,30 +178,6 @@ class ChecklistService2Spec extends WordSpec with Matchers with ScalatestRouteTe
       }
     }
 
-    "subscribe to monitor" in {
-      Get("/subscribe?subscriber=mailto%3Afoo%40bar&taxonSelector=Animalia,Insecta&wktString=ENVELOPE(-150,-50,40,10)") ~> route ~> check {
-        responseAs[String] should be("subscribed [mailto:foo@bar]")
-      }
-    }
-
-    "subscribe to monitor uuid" in {
-      Get("/subscribe?subscriber=mailto%3Afoo%40bar&uuid=55e4b0a0-bcd9-566f-99bc-357439011d85") ~> route ~> check {
-        responseAs[String] should be("subscribed [mailto:foo@bar]")
-      }
-    }
-
-    "unsubscribe to selector" in {
-      Get("/unsubscribe?subscriber=mailto%3Afoo%40bar&taxonSelector=Animalia,Insecta&wktString=ENVELOPE(-150,-50,40,10)") ~> route ~> check {
-        responseAs[String] should be("unsubscribed [mailto:foo@bar]")
-      }
-    }
-
-    "unsubscribe to selector uuid" in {
-      Get("/unsubscribe?subscriber=mailto%3Afoo%40bar&uuid=55e4b0a0-bcd9-566f-99bc-357439011d85") ~> route ~> check {
-        responseAs[String] should be("unsubscribed [mailto:foo@bar]")
-      }
-    }
-
     "refresh all monitors" in {
       Get("/updateAll") ~> route ~> check {
         responseAs[String] shouldEqual "all requested"
@@ -211,18 +187,6 @@ class ChecklistService2Spec extends WordSpec with Matchers with ScalatestRouteTe
     "refresh monitor uuid" in {
       Get("/update?uuid=55e4b0a0-bcd9-566f-99bc-357439011d85") ~> route ~> check {
         responseAs[OccurrenceCollection] shouldEqual OccurrenceCollection(OccurrenceSelector("Animalia|Insecta", "ENVELOPE(-150,-50,40,10)", ""), Some("requested"), List())
-      }
-    }
-
-    "send notification to subscribers" in {
-      Get("/notify?addedAfter=2016-01-10&taxonSelector=Animalia,Insecta&wktString=ENVELOPE(-150,-50,40,10)") ~> route ~> check {
-        responseAs[String] should be("sent [1] notification related occurrences added [DateTimeSelector(None,Some(2016-01-10))] to monitors [OccurrenceSelector(Animalia|Insecta,ENVELOPE(-150,-50,40,10),,None)]")
-      }
-    }
-
-    "send notification to subscribers uuid" in {
-      Get("/notify?addedAfter=2016-01-10&uuid=55e4b0a0-bcd9-566f-99bc-357439011d85") ~> route ~> check {
-        responseAs[String] should be("sent [1] notification related occurrences added [DateTimeSelector(None,Some(2016-01-10))] to monitors [OccurrenceSelector(Animalia|Insecta,ENVELOPE(-150,-50,40,10),,None)]")
       }
     }
 

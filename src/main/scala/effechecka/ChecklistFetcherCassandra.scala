@@ -4,11 +4,7 @@ import com.datastax.driver.core._
 import scala.collection.JavaConversions._
 import com.typesafe.config.Config
 
-trait ChecklistFetcher {
-  def itemsFor(checklist: ChecklistRequest): List[ChecklistItem]
-  def statusOf(checklist: ChecklistRequest): Option[String]
-  def request(checklist: ChecklistRequest): String
-}
+
 
 trait ChecklistFetcherCassandra extends ChecklistFetcher with Fetcher with SparkSubmitter {
   implicit def session: Session

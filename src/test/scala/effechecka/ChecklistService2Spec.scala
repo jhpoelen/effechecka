@@ -41,15 +41,6 @@ trait SelectorRegistryStatic extends SelectorRegistry {
   }
 }
 
-trait SubscriptionsStatic extends Subscriptions {
-  def subscribersOf(selector: OccurrenceSelector): List[URL] = List(new URL("mailto:foo@bar"))
-
-  def subscribe(subscriber: URL, selector: OccurrenceSelector) = new URL("mailto:foo@bar")
-
-  def unsubscribe(subscriber: URL, selector: OccurrenceSelector) = new URL("mailto:foo@bar")
-
-}
-
 trait OccurrenceCollectionFetcherStatic extends OccurrenceCollectionFetcher {
   val anOccurrence = Occurrence("Cartoona | mickey", 12.1, 32.1, 123L, 124L, "recordId", 456L, "archiveId")
   val aSelector: OccurrenceSelector = OccurrenceSelector("Cartoona | mickey", "some wkt string", "some trait selector")
@@ -75,7 +66,6 @@ trait OccurrenceCollectionFetcherStatic extends OccurrenceCollectionFetcher {
 
 class ChecklistService2Spec extends WordSpec with Matchers with ScalatestRouteTest with Service
   with SelectorRegistryStatic
-  with SubscriptionsStatic
   with ChecklistFetcherStatic
   with OccurrenceCollectionFetcherStatic {
 

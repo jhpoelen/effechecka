@@ -9,6 +9,7 @@ scalacOptions := Seq("-unchecked", "-deprecation", "-encoding", "utf8")
 libraryDependencies ++= {
   val akkaV = "2.4.18"
   val akkaHttpV = "10.0.7"
+  val eelV = "1.2.0-M5"
   val cassandraDriverV = "2.1.10.3"
   val scalaTestV = "3.0.1"
   Seq(
@@ -17,6 +18,8 @@ libraryDependencies ++= {
     "com.vividsolutions" % "jts-core" % "1.14.0",
     "com.fasterxml.uuid" %  "java-uuid-generator" % "3.1.4",
     "com.datastax.cassandra" % "cassandra-driver-core" % cassandraDriverV,
+    "io.eels" %% "eel-core" % eelV,
+    "io.eels" %% "eel-components" % eelV,
     "com.typesafe.akka" %% "akka-actor" % akkaV,
     "com.typesafe.akka" %% "akka-stream" % akkaV,
     "com.typesafe.akka" %% "akka-http-core" % akkaHttpV,

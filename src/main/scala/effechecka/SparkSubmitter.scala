@@ -63,7 +63,7 @@ trait SparkSubmitter {
                              |      "sparkProperties" : {
                              |        "spark.driver.supervise" : "false",
                              |        "spark.app.name" : "$sparkJobMainClass",
-                             |        "spark.eventLog.enabled": "true",
+                             |        "_spark.eventLog.enabled": "true",
                              |        "spark.submit.deployMode" : "cluster",
                              |        "spark.master" : "${config.getString("effechecka.spark.master.url")}",
                              |        "spark.executor.memory" : "${config.getString("effechecka.spark.executor.memory")}",

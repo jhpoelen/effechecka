@@ -1,5 +1,5 @@
 #!/bin/bash
-sbt "run-main effechecka.WebApi" \
+../sbt/bin/sbt "run-main effechecka.WebApi" \
 -Deffechecka.host=0.0.0.0 \
 -Deffechecka.port=8889 \
 -Deffechecka.cassandra.host=apihack-c18.idigbio.org \

@@ -72,9 +72,7 @@ class ChecklistFetcherHDFSSpec extends WordSpec with Matchers with ChecklistFetc
       val firstTaxonNameCombo = ParquetSource(pattern).toFrame().collect().map(_.values).head.head
       firstTaxonNameCombo shouldBe "Poecile atricapillus (Linnaeus, 1766)"
       val firstTaxonName = ParquetSource(output2).toFrame().collect().map(_.values).head.head
-      firstTaxonName shouldBe "Turdus migratorius Linnaeus, 1766"
-
-
+      firstTaxonNameCombo shouldNot be("Poecile atricapillus (Linnaeus, 1766)")
     }
   }
 

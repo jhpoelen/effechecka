@@ -67,7 +67,6 @@ trait SparkSubmitter {
                              |      "mainClass" : "$sparkJobMainClass",
                              |      "sparkProperties" : {
                              |        "spark.driver.supervise" : "false",
-                             |        "spark.executor.uri" : "${config.getString("effechecka.spark.executor.uri")}",
                              |        "spark.mesos.executor.home" : "${config.getString("effechecka.spark.mesos.executor.home")}",
                              |        "spark.cassandra.connection.host" : "${config.getString("effechecka.cassandra.host")}",
                              |        "spark.app.name" : "$sparkJobMainClass",

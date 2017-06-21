@@ -58,6 +58,11 @@ trait SparkSubmitter {
                              |      "clientSparkVersion" : "2.0.1",
                              |      "environmentVariables" : {
                              |        "SPARK_ENV_LOADED" : "1"
+                             |        "HADOOP_HOME" : "/usr/lib/hadoop",
+                             |        "HADOOP_PREFIX" : "/usr/lib/hadoop",
+                             |        "HADOOP_LIBEXEC_DIR" : "/usr/lib/hadoop/libexec",
+                             |        "HADOOP_CONF_DIR" : "/etc/hadoop/conf",
+                             |        "HADOOP_USER_NAME" : "hdfs"
                              |      },
                              |      "mainClass" : "$sparkJobMainClass",
                              |      "sparkProperties" : {

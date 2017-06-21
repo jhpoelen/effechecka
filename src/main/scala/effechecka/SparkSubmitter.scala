@@ -57,7 +57,7 @@ trait SparkSubmitter {
                              |      "appResource" : "$sparkJobJar",
                              |      "clientSparkVersion" : "2.0.1",
                              |      "environmentVariables" : {
-                             |        "SPARK_ENV_LOADED" : "1"
+                             |        "SPARK_ENV_LOADED" : "1",
                              |        "HADOOP_HOME" : "/usr/lib/hadoop",
                              |        "HADOOP_PREFIX" : "/usr/lib/hadoop",
                              |        "HADOOP_LIBEXEC_DIR" : "/usr/lib/hadoop/libexec",

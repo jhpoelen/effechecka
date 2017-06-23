@@ -27,7 +27,7 @@ class ChecklistFetcherHDFSSpec extends WordSpec with Matchers with ChecklistFetc
     }
 
     "produce a wellformed status query" in {
-      val checklist = itemsFor(req)
+      val checklist = itemsFor(req).toSeq
       checklist should contain(ChecklistItem("a|name", 1234))
     }
 
@@ -54,12 +54,18 @@ class ChecklistFetcherHDFSSpec extends WordSpec with Matchers with ChecklistFetc
 
       val output1 = new Path("target/pq/output1.pq")
       source.toFrame()
-        .filter(_.get("taxonName") == "Poecile atricapillus (Linnaeus, 1766)")
+        .filter({ row =>
+          println(s"filter1 [${row.get("taxonName")}]")
+          row.get("taxonName") == "Poecile atricapillus (Linnaeus, 1766)"
+        })
         .save(ParquetSink(output1).withOverwrite(true))
 
       val output2 = new Path("target/pq/output2.pq")
       source.toFrame()
-        .filter(_.get("taxonName") != "Poecile atricapillus (Linnaeus, 1766)")
+        .filter({ row =>
+          println(s"filter2 [${row.get("taxonName")}]")
+          row.get("taxonName") != "Poecile atricapillus (Linnaeus, 1766)"
+        })
         .save(ParquetSink(output2).withOverwrite(true))
 
       val resourcePath = fs.resolvePath(output2.getParent)
@@ -69,12 +75,28 @@ class ChecklistFetcherHDFSSpec extends WordSpec with Matchers with ChecklistFetc
           true
         }
       )
-      val firstTaxonNameCombo = ParquetSource(output1).toFrame().collect().map(_.values).head.head
+      val firstTaxonNameCombo = ParquetSource(output1).toFrame().map(r => {
+        println(s"map1 [${r.get("taxonName")}]")
+        r
+      }).toSeq().map {
+        row => {
+          println(s"map2 [${row.get("taxonName")}]")
+          row.values
+        }
+      }.head.head
       firstTaxonNameCombo shouldBe "Poecile atricapillus (Linnaeus, 1766)"
-      val firstTaxonName = ParquetSource(output2).toFrame().collect().map(_.values).head.head
-      firstTaxonName shouldNot be("Poecile atricapillus (Linnaeus, 1766)")
-
-
+      val firstTaxonName = ParquetSource(output2)
+        .toFrame()
+        .map(r => {
+          println(s"map21 [${r.get("taxonName")}]")
+          r
+        }).rows().iterator.flatMap {
+        row => {
+          println(s"map22 [${row.get("taxonName")}]")
+          row.values.map(_.toString)
+        }
+      }.mkString(" ")
+      firstTaxonName shouldNot contain("Poecile atricapillus (Linnaeus, 1766)")
     }
   }
 

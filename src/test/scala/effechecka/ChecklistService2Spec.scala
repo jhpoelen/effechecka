@@ -12,7 +12,7 @@ import akka.http.scaladsl.testkit.ScalatestRouteTest
 import akka.http.scaladsl.model._
 
 trait ChecklistFetcherStatic extends ChecklistFetcher {
-  def itemsFor(checklist: ChecklistRequest): List[ChecklistItem] = List(ChecklistItem("donald", 1))
+  def itemsFor(checklist: ChecklistRequest): Iterator[ChecklistItem] = Iterator(ChecklistItem("donald", 1))
 
   def statusOf(checklist: ChecklistRequest): Option[String] = Some("ready")
 

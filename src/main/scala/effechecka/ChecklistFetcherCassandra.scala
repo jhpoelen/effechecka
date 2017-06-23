@@ -10,10 +10,10 @@ trait ChecklistFetcherCassandra extends ChecklistFetcher with Fetcher with Spark
   implicit def session: Session
   implicit def config: Config
 
-  def itemsFor(checklist: ChecklistRequest): List[ChecklistItem] = {
+  def itemsFor(checklist: ChecklistRequest): Iterator[ChecklistItem] = {
     val results: ResultSet = session.execute(checklistSelect(checklist.limit),
       selectorParams(checklist.selector): _*)
-    val items: List[Row] = results.iterator.toList
+    val items: Iterator[Row] = results.iterator
     items.map(item => ChecklistItem(item.getString("taxon"), item.getInt("recordcount")))
   }
 

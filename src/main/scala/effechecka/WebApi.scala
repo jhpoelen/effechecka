@@ -146,12 +146,12 @@ trait Service extends Protocols
           val (items, status) = statusOpt match {
             case Some("ready") => (itemsFor(checklist), "ready")
             case None => {
-              (List(), request(checklist))
+              (Iterator(), request(checklist))
             }
-            case _ => (List(), statusOpt.get)
+            case _ => (Iterator(), statusOpt.get)
           }
           complete {
-            Checklist(ocSelector, status, items)
+            Checklist(ocSelector, status, items.toList)
           }
         }
       }

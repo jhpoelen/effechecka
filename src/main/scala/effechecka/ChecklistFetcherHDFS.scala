@@ -3,8 +3,8 @@ package effechecka
 
 trait ChecklistFetcherHDFS extends ChecklistFetcher {
 
-  def itemsFor(checklist: ChecklistRequest): List[ChecklistItem] = {
-    List(ChecklistItem("a|name", 1234))
+  def itemsFor(checklist: ChecklistRequest): Iterator[ChecklistItem] = {
+    Iterator(ChecklistItem("a|name", 1234))
   }
 
   def request(checklist: ChecklistRequest): String = {

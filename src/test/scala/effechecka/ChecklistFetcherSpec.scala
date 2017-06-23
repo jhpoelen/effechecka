@@ -19,7 +19,7 @@ class ChecklistFetcherSpec extends TestKit(ActorSystem("SparkIntegrationTest"))
       session.execute("INSERT INTO effechecka.checklist (taxonselector, wktstring, traitSelector, taxon, recordcount) VALUES ('Insecta|Mammalia', 'ENVELOPE(-150,-50,40,10)', 'bodyMass greaterThan 2.7 kg', 'Aves|Donald duckus', 12)")
       val checklist = itemsFor(request)
       checklist.foreach(println)
-      checklist should contain(ChecklistItem("Aves|Donald duckus", 12))
+      checklist.toSeq should contain(ChecklistItem("Aves|Donald duckus", 12))
     }
   }
 

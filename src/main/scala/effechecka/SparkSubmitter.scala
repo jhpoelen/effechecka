@@ -25,8 +25,8 @@ trait SparkSubmitter {
     send(requestOccurrences(selector))
   }
 
-  def submitChecklistRequest(checklist: ChecklistRequest): Unit = {
-    send(requestChecklist(checklist.selector))
+  def submitChecklistRequest(checklist: ChecklistRequest, persistence: String = "cassandra"): Unit = {
+    send(requestChecklist(checklist.selector, persistence))
   }
 
   private def send(req: HttpRequest) = {
@@ -35,8 +35,8 @@ trait SparkSubmitter {
       .foreach(resp => println(resp))
   }
 
-  def requestChecklist(selector: OccurrenceSelector): HttpRequest = requestFor(argsFor(selector), "ChecklistGenerator")
-  def requestOccurrences(selector: OccurrenceSelector): HttpRequest = requestFor(argsFor(selector), "OccurrenceCollectionGenerator")
+  def requestChecklist(selector: OccurrenceSelector, persistence: String = "cassandra"): HttpRequest = requestFor(argsFor(selector), "ChecklistGenerator", persistence)
+  def requestOccurrences(selector: OccurrenceSelector, persistence: String = "cassandra"): HttpRequest = requestFor(argsFor(selector), "OccurrenceCollectionGenerator", persistence)
   def requestUpdateAll(): HttpRequest = requestFor(""""-a", "true"""", "OccurrenceCollectionGenerator")
 
 
@@ -47,13 +47,13 @@ trait SparkSubmitter {
     List(argSelectorTaxon, argSelectorWktString, argSelectorTrait).map(""""\"""" + _ + """\""""").mkString(", ")
   }
 
-  def requestFor(args: String, sparkJobMainClass: String) = {
+  def requestFor(args: String, sparkJobMainClass: String, persistence: String = "cassandra") = {
     val sparkJobJar = config.getString("effechecka.spark.job.jar")
     val dataPathOccurrences = config.getString("effechecka.data.dir") + "gbif-idigbio.parquet"
     val dataPathTraits = config.getString("effechecka.data.dir") + "traitbank/*.csv"
     val sparkJobRequest = s"""{
                              |      "action" : "CreateSubmissionRequest",
-                             |      "appArgs" : [ "-f", "cassandra","-c","\\"$dataPathOccurrences\\"","-t", "\\"$dataPathTraits\\"", $args],
+                             |      "appArgs" : [ "-f", "$persistence","-c","\\"$dataPathOccurrences\\"","-t", "\\"$dataPathTraits\\"", $args],
                              |      "appResource" : "$sparkJobJar",
                              |      "clientSparkVersion" : "2.0.1",
                              |      "environmentVariables" : {

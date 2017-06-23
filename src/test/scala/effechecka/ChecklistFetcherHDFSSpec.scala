@@ -40,9 +40,9 @@ class ChecklistFetcherHDFSSpec extends TestKit(ActorSystem("IntegrationTest"))
       request(req) shouldBe "ready"
     }
 
-    "request a checklist new" in {
-      request(reqNew) shouldBe "requested"
-    }
+//    "request a checklist new" in {
+//      request(reqNew) shouldBe "requested"
+//    }
 
     "return items" in {
       val checklist = itemsFor(req).toSeq

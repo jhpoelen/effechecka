@@ -5,18 +5,17 @@ import java.nio.file.Paths
 import akka.stream.scaladsl.{FileIO, Sink}
 import com.typesafe.config.Config
 import io.eels.FilePattern
-import io.eels.component.csv.CsvSource
 import io.eels.component.parquet.ParquetSource
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FileSystem, Path}
 
 
-trait ChecklistFetcherHDFS extends ChecklistFetcher {
+trait ChecklistFetcherHDFS extends ChecklistFetcher with SparkSubmitter {
 
   implicit def config: Config
 
-  protected implicit val configHadoop = new Configuration()
-  protected implicit val fs = FileSystem.get(configHadoop)
+  protected implicit val configHadoop: Configuration = new Configuration()
+  protected implicit val fs: FileSystem = FileSystem.get(configHadoop)
 
   def itemsFor(checklist: ChecklistRequest): Iterator[ChecklistItem] = {
     checklistPath(checklist, "spark.parquet") match {
@@ -29,7 +28,12 @@ trait ChecklistFetcherHDFS extends ChecklistFetcher {
   }
 
   def request(checklist: ChecklistRequest): String = {
-    if (checklistExists(checklist)) "ready" else "requested"
+    if (checklistExists(checklist)) {
+      "ready"
+    } else {
+      submitChecklistRequest(checklist, "hdfs")
+      "requested"
+    }
   }
 
   private def checklistExists(checklist: ChecklistRequest) = {

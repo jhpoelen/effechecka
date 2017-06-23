@@ -27,7 +27,7 @@ class SparkSubmitterSpec extends TestKit(ActorSystem("SparkIntegrationTest"))
 
   "checklist job request" in {
     val selector: OccurrenceSelector = OccurrenceSelector("Animalia|Insecta", "ENVELOPE(-150,-50,40,10)", "")
-    val someRequest = requestChecklist(selector)
+    val someRequest = requestChecklist(selector, "hdfs")
     val expectedRequestBody =
       """{
         |      "action" : "CreateSubmissionRequest",

@@ -5,7 +5,7 @@ import akka.stream.ActorMaterializer
 import akka.testkit.TestKit
 import org.scalatest.{Matchers, WordSpecLike}
 
-class ChecklistFetcherSpec extends TestKit(ActorSystem("SparkIntegrationTest"))
+class ChecklistFetcherCassandraSpec extends TestKit(ActorSystem("SparkIntegrationTest"))
   with WordSpecLike with Matchers with ChecklistFetcherCassandra with Configure {
 
   implicit val materializer = ActorMaterializer()(system)

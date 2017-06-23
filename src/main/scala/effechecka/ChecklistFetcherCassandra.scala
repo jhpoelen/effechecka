@@ -6,7 +6,9 @@ import com.typesafe.config.Config
 
 
 
-trait ChecklistFetcherCassandra extends ChecklistFetcher with Fetcher with SparkSubmitter {
+trait ChecklistFetcherCassandra extends ChecklistFetcher
+  with Fetcher
+  with SparkSubmitter {
   implicit def session: Session
   implicit def config: Config
 

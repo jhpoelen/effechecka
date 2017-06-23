@@ -24,7 +24,9 @@ trait Fetcher {
 
 
 
-trait OccurrenceCollectionFetcherCassandra extends OccurrenceCollectionFetcher with Fetcher with SparkSubmitter {
+trait OccurrenceCollectionFetcherCassandra extends OccurrenceCollectionFetcher
+  with Fetcher
+  with SparkSubmitter {
   implicit def session: Session
 
   implicit def config: Config

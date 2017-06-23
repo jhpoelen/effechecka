@@ -2,49 +2,71 @@ package effechecka
 
 import java.nio.file.Paths
 
+import akka.actor.ActorSystem
+import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{FileIO, Sink}
+import akka.testkit.TestKit
+import com.typesafe.config.{Config, ConfigFactory}
 import io.eels.FilePattern
 import org.apache.hadoop.fs.{FileSystem, Path}
 import org.apache.hadoop.conf.Configuration
-import org.scalatest.{Matchers, WordSpec}
+import org.scalatest.{Matchers, WordSpec, WordSpecLike}
 import io.eels.component.csv.CsvSource
 import io.eels.schema._
 import io.eels.component.parquet.{ParquetSink, ParquetSource}
 
-class ChecklistFetcherHDFSSpec extends WordSpec with Matchers with ChecklistFetcherHDFS {
-  val req = ChecklistRequest(OccurrenceSelector("Animalia|Insecta", "ENVELOPE(-150,-50,40,10)", ""), 2)
+class ChecklistFetcherHDFSSpec extends TestKit(ActorSystem("IntegrationTest"))
+  with WordSpecLike with Matchers with ChecklistFetcherHDFS {
 
-  private implicit val conf = new Configuration()
-  private implicit val fs = FileSystem.get(conf)
+  implicit val materializer = ActorMaterializer()(system)
+  implicit val ec = system.dispatcher
+  val req = ChecklistRequest(OccurrenceSelector("Animalia|Insecta", "ENVELOPE(-150,-50,40,10)", ""), 2)
+  val reqNew = ChecklistRequest(OccurrenceSelector("Aves|Mammalia", "ENVELOPE(-150,-50,40,10)", ""), 2)
+
+  private val resourcePath = Paths.get(getClass.getResource("/hdfs-layout/base.txt").toURI).getParent.toAbsolutePath
+  val config: Config = ConfigFactory.parseString(s"""effechecka.monitor.dir = "$resourcePath"""")
+
 
   "HDFS" should {
-    "produce some status" in {
-      statusOf(req) shouldBe Some("unknown")
+    "status existing" in {
+      statusOf(req) shouldBe Some("ready")
     }
 
-    "request a checklist" in {
-      request(req) shouldBe "unknown"
+    "status non-existing" in {
+      statusOf(reqNew) shouldBe None
     }
 
-    "produce a wellformed status query" in {
+    "request a checklist already exists" in {
+      request(req) shouldBe "ready"
+    }
+
+    "request a checklist new" in {
+      request(reqNew) shouldBe "requested"
+    }
+
+    "return items" in {
       val checklist = itemsFor(req).toSeq
-      checklist should contain(ChecklistItem("a|name", 1234))
+      checklist should contain(ChecklistItem("Animalia|Chordata|Aves|Passeriformes|Paridae|Poecile|atricapillus|Poecile atricapillus (Linnaeus, 1766)",126643))
+    }
+
+    "return no items" in {
+      val checklist = itemsFor(reqNew).toSeq
+      checklist shouldNot contain(ChecklistItem("Animalia|Chordata|Aves|Passeriformes|Paridae|Poecile|atricapillus|Poecile atricapillus (Linnaeus, 1766)",126643))
     }
 
     "read parquet by spark" in {
       val pathForRequest = pathFor(req.selector)
-      val pathFull = Paths.get(getClass.getResource("/hdfs-layout/" + pathForRequest + "spark.parquet").getFile)
+      val pathFull = Paths.get(baseDir + "/" + pathForRequest + "spark.parquet")
       val pattern = FilePattern(pathFull + "/*").withFilter(_.getName.endsWith(".parquet"))
       val firstTaxonNameCombo = ParquetSource(pattern).toFrame().collect().map(_.values).head.head
       firstTaxonNameCombo shouldBe "Poecile atricapillus (Linnaeus, 1766)"
-
     }
 
     "create path for selector" in {
       val pathForRequest = pathFor(req.selector)
       pathForRequest shouldBe "occurrencesForMonitor/55/e4/b0/55e4b0a0-bcd9-566f-99bc-357439011d85/checklist/"
 
-      val pathFull = Paths.get(getClass.getResource("/hdfs-layout/" + pathForRequest + "20.tsv/checklist20.tsv").getFile)
+      val pathFull = Paths.get(baseDir + "/" + pathForRequest + "20.tsv/checklist20.tsv")
       FileIO.fromPath(pathFull)
         .to(Sink.ignore)
 

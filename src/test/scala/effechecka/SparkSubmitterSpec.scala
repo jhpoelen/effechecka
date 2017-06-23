@@ -25,27 +25,112 @@ class SparkSubmitterSpec extends TestKit(ActorSystem("SparkIntegrationTest"))
   implicit val ec = system.dispatcher
   implicit val defaultPatience = PatienceConfig(timeout = Span(10, Seconds), interval = Span(500, Millis))
 
-  "submit checklist job" in {
+  "checklist job request" in {
     val selector: OccurrenceSelector = OccurrenceSelector("Animalia|Insecta", "ENVELOPE(-150,-50,40,10)", "")
-    assertOkAndLog(requestChecklist(selector))
+    val someRequest = requestChecklist(selector)
+    val expectedRequestBody =
+      """{
+        |      "action" : "CreateSubmissionRequest",
+        |      "appArgs" : [ "-f", "cassandra","-c","\"file:///does/not/exist/gbif-idigbio.parquet\"","-t", "\"file:///does/not/exist/traitbank/*.csv\"", "\"Animalia|Insecta\"", "\"ENVELOPE(-150,-50,40,10)\"", "\"\""],
+        |      "appResource" : "file:///doesnotexist.jar",
+        |      "clientSparkVersion" : "2.0.1",
+        |      "environmentVariables" : {
+        |        "SPARK_ENV_LOADED" : "1",
+        |        "HADOOP_HOME" : "/usr/lib/hadoop",
+        |        "HADOOP_PREFIX" : "/usr/lib/hadoop",
+        |        "HADOOP_LIBEXEC_DIR" : "/usr/lib/hadoop/libexec",
+        |        "HADOOP_CONF_DIR" : "/etc/hadoop/conf",
+        |        "HADOOP_USER_NAME" : "hdfs"
+        |      },
+        |      "mainClass" : "ChecklistGenerator",
+        |      "sparkProperties" : {
+        |        "spark.driver.supervise" : "false",
+        |        "spark.mesos.executor.home" : "/path/to/local/spark/on/mesos/worker",
+        |        "spark.cassandra.connection.host" : "localhost",
+        |        "spark.app.name" : "ChecklistGenerator",
+        |        "_spark.eventLog.enabled": "true",
+        |        "spark.submit.deployMode" : "cluster",
+        |        "spark.master" : "mesos://api.effechecka.org:7077",
+        |        "spark.executor.memory" : "32g",
+        |        "spark.driver.memory" : "8g",
+        |        "spark.task.maxFailures" : 1
+        |      }
+        |    }""".stripMargin
+
+    assertRequest(someRequest, expectedRequestBody)
   }
 
-  "submit occurrence job" in {
+  "occurrence job request" in {
     val selector: OccurrenceSelector = OccurrenceSelector("Animalia|Insecta", "ENVELOPE(-150,-50,40,10)", "")
-    assertOkAndLog(requestOccurrences(selector))
+    val someRequest = requestOccurrences(selector)
+    val expectedRequestBody =
+      """{
+        |      "action" : "CreateSubmissionRequest",
+        |      "appArgs" : [ "-f", "cassandra","-c","\"file:///does/not/exist/gbif-idigbio.parquet\"","-t", "\"file:///does/not/exist/traitbank/*.csv\"", "\"Animalia|Insecta\"", "\"ENVELOPE(-150,-50,40,10)\"", "\"\""],
+        |      "appResource" : "file:///doesnotexist.jar",
+        |      "clientSparkVersion" : "2.0.1",
+        |      "environmentVariables" : {
+        |        "SPARK_ENV_LOADED" : "1",
+        |        "HADOOP_HOME" : "/usr/lib/hadoop",
+        |        "HADOOP_PREFIX" : "/usr/lib/hadoop",
+        |        "HADOOP_LIBEXEC_DIR" : "/usr/lib/hadoop/libexec",
+        |        "HADOOP_CONF_DIR" : "/etc/hadoop/conf",
+        |        "HADOOP_USER_NAME" : "hdfs"
+        |      },
+        |      "mainClass" : "OccurrenceCollectionGenerator",
+        |      "sparkProperties" : {
+        |        "spark.driver.supervise" : "false",
+        |        "spark.mesos.executor.home" : "/path/to/local/spark/on/mesos/worker",
+        |        "spark.cassandra.connection.host" : "localhost",
+        |        "spark.app.name" : "OccurrenceCollectionGenerator",
+        |        "_spark.eventLog.enabled": "true",
+        |        "spark.submit.deployMode" : "cluster",
+        |        "spark.master" : "mesos://api.effechecka.org:7077",
+        |        "spark.executor.memory" : "32g",
+        |        "spark.driver.memory" : "8g",
+        |        "spark.task.maxFailures" : 1
+        |      }
+        |    }""".stripMargin
+    assertRequest(someRequest, expectedRequestBody)
+
   }
 
-  "update monitors" in {
-    assertOkAndLog(requestUpdateAll())
+  "update monitor request" in {
+    val someRequest = requestUpdateAll()
+    val expectedRequestBody =
+      """{
+        |      "action" : "CreateSubmissionRequest",
+        |      "appArgs" : [ "-f", "cassandra","-c","\"file:///does/not/exist/gbif-idigbio.parquet\"","-t", "\"file:///does/not/exist/traitbank/*.csv\"", "-a", "true"],
+        |      "appResource" : "file:///doesnotexist.jar",
+        |      "clientSparkVersion" : "2.0.1",
+        |      "environmentVariables" : {
+        |        "SPARK_ENV_LOADED" : "1",
+        |        "HADOOP_HOME" : "/usr/lib/hadoop",
+        |        "HADOOP_PREFIX" : "/usr/lib/hadoop",
+        |        "HADOOP_LIBEXEC_DIR" : "/usr/lib/hadoop/libexec",
+        |        "HADOOP_CONF_DIR" : "/etc/hadoop/conf",
+        |        "HADOOP_USER_NAME" : "hdfs"
+        |      },
+        |      "mainClass" : "OccurrenceCollectionGenerator",
+        |      "sparkProperties" : {
+        |        "spark.driver.supervise" : "false",
+        |        "spark.mesos.executor.home" : "/path/to/local/spark/on/mesos/worker",
+        |        "spark.cassandra.connection.host" : "localhost",
+        |        "spark.app.name" : "OccurrenceCollectionGenerator",
+        |        "_spark.eventLog.enabled": "true",
+        |        "spark.submit.deployMode" : "cluster",
+        |        "spark.master" : "mesos://api.effechecka.org:7077",
+        |        "spark.executor.memory" : "32g",
+        |        "spark.driver.memory" : "8g",
+        |        "spark.task.maxFailures" : 1
+        |      }
+        |    }""".stripMargin
+    assertRequest(someRequest, expectedRequestBody)
   }
 
-  private def assertOkAndLog(req: HttpRequest) = {
-    val resp = Http().singleRequest(req)
-    whenReady(resp) { result =>
-      result.status.intValue() should be(200)
-      println(result.entity.toString)
-    }
+  private def assertRequest(someRequest: HttpRequest, expectedRequestBody: String) = {
+    someRequest.uri shouldBe Uri("http://api.effechecka.org:7077/v1/submissions/create")
+    someRequest.entity shouldBe HttpEntity.apply(ContentTypes.`application/json`, expectedRequestBody)
   }
-
 
 }

@@ -31,7 +31,7 @@ class SparkSubmitterSpec extends TestKit(ActorSystem("SparkIntegrationTest"))
     val expectedRequestBody =
       """{
         |      "action" : "CreateSubmissionRequest",
-        |      "appArgs" : [ "-f", "cassandra","-c","\"file:///does/not/exist/gbif-idigbio.parquet\"","-t", "\"file:///does/not/exist/traitbank/*.csv\"", "\"Animalia|Insecta\"", "\"ENVELOPE(-150,-50,40,10)\"", "\"\""],
+        |      "appArgs" : [ "-f", "hdfs","-c","\"file:///does/not/exist/gbif-idigbio.parquet\"","-t", "\"file:///does/not/exist/traitbank/*.csv\"", "\"Animalia|Insecta\"", "\"ENVELOPE(-150,-50,40,10)\"", "\"\""],
         |      "appResource" : "file:///doesnotexist.jar",
         |      "clientSparkVersion" : "2.0.1",
         |      "environmentVariables" : {

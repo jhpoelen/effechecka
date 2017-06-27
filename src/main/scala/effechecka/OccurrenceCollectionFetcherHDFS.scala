@@ -105,7 +105,13 @@ trait OccurrenceCollectionFetcherHDFS extends OccurrenceCollectionFetcher
 
 
   def request(selector: OccurrenceSelector): String = {
-    "unknown"
+    statusOf(selector) match {
+      case Some("ready") => "ready"
+      case _ => {
+        submitOccurrenceCollectionRequest(selector, persistence = "hdfs")
+        "requested"
+      }
+    }
   }
 
   def requestAll(): String = {
@@ -113,7 +119,10 @@ trait OccurrenceCollectionFetcherHDFS extends OccurrenceCollectionFetcher
   }
 
   def statusOf(selector: OccurrenceSelector): Option[String] = {
-    Some("unknown")
+    monitorOf(selector) match {
+      case Some(monitor) => monitor.status
+      case None => None
+    }
   }
 
 }

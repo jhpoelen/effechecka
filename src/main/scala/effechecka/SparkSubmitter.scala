@@ -21,8 +21,8 @@ trait SparkSubmitter {
     send(requestUpdateAll())
   }
 
-  def submitOccurrenceCollectionRequest(selector: OccurrenceSelector): Unit = {
-    send(requestOccurrences(selector))
+  def submitOccurrenceCollectionRequest(selector: OccurrenceSelector, persistence: String = "cassandra"): Unit = {
+    send(requestOccurrences(selector, persistence))
   }
 
   def submitChecklistRequest(checklist: ChecklistRequest, persistence: String = "cassandra"): Unit = {

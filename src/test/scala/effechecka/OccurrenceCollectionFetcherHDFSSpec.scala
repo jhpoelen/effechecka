@@ -47,6 +47,15 @@ class OccurrenceCollectionFetcherHDFSSpec extends TestKit(ActorSystem("Integrati
       monitors.hasNext should be(false)
     }
 
+    "return status of monitor" in {
+      statusOf(expectedSelector) should be(Some("ready"))
+      statusOf(OccurrenceSelector("no|taxon", expectedWktString, "")) should be(None)
+    }
+
+    "already requested" in {
+      request(expectedSelector) should be("ready")
+    }
+
   }
 
 }

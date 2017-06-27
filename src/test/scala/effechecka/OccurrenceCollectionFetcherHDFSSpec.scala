@@ -1,48 +1,49 @@
 package effechecka
 
-import org.scalatest.{Matchers, WordSpec}
+import akka.actor.ActorSystem
+import akka.stream.ActorMaterializer
+import akka.testkit.TestKit
+import org.scalatest.{Matchers, WordSpecLike}
 
-class OccurrenceCollectionFetcherHDFSSpec extends WordSpec with Matchers with OccurrenceCollectionFetcherHDFS {
+class OccurrenceCollectionFetcherHDFSSpec extends TestKit(ActorSystem("IntegrationTest"))
+  with WordSpecLike with Matchers with OccurrenceCollectionFetcherHDFS with HDFSTestUtil {
 
-  "Cassandra driver" should {
-    "store and provide access to an occurrence collection" in {
+  implicit val materializer = ActorMaterializer()(system)
+  implicit val ec = system.dispatcher
+
+  val expectedWktString: String = "ENVELOPE(-150,-50,40,10)"
+  val expectedTraitSelector: String = ""
+  val expectedSelector = OccurrenceSelector("Animalia|Insecta", expectedWktString, expectedTraitSelector, Some("55e4b0a0-bcd9-566f-99bc-357439011d85"))
+  val expectedMonitor = OccurrenceMonitor(expectedSelector, Some("ready"), Some(3997))
+
+  "HDFS" should {
+    "access an occurrence collection" in {
       val selector: OccurrenceSelector = OccurrenceSelector("Animalia|Insecta", "ENVELOPE(-150,-50,40,10)", "")
       val request = OccurrenceRequest(selector, Some(2))
       val occurrenceCollection = occurrencesFor(request)
       val occ = occurrenceCollection.next
-      occ.lat should be(12.1 +- 1e-2)
-      occ.lng should be(11.1 +- 1e-2)
-      occ.taxon should be("a|taxon")
-      occ.start should be(0L)
-      occ.end should be(1L)
-      occ.added should be(2L)
-      occ.id should be("some:id")
-      occ.source should be("a source")
-
-      //monitors() should contain(OccurrenceMonitor(OccurrenceSelector("Animalia|Insecta", "ENVELOPE(-150,-50,40,10)", "").withUUID, Some("requested"), Some(0)))
-      //monitorOf(OccurrenceSelector("Insecta|Aves", "wktString", "")) should contain(OccurrenceMonitor(OccurrenceSelector("Insecta|Aves", "wktString", "").withUUID, Some("requested"), Some(0)))
-      //monitorOf(OccurrenceSelector("Insecta", "wktString", "")) should contain(OccurrenceMonitor(OccurrenceSelector("Insecta", "wktString", "").withUUID, Some("requested"), Some(0)))
+      occ.lat should be(37.72 +- 1e-2)
+      occ.lng should be(-122.42 +- 1e-2)
+      occ.taxon should be("Plantae|Magnoliophyta|Magnoliopsida|Apiales|Araliaceae|Hedera|Hedera helix")
+      occ.start should be(1415062695000L)
+      occ.end should be(1415062695000L)
+      occ.added should be(1433462400000L)
+      occ.id should be("http://www.inaturalist.org/observations/1053719")
+      occ.source should be("inaturalist")
     }
 
     "occurrence selector with null status" in {
-      val expectedWktString: String = "ENVELOPE(-150,-50,40,10)"
-      val expectedTraitSelector: String = ""
-      val expectedTaxonSelector: String = "Animalia|Insecta"
-      val expectedSelector: OccurrenceSelector = OccurrenceSelector(expectedTaxonSelector, expectedWktString, expectedTraitSelector)
-      monitors() should contain(OccurrenceMonitor(expectedSelector, None, Some(123)))
-      monitorOf(OccurrenceSelector("Animalia|Insecta", expectedWktString, expectedTraitSelector)) should be(Some(OccurrenceMonitor(OccurrenceSelector("Animalia|Insecta", expectedWktString, expectedTraitSelector), None, Some(123))))
+      monitors() should contain(expectedMonitor)
+      monitorOf(expectedSelector) should be(Some(expectedMonitor))
     }
 
-    "return monitored occurrences" in {
-      val expectedWktString: String = "ENVELOPE(-150,-50,40,10)"
-      val expectedTraitSelector: String = ""
-      val expectedTaxonSelector: String = "Animalia|Insecta"
-      val occIter: Iterator[String] = monitoredOccurrencesFor("my source")
-      occIter.next() should be("some:id")
+    "return monitored occurrences by source and/or occurrence id" in {
+      val occIter: Iterator[String] = monitoredOccurrencesFor("inaturalist")
+      occIter.next() should be("http://www.inaturalist.org/observations/1053719")
       occIter.hasNext should be(false)
 
-      val monitors: Iterator[OccurrenceSelector] = monitorsFor(source = "my source", id = "some id")
-      monitors.next() should be(OccurrenceSelector(expectedTaxonSelector, expectedWktString, expectedTraitSelector))
+      val monitors: Iterator[OccurrenceSelector] = monitorsFor(source = "inaturalist", id = "http://www.inaturalist.org/observations/1053719")
+      monitors.next() should be(expectedSelector)
       monitors.hasNext should be(false)
     }
 

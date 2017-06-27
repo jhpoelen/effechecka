@@ -1,16 +1,12 @@
 package effechecka
 
-import java.nio.file.Paths
-
-import akka.stream.scaladsl.{FileIO, Sink}
 import com.typesafe.config.Config
-import io.eels.FilePattern
 import io.eels.component.parquet.ParquetSource
 import org.apache.hadoop.conf.Configuration
-import org.apache.hadoop.fs.{FileSystem, Path}
+import org.apache.hadoop.fs.FileSystem
 
 
-trait ChecklistFetcherHDFS extends ChecklistFetcher with SparkSubmitter {
+trait ChecklistFetcherHDFS extends ChecklistFetcher with SparkSubmitter with HDFSUtil {
 
   implicit def config: Config
 
@@ -45,32 +41,16 @@ trait ChecklistFetcherHDFS extends ChecklistFetcher with SparkSubmitter {
   }
 
   private def checklistPath(checklist: ChecklistRequest, part: String) = {
-    val pathForRequest = pathFor(checklist.selector)
-    val pathString = baseDir + "/" + pathForRequest + part
-    val pathFull = Paths.get(pathString)
-    val path = new Path(pathFull.getParent.toAbsolutePath.toString)
-    if (fs.exists(path)) {
-      val resourcePath = fs.resolvePath(path)
-      Some(FilePattern(resourcePath + "/*"))
-    } else {
-      None
-    }
+    patternFor(pathForChecklist(checklist.selector) + part)
   }
+
 
   def statusOf(checklist: ChecklistRequest): Option[String] = {
     if (checklistExists(checklist)) Some("ready") else None
   }
 
-  def pathFor(occurrenceSelector: OccurrenceSelector) = {
-    val uuid = UuidUtils.uuidFor(occurrenceSelector)
-    val f0 = uuid.toString.substring(0, 2)
-    val f1 = uuid.toString.substring(2, 4)
-    val f2 = uuid.toString.substring(4, 6)
-    s"occurrencesForMonitor/$f0/$f1/$f2/$uuid/checklist/"
-  }
-
-  protected def baseDir = {
-    config.getString("effechecka.monitor.dir")
+  def pathForChecklist(occurrenceSelector: OccurrenceSelector): String = {
+    pathForSelector(occurrenceSelector) + "checklist/"
   }
 
 

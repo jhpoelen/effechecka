@@ -6,25 +6,21 @@ import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{FileIO, Sink}
 import akka.testkit.TestKit
-import com.typesafe.config.{Config, ConfigFactory}
 import io.eels.FilePattern
-import org.apache.hadoop.fs.{FileSystem, Path}
-import org.apache.hadoop.conf.Configuration
-import org.scalatest.{Matchers, WordSpec, WordSpecLike}
+import org.apache.hadoop.fs.Path
+import org.scalatest.{Matchers, WordSpecLike}
 import io.eels.component.csv.CsvSource
-import io.eels.schema._
 import io.eels.component.parquet.{ParquetSink, ParquetSource}
 
 class ChecklistFetcherHDFSSpec extends TestKit(ActorSystem("IntegrationTest"))
-  with WordSpecLike with Matchers with ChecklistFetcherHDFS {
+  with WordSpecLike with Matchers with ChecklistFetcherHDFS with HDFSTestUtil {
 
   implicit val materializer = ActorMaterializer()(system)
   implicit val ec = system.dispatcher
+
   val req = ChecklistRequest(OccurrenceSelector("Animalia|Insecta", "ENVELOPE(-150,-50,40,10)", ""), 2)
   val reqNew = ChecklistRequest(OccurrenceSelector("Aves|Mammalia", "ENVELOPE(-150,-50,40,10)", ""), 2)
 
-  private val resourcePath = Paths.get(getClass.getResource("/hdfs-layout/base.txt").toURI).getParent.toAbsolutePath
-  val config: Config = ConfigFactory.parseString(s"""effechecka.monitor.dir = "$resourcePath"""")
 
 
   "HDFS" should {
@@ -55,7 +51,7 @@ class ChecklistFetcherHDFSSpec extends TestKit(ActorSystem("IntegrationTest"))
     }
 
     "read parquet by spark" in {
-      val pathForRequest = pathFor(req.selector)
+      val pathForRequest = pathForChecklist(req.selector)
       val pathFull = Paths.get(baseDir + "/" + pathForRequest + "spark.parquet")
       val pattern = FilePattern(pathFull + "/*").withFilter(_.getName.endsWith(".parquet"))
       val firstTaxonNameCombo = ParquetSource(pattern).toFrame().collect().map(_.values).head.head
@@ -63,7 +59,7 @@ class ChecklistFetcherHDFSSpec extends TestKit(ActorSystem("IntegrationTest"))
     }
 
     "create path for selector" in {
-      val pathForRequest = pathFor(req.selector)
+      val pathForRequest = pathForChecklist(req.selector)
       pathForRequest shouldBe "occurrencesForMonitor/55/e4/b0/55e4b0a0-bcd9-566f-99bc-357439011d85/checklist/"
 
       val pathFull = Paths.get(baseDir + "/" + pathForRequest + "20.tsv/checklist20.tsv")

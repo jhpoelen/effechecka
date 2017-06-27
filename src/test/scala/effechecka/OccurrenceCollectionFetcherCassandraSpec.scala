@@ -6,7 +6,7 @@ import akka.testkit.TestKit
 import com.datastax.driver.core.ResultSet
 import org.scalatest.{Matchers, WordSpecLike}
 
-class OccurrenceCollectionFetcherSpec  extends TestKit(ActorSystem("SparkIntegrationTest"))
+class OccurrenceCollectionFetcherCassandraSpec  extends TestKit(ActorSystem("SparkIntegrationTest"))
   with WordSpecLike with Matchers with OccurrenceCollectionFetcherCassandra with Configure {
 
   implicit val materializer = ActorMaterializer()(system)

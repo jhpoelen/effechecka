@@ -26,14 +26,12 @@ trait Fetcher {
 
 trait OccurrenceCollectionFetcherCassandra extends OccurrenceCollectionFetcher
   with Fetcher
-  with SparkSubmitter {
+  with SparkSubmitter
+  with DateUtil {
   implicit def session: Session
 
   implicit def config: Config
 
-  def parseDate(dateString: String) = {
-    new DateTime(dateString, DateTimeZone.UTC).toDate
-  }
 
   def occurrencesFor(ocRequest: OccurrenceRequest): Iterator[Occurrence] = {
     val added = ocRequest.added

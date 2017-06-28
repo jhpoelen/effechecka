@@ -47,11 +47,13 @@ trait OccurrenceCollectionFetcherHDFS extends OccurrenceCollectionFetcher
   def monitoredOccurrencesFor(source: String, added: DateTimeSelector = DateTimeSelector(), occLimit: Option[Int] = None): Iterator[String] = {
     patternFor(s"occurrencesForSource/source=$source/ids.parquet") match {
       case Some(path) =>
-        ParquetSource(path)
-          .toFrame().rows().iterator
-          .map(row => {
-            row.get(0).toString
-          })
+        val source = ParquetSource(path)
+          if (source.parts().isEmpty) Iterator() else {
+            source.toFrame().rows().iterator
+              .map(row => {
+                row.get(0).toString
+              })
+          }
       case None => Iterator()
     }
   }
@@ -68,14 +70,16 @@ trait OccurrenceCollectionFetcherHDFS extends OccurrenceCollectionFetcher
 
     patternFor(s"occurrencesForMonitor/", includeSummariesOnly) match {
       case Some(path) =>
-        println(path)
-        val monitors = ParquetSource(path)
-          .toFrame().rows().iterator
-        monitors.map(row => {
-          val statusOpt = row.get("status").toString
-          val recordOpt = Some(Integer.parseInt(row.get("count").toString))
-          OccurrenceMonitor(selectorFromRow(row), Some(statusOpt), recordOpt)
-        }).toList
+        val source = ParquetSource(path)
+        if (source.parts().isEmpty) List() else {
+          val monitors = source
+            .toFrame().rows().iterator
+          monitors.map(row => {
+            val statusOpt = row.get("status").toString
+            val recordOpt = Some(Integer.parseInt(row.get("count").toString))
+            OccurrenceMonitor(selectorFromRow(row), Some(statusOpt), recordOpt)
+          }).toList
+        }
       case None => List()
     }
   }
@@ -88,15 +92,17 @@ trait OccurrenceCollectionFetcherHDFS extends OccurrenceCollectionFetcher
   def monitorOf(selector: OccurrenceSelector): Option[OccurrenceMonitor] = {
     patternFor(s"${pathForSelector(selector)}/occurrence/summary.parquet") match {
       case Some(path) =>
-        val monitors = ParquetSource(path)
-          .toFrame().rows().iterator
-        if (monitors.isEmpty) None else {
-          monitors.map(row => {
-            val statusOpt = row.get("status").toString
-            val recordOpt = Some(Integer.parseInt(row.get("count").toString))
-            val selectorWithUUID = selector.copy(uuid = Some(row.get("uuid").toString))
-            OccurrenceMonitor(selectorWithUUID, Some(statusOpt), recordOpt)
-          }).take(1).toList.headOption
+        val source = ParquetSource(path)
+        if (source.parts().isEmpty) None else {
+          val monitors = source.toFrame().rows().iterator
+          if (monitors.isEmpty) None else {
+            monitors.map(row => {
+              val statusOpt = row.get("status").toString
+              val recordOpt = Some(Integer.parseInt(row.get("count").toString))
+              val selectorWithUUID = selector.copy(uuid = Some(row.get("uuid").toString))
+              OccurrenceMonitor(selectorWithUUID, Some(statusOpt), recordOpt)
+            }).take(1).toList.headOption
+          }
         }
       case None => None
     }
@@ -105,8 +111,10 @@ trait OccurrenceCollectionFetcherHDFS extends OccurrenceCollectionFetcher
   def monitorsFor(source: String, id: String): Iterator[OccurrenceSelector] = {
     patternFor(s"monitorsForOccurrence/${pathForUUID(UuidUtils.generator.generate(id))}/source=$source") match {
       case Some(path) =>
-        ParquetSource(path)
-          .toFrame().rows().iterator.map(selectorFromRow)
+        val source = ParquetSource(path)
+          if (source.parts().isEmpty) Iterator() else {
+            source.toFrame().rows().iterator.map(selectorFromRow)
+          }
       case None => Iterator()
     }
   }
@@ -128,7 +136,7 @@ trait OccurrenceCollectionFetcherHDFS extends OccurrenceCollectionFetcher
 
   def statusOf(selector: OccurrenceSelector): Option[String] = {
     monitorOf(selector) match {
-      case Some(monitor) => monitor.status
+      case Some(aMonitor) => aMonitor.status
       case None => None
     }
   }

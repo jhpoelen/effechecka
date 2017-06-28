@@ -16,12 +16,14 @@ trait OccurrenceCollectionFetcherHDFS extends OccurrenceCollectionFetcher
 
   def occurrencesFor(ocRequest: OccurrenceRequest): Iterator[Occurrence] = {
     val selector = ocRequest.selector
-    patternFor(s"${pathForSelector(selector)}/occurrence/spark.parquet") match {
-      case Some(path) =>
-        println(path)
-        ParquetSource(path)
+    val pathBase = s"${pathForSelector(selector)}/occurrence/spark.parquet"
+    patternFor(pathBase) match {
+      case Some(pathPattern) =>
+        ParquetSource(pathPattern)
+//        ParquetSource(pathPattern.withFilter(pathFilterWithDateRange(ocRequest)))
           .toFrame().rows().iterator
           .map(row => {
+            print(".")
             val startDate = java.lang.Long.parseLong(row.get("eventStartDate").toString)
             Occurrence(taxon = row.get("taxonPath").toString,
             lat = java.lang.Double.parseDouble(row.get("lat").toString),

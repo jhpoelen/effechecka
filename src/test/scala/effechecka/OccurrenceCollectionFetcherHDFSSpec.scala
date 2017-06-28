@@ -21,6 +21,7 @@ class OccurrenceCollectionFetcherHDFSSpec extends TestKit(ActorSystem("Integrati
       val selector: OccurrenceSelector = OccurrenceSelector("Animalia|Insecta", "ENVELOPE(-150,-50,40,10)", "")
       val request = OccurrenceRequest(selector, Some(2))
       val occurrenceCollection = occurrencesFor(request)
+      occurrenceCollection.hasNext shouldBe true
       val occ = occurrenceCollection.next
       occ.lat should be(37.72 +- 1e-2)
       occ.lng should be(-122.42 +- 1e-2)

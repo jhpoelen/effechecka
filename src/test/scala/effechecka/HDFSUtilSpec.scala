@@ -38,7 +38,7 @@ class HDFSUtilSpec extends TestKit(ActorSystem("IntegrationTest"))
 
     val pattern: FilePattern = selectPathByDateRange(request, "some/path")
 
-    pattern.filter(new Path("some/path/y=2017/m=04/d=04")) shouldBe true
+    pattern.filter(new Path("some/path/y=2017/m=04/d=04/bla")) shouldBe true
     pattern.filter(new Path("some/path/y=2018/m=04/d=04")) shouldBe true
     pattern.filter(new Path("some/path/y=2015/m=04/d=04")) shouldBe true
   }

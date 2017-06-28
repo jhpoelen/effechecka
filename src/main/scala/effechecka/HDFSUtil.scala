@@ -30,8 +30,7 @@ trait HDFSUtil extends DateUtil {
     val f0 = uuid.toString.substring(0, 2)
     val f1 = uuid.toString.substring(2, 4)
     val f2 = uuid.toString.substring(4, 6)
-    val suffix = s"$f0/$f1/$f2/$uuid/"
-    suffix
+    s"$f0/$f1/$f2/$uuid"
   }
 
   def includeAll(path: Path) = FilePattern(path + "/*")
@@ -53,26 +52,24 @@ trait HDFSUtil extends DateUtil {
 
   def selectPathByDateRange(request: OccurrenceRequest, path: String) = {
     FilePattern(path + "/*")
-      .withFilter(pathFilterWithDateRange(request))
+      .withFilter(pathFilterWithDateRange(request.added))
   }
 
-
-  def pathFilterWithDateRange(request: OccurrenceRequest): (Path) => Boolean = {
-    val datePathPattern = ".*/y=([0-9]{4})/m=([0-9]{2})/d=([0-9]{2})".r
+  def pathFilterWithDateRange(added: DateTimeSelector): (Path) => Boolean = {
+    val datePathPattern = ".*/y=([0-9]{4})/m=([0-9]{2})/d=([0-9]{2}).*".r
     x => {
-      println("filtering " + x)
       x.toUri.toString match {
         case datePathPattern(year, month, day) => {
           val pathDate = parseDate(s"$year-$month-$day")
-          val upper = request.added.before match {
-            case Some(end) => Seq(com.google.common.collect.Range.lessThan(parseDate(end)))
-            case None => Seq()
+          val upper = added.before match {
+            case Some(end) => Some(com.google.common.collect.Range.lessThan(parseDate(end)))
+            case None => None
           }
-          val lower = request.added.after match {
-            case Some(start) => Seq(com.google.common.collect.Range.greaterThan(parseDate(start)))
-            case None => Seq()
+          val lower = added.after match {
+            case Some(start) => Some(com.google.common.collect.Range.greaterThan(parseDate(start)))
+            case None => None
           }
-          !(upper ++ lower).exists(!_.contains(pathDate))
+          !Seq(upper, lower).flatten.exists(!_.contains(pathDate))
         }
         case _ => false
       }

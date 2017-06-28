@@ -50,7 +50,7 @@ trait ChecklistFetcherHDFS extends ChecklistFetcher with SparkSubmitter with HDF
   }
 
   def pathForChecklist(occurrenceSelector: OccurrenceSelector): String = {
-    pathForSelector(occurrenceSelector) + "checklist/"
+    pathForSelector(occurrenceSelector) + "/checklist/"
   }
 
 

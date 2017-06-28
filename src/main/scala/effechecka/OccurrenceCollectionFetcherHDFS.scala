@@ -19,22 +19,24 @@ trait OccurrenceCollectionFetcherHDFS extends OccurrenceCollectionFetcher
     val pathBase = s"${pathForSelector(selector)}/occurrence/spark.parquet"
     patternFor(pathBase) match {
       case Some(pathPattern) =>
-        ParquetSource(pathPattern)
-//        ParquetSource(pathPattern.withFilter(pathFilterWithDateRange(ocRequest)))
-          .toFrame().rows().iterator
-          .map(row => {
-            print(".")
-            val startDate = java.lang.Long.parseLong(row.get("eventStartDate").toString)
-            Occurrence(taxon = row.get("taxonPath").toString,
-            lat = java.lang.Double.parseDouble(row.get("lat").toString),
-            lng = java.lang.Double.parseDouble(row.get("lng").toString),
-            start = startDate,
-            end = startDate,
-              id = row.get("occurrenceId").toString,
-              added = java.lang.Long.parseLong(row.get("firstAddedDate").toString),
-              source = row.get("source").toString
-            )
-          })
+        val source = ParquetSource(pathPattern.withFilter(pathFilterWithDateRange(ocRequest.added)))
+        if (source.parts().isEmpty) Iterator() else {
+          val frame = source.toFrame()
+          val iterator = frame.rows().iterator
+          iterator
+            .map(row => {
+              val startDate = java.lang.Long.parseLong(row.get("eventStartDate").toString)
+              Occurrence(taxon = row.get("taxonPath").toString,
+                lat = java.lang.Double.parseDouble(row.get("lat").toString),
+                lng = java.lang.Double.parseDouble(row.get("lng").toString),
+                start = startDate,
+                end = startDate,
+                id = row.get("occurrenceId").toString,
+                added = java.lang.Long.parseLong(row.get("firstAddedDate").toString),
+                source = row.get("source").toString
+              )
+            })
+        }
       case None => Iterator()
     }
   }
@@ -58,18 +60,19 @@ trait OccurrenceCollectionFetcherHDFS extends OccurrenceCollectionFetcher
     def includeSummariesOnly(path: Path) = FilePattern(path + "/*")
       .withFilter({ x => {
         x.toUri.toString.contains("summary.parquet")
-      }})
+      }
+      })
 
     patternFor(s"occurrencesForMonitor/", includeSummariesOnly) match {
       case Some(path) =>
         println(path)
         val monitors = ParquetSource(path)
           .toFrame().rows().iterator
-          monitors.map(row => {
-            val statusOpt = row.get("status").toString
-            val recordOpt = Some(Integer.parseInt(row.get("count").toString))
-            OccurrenceMonitor(selectorFromRow(row), Some(statusOpt), recordOpt)
-          }).toList
+        monitors.map(row => {
+          val statusOpt = row.get("status").toString
+          val recordOpt = Some(Integer.parseInt(row.get("count").toString))
+          OccurrenceMonitor(selectorFromRow(row), Some(statusOpt), recordOpt)
+        }).toList
       case None => List()
     }
   }

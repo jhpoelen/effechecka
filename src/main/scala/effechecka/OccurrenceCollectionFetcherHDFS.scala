@@ -22,7 +22,10 @@ trait OccurrenceCollectionFetcherHDFS extends OccurrenceCollectionFetcher
         val source = ParquetSource(pathPattern.withFilter(pathFilterWithDateRange(ocRequest.added)))
         if (source.parts().isEmpty) Iterator() else {
           val frame = source.toFrame()
-          val iterator = frame.rows().iterator
+          val iterator = ocRequest.limit match {
+            case Some(aLimit) => frame.rows().iterator.take(aLimit)
+            case _ => frame.rows.iterator
+          }
           iterator
             .map(row => {
               val startDate = java.lang.Long.parseLong(row.get("eventStartDate").toString)

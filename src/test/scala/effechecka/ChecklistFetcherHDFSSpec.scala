@@ -18,10 +18,10 @@ class ChecklistFetcherHDFSSpec extends TestKit(ActorSystem("IntegrationTest"))
   implicit val materializer = ActorMaterializer()(system)
   implicit val ec = system.dispatcher
 
-  val req = ChecklistRequest(OccurrenceSelector("Animalia|Insecta", "ENVELOPE(-150,-50,40,10)", ""), 2)
+  private val reqSelector = OccurrenceSelector("Animalia|Insecta", "ENVELOPE(-150,-50,40,10)", "")
+  val req = ChecklistRequest(reqSelector, 2)
+  val req5 = ChecklistRequest(reqSelector, 5)
   val reqNew = ChecklistRequest(OccurrenceSelector("Aves|Mammalia", "ENVELOPE(-150,-50,40,10)", ""), 2)
-
-
 
   "HDFS" should {
     "status existing" in {
@@ -43,6 +43,12 @@ class ChecklistFetcherHDFSSpec extends TestKit(ActorSystem("IntegrationTest"))
     "return items" in {
       val checklist = itemsFor(req).toSeq
       checklist should contain(ChecklistItem("Animalia|Chordata|Aves|Passeriformes|Paridae|Poecile|atricapillus|Poecile atricapillus (Linnaeus, 1766)",126643))
+      checklist.length shouldBe 2
+    }
+
+    "return 5 items" in {
+      val checklist = itemsFor(req5).toSeq
+      checklist.length shouldBe 5
     }
 
     "return no items" in {

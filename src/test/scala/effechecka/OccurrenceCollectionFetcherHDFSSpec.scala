@@ -31,6 +31,8 @@ class OccurrenceCollectionFetcherHDFSSpec extends TestKit(ActorSystem("Integrati
       occ.added should be(1433462400000L)
       occ.id should be("http://www.inaturalist.org/observations/1053719")
       occ.source should be("inaturalist")
+
+      occurrenceCollection.take(2).length shouldBe 1
     }
 
     "occurrence selector with null status" in {

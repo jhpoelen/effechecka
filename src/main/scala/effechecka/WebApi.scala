@@ -18,7 +18,7 @@ import org.effechecka.selector.{DateTimeSelector, OccurrenceSelector, UuidUtils}
 import spray.json._
 
 trait Protocols extends SprayJsonSupport with DefaultJsonProtocol {
-  implicit val occurrenceSelector = jsonFormat4(OccurrenceSelector)
+  implicit val occurrenceSelector = jsonFormat5(OccurrenceSelector)
 
   implicit val checklistFormat = jsonFormat2(ChecklistRequest)
   implicit val itemFormat = jsonFormat2(ChecklistItem)

@@ -14,9 +14,7 @@ trait HDFSUtil extends DateUtil {
   protected implicit val fs: FileSystem
 
   def pathForSelector(occurrenceSelector: OccurrenceSelector): String = {
-    val suffix: String = pathForUUID(UuidUtils.uuidFor(occurrenceSelector))
-    val prefix = "occurrencesForMonitor"
-    s"$prefix/$suffix"
+    UuidUtils.pathForSelector(occurrenceSelector)
   }
 
   def absolutePathForSelector(occurrenceSelector: OccurrenceSelector): String = {
@@ -27,10 +25,7 @@ trait HDFSUtil extends DateUtil {
   }
 
   def pathForUUID(uuid: UUID) = {
-    val f0 = uuid.toString.substring(0, 2)
-    val f1 = uuid.toString.substring(2, 4)
-    val f2 = uuid.toString.substring(4, 6)
-    s"$f0/$f1/$f2/$uuid"
+    UuidUtils.pathForUUID(uuid)
   }
 
   def includeAll(path: Path) = FilePattern(path + "/*")
@@ -46,6 +41,7 @@ trait HDFSUtil extends DateUtil {
       None
     }
   }
+
   protected def baseDir = {
     config.getString("effechecka.monitor.dir")
   }

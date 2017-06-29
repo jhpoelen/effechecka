@@ -1,6 +1,7 @@
 package effechecka
 
 import com.typesafe.config.Config
+import effechecka.selector.{DateTimeSelector, OccurrenceSelector, UuidUtils}
 import io.eels.{FilePattern, Row}
 import io.eels.component.parquet.ParquetSource
 import org.apache.hadoop.conf.Configuration

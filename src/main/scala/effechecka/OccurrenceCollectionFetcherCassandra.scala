@@ -3,9 +3,11 @@ package effechecka
 import com.datastax.driver.core._
 import org.joda.time.DateTime
 import org.joda.time.DateTimeZone
+
 import scala.collection.JavaConversions
 import scala.collection.JavaConversions._
 import com.typesafe.config.Config
+import effechecka.selector.{DateTimeSelector, OccurrenceSelector}
 
 trait Fetcher {
   def normalizeSelector(taxonSelector: String) = {

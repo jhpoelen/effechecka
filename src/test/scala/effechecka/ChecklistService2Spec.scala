@@ -3,13 +3,13 @@ package effechecka
 import java.net.URL
 import java.util.UUID
 
-
-import akka.http.scaladsl.model.TransferEncodings.{gzip, deflate}
-import akka.http.scaladsl.model.headers.{`Access-Control-Allow-Origin`, Location, `Accept-Encoding`}
+import akka.http.scaladsl.model.TransferEncodings.{deflate, gzip}
+import akka.http.scaladsl.model.headers.{Location, `Accept-Encoding`, `Access-Control-Allow-Origin`}
 import akka.http.scaladsl.server.ValidationRejection
 import org.scalatest.{Matchers, WordSpec}
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import akka.http.scaladsl.model._
+import effechecka.selector.{DateTimeSelector, OccurrenceSelector}
 
 trait ChecklistFetcherStatic extends ChecklistFetcher {
   def itemsFor(checklist: ChecklistRequest): Iterator[ChecklistItem] = Iterator(ChecklistItem("donald", 1))

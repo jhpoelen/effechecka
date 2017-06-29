@@ -1,5 +1,7 @@
 package effechecka
 
+import effechecka.selector.{DateTimeSelector, OccurrenceSelector}
+
 trait OccurrenceCollectionFetcher {
   def occurrencesFor(request: OccurrenceRequest): Iterator[Occurrence]
 

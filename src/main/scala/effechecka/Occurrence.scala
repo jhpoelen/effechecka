@@ -1,9 +1,6 @@
 package effechecka
 
-case class OccurrenceSelector(taxonSelector: String, wktString: String, traitSelector: String, uuid: Option[String] = None) {
-  def withUUID = this.copy(uuid = Some(UuidUtils.uuidFor(this).toString))
-}
-case class DateTimeSelector(before: Option[String] = None, after: Option[String] = None)
+import effechecka.selector.{DateTimeSelector, OccurrenceSelector}
 
 case class OccurrenceRequest(selector: OccurrenceSelector, limit: Option[Int] = None, added: DateTimeSelector = DateTimeSelector())
 case class Occurrence(taxon: String, lat: Double, lng: Double, start: Long, end: Long, id: String, added: Long, source: String)

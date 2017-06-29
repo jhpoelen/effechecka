@@ -1,10 +1,9 @@
-package effechecka
+package effechecka.selector
 
 import java.util.UUID
 
-import com.fasterxml.uuid.{Generators, StringArgGenerator}
-
-import org.scalatest._
+import com.fasterxml.uuid.Generators
+import OccurrenceSelector
 
 
 

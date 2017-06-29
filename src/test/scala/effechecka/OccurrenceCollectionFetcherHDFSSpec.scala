@@ -3,6 +3,7 @@ package effechecka
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import akka.testkit.TestKit
+import effechecka.selector.OccurrenceSelector
 import org.scalatest.{Matchers, WordSpecLike}
 
 class OccurrenceCollectionFetcherHDFSSpec extends TestKit(ActorSystem("IntegrationTest"))

@@ -6,6 +6,7 @@ import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{FileIO, Sink}
 import akka.testkit.TestKit
+import effechecka.selector.OccurrenceSelector
 import io.eels.FilePattern
 import org.apache.hadoop.fs.Path
 import org.scalatest.{Matchers, WordSpecLike}

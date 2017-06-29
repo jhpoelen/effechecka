@@ -1,5 +1,6 @@
 package effechecka
 
+import effechecka.selector.OccurrenceSelector
 import org.scalatest._
 
 

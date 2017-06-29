@@ -8,7 +8,7 @@ import org.scalatest._
 
 
 
-class UuidUtilSpec extends WordSpecLike with Matchers {
+class UuidUtilsSpec extends WordSpecLike with Matchers {
 
   "reconstruct effechecka namespace guid" in {
     // from http://www.ietf.org/rfc/rfc4122.txt

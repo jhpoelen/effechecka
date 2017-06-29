@@ -4,7 +4,7 @@ import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import akka.testkit.TestKit
 import com.datastax.driver.core.ResultSet
-import effechecka.selector.{DateTimeSelector, OccurrenceSelector}
+import org.effechecka.selector.{DateTimeSelector, OccurrenceSelector}
 import org.scalatest.{Matchers, WordSpecLike}
 
 class OccurrenceCollectionFetcherCassandraSpec  extends TestKit(ActorSystem("SparkIntegrationTest"))

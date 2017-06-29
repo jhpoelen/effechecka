@@ -6,7 +6,7 @@ import akka.http.scaladsl.model._
 import akka.stream.ActorMaterializer
 import akka.testkit.TestKit
 import com.typesafe.config.ConfigFactory
-import effechecka.selector.OccurrenceSelector
+import org.effechecka.selector.OccurrenceSelector
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.time.{Millis, Seconds, Span}
 import org.scalatest.{Matchers, WordSpecLike}

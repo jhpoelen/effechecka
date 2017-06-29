@@ -1,6 +1,6 @@
-package effechecka
+package org.effechecka.selector
 
-import effechecka.selector.OccurrenceSelector
+import effechecka.SelectorValidator
 import org.scalatest._
 
 

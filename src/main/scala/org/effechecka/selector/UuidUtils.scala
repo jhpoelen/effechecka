@@ -1,10 +1,9 @@
-package effechecka.selector
+package org.effechecka.selector
 
 import java.net.{URL, URLEncoder}
 import java.util.UUID
 
 import com.fasterxml.uuid.{Generators, StringArgGenerator}
-import effechecka.DateTimeSelector
 
 object UuidUtils {
   val effecheckaNamespace = UUID.fromString("40d05094-803d-5bfa-b1e1-48975d2035fc")

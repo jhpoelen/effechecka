@@ -1,28 +1,21 @@
 package effechecka
 
-import java.net.URL
 import java.util.UUID
 
-import akka.NotUsed
-import akka.event.{Logging, LoggingAdapter}
-import akka.http.scaladsl.model.ContentType.WithCharset
-import akka.util.ByteString
-import akka.http.scaladsl.{Http, server}
-import akka.http.scaladsl.server.Directives._
-import akka.stream.ActorMaterializer
-import org.locationtech.spatial4j.context.jts.JtsSpatialContext
-import org.locationtech.spatial4j.io.WKTReader
-import spray.json._
-import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import akka.actor.ActorSystem
+import akka.event.Logging
+import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
+import akka.http.scaladsl.model.ContentType.WithCharset
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers._
-import akka.stream.scaladsl.{Concat, Flow, Keep, Source}
+import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.{Directive0, Directive1, Route, ValidationRejection}
-import akka.http.scaladsl.model.StatusCode._
-import effechecka.selector.{DateTimeSelector, OccurrenceSelector, UuidUtils}
-
-import scala.util.Try
+import akka.http.scaladsl.{Http, server}
+import akka.stream.ActorMaterializer
+import akka.stream.scaladsl.{Concat, Source}
+import akka.util.ByteString
+import org.effechecka.selector.{DateTimeSelector, OccurrenceSelector, UuidUtils}
+import spray.json._
 
 trait Protocols extends SprayJsonSupport with DefaultJsonProtocol {
   implicit val occurrenceSelector = jsonFormat4(OccurrenceSelector)

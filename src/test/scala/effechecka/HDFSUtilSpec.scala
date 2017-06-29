@@ -3,13 +3,12 @@ package effechecka
 import java.util.{Date, UUID}
 
 import akka.actor.ActorSystem
-import akka.http.scaladsl.model.DateTime
 import akka.stream.ActorMaterializer
 import akka.testkit.TestKit
-import effechecka.selector.{DateTimeSelector, OccurrenceSelector}
 import io.eels.FilePattern
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FileSystem, Path}
+import org.effechecka.selector.{DateTimeSelector, OccurrenceSelector}
 import org.scalatest._
 
 

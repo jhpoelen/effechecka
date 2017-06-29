@@ -9,7 +9,7 @@ import akka.http.scaladsl.server.ValidationRejection
 import org.scalatest.{Matchers, WordSpec}
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import akka.http.scaladsl.model._
-import effechecka.selector.{DateTimeSelector, OccurrenceSelector}
+import org.effechecka.selector.{DateTimeSelector, OccurrenceSelector}
 
 trait ChecklistFetcherStatic extends ChecklistFetcher {
   def itemsFor(checklist: ChecklistRequest): Iterator[ChecklistItem] = Iterator(ChecklistItem("donald", 1))

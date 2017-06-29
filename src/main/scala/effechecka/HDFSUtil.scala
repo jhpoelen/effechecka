@@ -4,9 +4,9 @@ import java.nio.file.Paths
 import java.util.UUID
 
 import com.typesafe.config.Config
-import effechecka.selector.{DateTimeSelector, OccurrenceSelector, UuidUtils}
 import io.eels.FilePattern
 import org.apache.hadoop.fs.{FileSystem, Path}
+import org.effechecka.selector.{DateTimeSelector, OccurrenceSelector, UuidUtils}
 
 trait HDFSUtil extends DateUtil {
 

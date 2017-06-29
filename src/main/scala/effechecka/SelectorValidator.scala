@@ -1,6 +1,6 @@
 package effechecka
 
-import effechecka.selector.OccurrenceSelector
+import org.effechecka.selector.OccurrenceSelector
 import org.locationtech.spatial4j.context.jts.JtsSpatialContext
 import org.locationtech.spatial4j.io.WKTReader
 

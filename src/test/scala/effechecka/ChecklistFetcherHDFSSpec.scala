@@ -6,12 +6,12 @@ import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{FileIO, Sink}
 import akka.testkit.TestKit
-import effechecka.selector.OccurrenceSelector
 import io.eels.FilePattern
 import org.apache.hadoop.fs.Path
 import org.scalatest.{Matchers, WordSpecLike}
 import io.eels.component.csv.CsvSource
 import io.eels.component.parquet.{ParquetSink, ParquetSource}
+import org.effechecka.selector.OccurrenceSelector
 
 class ChecklistFetcherHDFSSpec extends TestKit(ActorSystem("IntegrationTest"))
   with WordSpecLike with Matchers with ChecklistFetcherHDFS with HDFSTestUtil {

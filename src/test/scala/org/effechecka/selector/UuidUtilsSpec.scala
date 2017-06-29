@@ -1,10 +1,9 @@
-package effechecka.selector
+package org.effechecka.selector
 
 import java.util.UUID
 
 import com.fasterxml.uuid.Generators
-import OccurrenceSelector
-
+import org.scalatest.{Matchers, WordSpecLike}
 
 
 class UuidUtilsSpec extends WordSpecLike with Matchers {

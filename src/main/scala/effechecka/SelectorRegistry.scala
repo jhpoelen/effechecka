@@ -4,7 +4,7 @@ import java.util.UUID
 
 import com.datastax.driver.core._
 import com.typesafe.config.Config
-import effechecka.selector.{OccurrenceSelector, UuidUtils}
+import org.effechecka.selector.{OccurrenceSelector, UuidUtils}
 
 import scala.collection.JavaConverters._
 

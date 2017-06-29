@@ -3,7 +3,7 @@ package effechecka
 import java.util.UUID
 
 import com.datastax.driver.core.ResultSet
-import effechecka.selector.{OccurrenceSelector, UuidUtils}
+import org.effechecka.selector.{OccurrenceSelector, UuidUtils}
 import org.scalatest.{Matchers, WordSpec}
 
 class SelectorRegistrySpec extends WordSpec with Matchers with SelectorRegistryCassandra with Configure {

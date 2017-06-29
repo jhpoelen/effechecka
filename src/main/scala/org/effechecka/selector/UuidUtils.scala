@@ -54,7 +54,6 @@ object UuidUtils {
   }
 
   def pathForSelector(occurrenceSelector: OccurrenceSelector): String = {
-    UuidUtils.pathForSelector(occurrenceSelector)
     val suffix: String = pathForUUID(UuidUtils.uuidFor(occurrenceSelector))
     val prefix = "occurrencesForMonitor"
     s"$prefix/$suffix"

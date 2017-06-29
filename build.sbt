@@ -13,7 +13,7 @@ libraryDependencies ++= {
   val cassandraDriverV = "2.1.10.3"
   val scalaTestV = "3.0.1"
   Seq(
-    "org.effechecka" %% "effechecka-selector" % "0.0.1-SNAPSHOT",
+    "org.effechecka" %% "effechecka-selector" % "0.0.2-SNAPSHOT",
     "com.datastax.cassandra" % "cassandra-driver-core" % cassandraDriverV,
     "io.eels" %% "eel-core" % eelV,
     "io.eels" %% "eel-components" % eelV,

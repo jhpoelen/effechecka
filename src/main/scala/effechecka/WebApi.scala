@@ -164,7 +164,7 @@ trait Service extends Protocols
                     () =>
                       itemsFor(checklist)
                         .map(item => {
-                          ByteString(s"${item.taxon}\t${item.recordcount}")
+                          ByteString(s"\n${item.taxon}\t${item.recordcount}")
                         })
                   })
                   val header = Source.single[ByteString](ByteString(Seq("taxon", "recordcount").mkString("\t")))

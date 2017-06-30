@@ -271,7 +271,18 @@ object WebApi extends App with Service with Configure
   implicit val system = ActorSystem("effechecka")
   implicit val materializer = ActorMaterializer()
   implicit val ec = system.dispatcher
-  implicit val configHadoop: Configuration = new Configuration()
+
+  implicit val configHadoop: Configuration =
+    sys.env.get("HADOOP_CONF_DIR") match {
+    case Some(confDir) =>
+      val conf = new Configuration()
+      conf.addResource(s"$confDir/hdfs-site.xml")
+      conf.addResource(s"$confDir/code-site.xml")
+      conf
+    case _ =>
+      new Configuration()
+  }
+
   implicit val fs: FileSystem = FileSystem.get(configHadoop)
 
   val logger = Logging(system, getClass)

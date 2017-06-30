@@ -164,10 +164,11 @@ trait Service extends Protocols
                     () =>
                       itemsFor(checklist)
                         .map(item => {
-                          ByteString(s"\n${item.taxon}\t${item.recordcount}")
+                          val taxonName = item.taxon.split("""|""").reverse.head
+                          ByteString(s"\n$taxonName\t${item.taxon}\t${item.recordcount}")
                         })
                   })
-                  val header = Source.single[ByteString](ByteString(Seq("taxon", "recordcount").mkString("\t")))
+                  val header = Source.single[ByteString](ByteString(Seq("taxonName", "taxonPath", "recordCount").mkString("\t")))
                   HttpEntity(contentType, Source.combine(header, occurrenceSource)(Concat[ByteString]))
                 }
               }

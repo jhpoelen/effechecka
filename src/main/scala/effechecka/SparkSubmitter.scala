@@ -52,6 +52,7 @@ trait SparkSubmitter {
     val sparkJobJar = config.getString("effechecka.spark.job.jar")
     val dataPathOccurrences = config.getString("effechecka.data.dir") + "gbif-idigbio.parquet"
     val dataPathTraits = config.getString("effechecka.data.dir") + "traitbank/*.csv"
+    val outputPath = config.getString("effechecka.monitor.dir")
     val sparkJobRequest = s"""{
                              |      "action" : "CreateSubmissionRequest",
                              |      "appArgs" : [ "-f", "$persistence","-c","\\"$dataPathOccurrences\\"","-t", "\\"$dataPathTraits\\"", $args],

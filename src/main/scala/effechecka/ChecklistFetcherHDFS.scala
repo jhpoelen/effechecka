@@ -18,11 +18,15 @@ trait ChecklistFetcherHDFS extends ChecklistFetcher with SparkSubmitter with HDF
     checklistPath(checklist, "/spark.parquet") match {
       case Some(path) =>
         val source = ParquetSource(path)
-          if (source.parts().isEmpty) Iterator() else {
-            source.toFrame().rows().iterator
-              .take(checklist.limit)
-              .map(row => ChecklistItem(row.get("taxonPath").toString, Integer.parseInt(row.get("recordCount").toString)))
+        if (source.parts().isEmpty) Iterator() else {
+          val i = source.toFrame().rows().iterator
+          val iLimited = checklist.limit match {
+            case Some(aLimit) => i.take(aLimit)
+            case _ => i
           }
+          iLimited
+            .map(row => ChecklistItem(row.get("taxonPath").toString, Integer.parseInt(row.get("recordCount").toString)))
+        }
       case None => Iterator() // should really be None
     }
   }

@@ -13,7 +13,7 @@ trait ChecklistFetcherCassandra extends ChecklistFetcher
   implicit def config: Config
 
   def itemsFor(checklist: ChecklistRequest): Iterator[ChecklistItem] = {
-    val results: ResultSet = session.execute(checklistSelect(checklist.limit),
+    val results: ResultSet = session.execute(checklistSelect(checklist.limit.getOrElse(20)),
       selectorParams(checklist.selector): _*)
     val items: Iterator[Row] = results.iterator
     items.map(item => ChecklistItem(item.getString("taxon"), item.getInt("recordcount")))

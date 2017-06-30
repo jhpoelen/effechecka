@@ -23,9 +23,9 @@ class ChecklistFetcherHDFSSpec extends TestKit(ActorSystem("IntegrationTest"))
 
 
   private val reqSelector = OccurrenceSelector("Animalia|Insecta", "ENVELOPE(-150,-50,40,10)", "")
-  val req = ChecklistRequest(reqSelector, 2)
-  val req5 = ChecklistRequest(reqSelector, 5)
-  val reqNew = ChecklistRequest(OccurrenceSelector("Aves|Mammalia", "ENVELOPE(-150,-50,40,10)", ""), 2)
+  val req = ChecklistRequest(reqSelector, Some(2))
+  val req5 = ChecklistRequest(reqSelector, Some(5))
+  val reqNew = ChecklistRequest(OccurrenceSelector("Aves|Mammalia", "ENVELOPE(-150,-50,40,10)", ""), Some(2))
 
   "HDFS" should {
     "status existing" in {

@@ -137,7 +137,7 @@ trait Service extends Protocols
     } ~ path("checklist") {
       get {
         parameters('limit.as[Int] ? 20) { limit =>
-          val checklist = ChecklistRequest(ocSelector, limit)
+          val checklist = ChecklistRequest(ocSelector, Some(limit))
           val statusOpt: Option[String] = statusOf(checklist)
           val (items, status) = statusOpt match {
             case Some("ready") => (itemsFor(checklist), "ready")
@@ -148,6 +148,35 @@ trait Service extends Protocols
           }
           complete {
             Checklist(ocSelector, status, items.toList)
+          }
+        }
+      }
+    } ~ path("checklist.tsv") {
+      get {
+        parameters('limit.as[Int] ?) { limit =>
+          val checklist = ChecklistRequest(ocSelector, limit)
+          val statusOpt: Option[String] = statusOf(checklist)
+          statusOpt match {
+            case Some("ready") => {
+              encodeResponse {
+                complete {
+                  val occurrenceSource = Source.fromIterator[ByteString]({
+                    () =>
+                      itemsFor(checklist)
+                        .map(item => {
+                          ByteString(s"${item.taxon}\t${item.recordcount}")
+                        })
+                  })
+                  val header = Source.single[ByteString](ByteString(Seq("taxon", "recordCount").mkString("\t")))
+                  HttpEntity(contentType, Source.combine(header, occurrenceSource)(Concat[ByteString]))
+                }
+              }
+            }
+            case None => {
+              complete {
+                StatusCodes.NotFound
+              }
+            }
           }
         }
       }
@@ -275,15 +304,15 @@ object WebApi extends App with Service with Configure
 
   implicit val configHadoop: Configuration =
     sys.env.get("HADOOP_CONF_DIR") match {
-    case Some(confDir) =>
-      println(s"attempting to override configuration in [$confDir]")
-      val conf = new Configuration()
-      conf.addResource(new URL(s"file:///$confDir/hdfs-site.xml"))
-      conf.addResource(new URL(s"file:///$confDir/core-site.xml"))
-      conf
-    case _ =>
-      new Configuration()
-  }
+      case Some(confDir) =>
+        println(s"attempting to override configuration in [$confDir]")
+        val conf = new Configuration()
+        conf.addResource(new URL(s"file:///$confDir/hdfs-site.xml"))
+        conf.addResource(new URL(s"file:///$confDir/core-site.xml"))
+        conf
+      case _ =>
+        new Configuration()
+    }
 
   implicit val fs: FileSystem = FileSystem.get(configHadoop)
 

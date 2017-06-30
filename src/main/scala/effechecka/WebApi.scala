@@ -164,7 +164,7 @@ trait Service extends Protocols
                     () =>
                       itemsFor(checklist)
                         .map(item => {
-                          val taxonName = item.taxon.split("""|""").reverse.head
+                          val taxonName = item.taxon.split("""\|""").reverse.head
                           ByteString(s"\n$taxonName\t${item.taxon}\t${item.recordcount}")
                         })
                   })

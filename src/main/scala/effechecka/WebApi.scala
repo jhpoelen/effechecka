@@ -1,5 +1,6 @@
 package effechecka
 
+import java.net.URL
 import java.util.UUID
 
 import akka.actor.ActorSystem
@@ -275,9 +276,10 @@ object WebApi extends App with Service with Configure
   implicit val configHadoop: Configuration =
     sys.env.get("HADOOP_CONF_DIR") match {
     case Some(confDir) =>
+      println(s"attempting to override configuration in [$confDir]")
       val conf = new Configuration()
-      conf.addResource(s"$confDir/hdfs-site.xml")
-      conf.addResource(s"$confDir/code-site.xml")
+      conf.addResource(new URL(s"file:///$confDir/hdfs-site.xml"))
+      conf.addResource(new URL(s"file:///$confDir/code-site.xml"))
       conf
     case _ =>
       new Configuration()

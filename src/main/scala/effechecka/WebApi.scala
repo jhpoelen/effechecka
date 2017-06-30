@@ -167,7 +167,7 @@ trait Service extends Protocols
                           ByteString(s"${item.taxon}\t${item.recordcount}")
                         })
                   })
-                  val header = Source.single[ByteString](ByteString(Seq("taxon", "recordCount").mkString("\t")))
+                  val header = Source.single[ByteString](ByteString(Seq("taxon", "recordcount").mkString("\t")))
                   HttpEntity(contentType, Source.combine(header, occurrenceSource)(Concat[ByteString]))
                 }
               }

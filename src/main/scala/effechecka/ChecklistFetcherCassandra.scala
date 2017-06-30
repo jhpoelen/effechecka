@@ -13,7 +13,7 @@ trait ChecklistFetcherCassandra extends ChecklistFetcher
   implicit def config: Config
 
   def itemsFor(checklist: ChecklistRequest): Iterator[ChecklistItem] = {
-    val results: ResultSet = session.execute(checklistSelect(checklist.limit.getOrElse(20)),
+    val results: ResultSet = session.execute(checklistSelect(checklist.limit),
       selectorParams(checklist.selector): _*)
     val items: Iterator[Row] = results.iterator
     items.map(item => ChecklistItem(item.getString("taxon"), item.getInt("recordcount")))
@@ -30,8 +30,12 @@ trait ChecklistFetcherCassandra extends ChecklistFetcher
     items.map(_.getString("status")).headOption
   }
 
-  def checklistSelect(limit: Int): String = {
-    s"SELECT taxon,recordcount FROM effechecka.checklist WHERE taxonselector = ? AND wktstring = ? AND traitselector = ? ORDER BY recordcount DESC LIMIT $limit"
+  def checklistSelect(limit: Option[Int]): String = {
+    val limitClause = limit match {
+      case Some(aLimit) => s"LIMIT $aLimit"
+      case None => ""
+    }
+    s"SELECT taxon,recordcount FROM effechecka.checklist WHERE taxonselector = ? AND wktstring = ? AND traitselector = ? ORDER BY recordcount DESC $limitClause".trim
   }
 
   def checklistStatusSelect: String = {

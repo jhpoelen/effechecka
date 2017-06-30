@@ -172,7 +172,7 @@ trait Service extends Protocols
                 }
               }
             }
-            case None => {
+            case _ => {
               complete {
                 StatusCodes.NotFound
               }

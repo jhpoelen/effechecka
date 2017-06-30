@@ -50,12 +50,12 @@ trait SparkSubmitter {
 
   def requestFor(args: String, sparkJobMainClass: String, persistence: String = "cassandra") = {
     val sparkJobJar = config.getString("effechecka.spark.job.jar")
-    val dataPathOccurrences = config.getString("effechecka.data.dir") + "gbif-idigbio.parquet"
-    val dataPathTraits = config.getString("effechecka.data.dir") + "traitbank/*.csv"
+    val dataPathOccurrences = config.getString("effechecka.data.dir") + "/gbif-idigbio.parquet"
+    val dataPathTraits = config.getString("effechecka.data.dir") + "/traitbank/*.csv"
     val outputPath = config.getString("effechecka.monitor.dir")
     val sparkJobRequest = s"""{
                              |      "action" : "CreateSubmissionRequest",
-                             |      "appArgs" : [ "-f", "$persistence","-c","\\"$dataPathOccurrences\\"","-t", "\\"$dataPathTraits\\"", $args],
+                             |      "appArgs" : [ "-f", "$persistence","-o", "\\"$outputPath\\"","-c","\\"$dataPathOccurrences\\"","-t", "\\"$dataPathTraits\\"", $args],
                              |      "appResource" : "$sparkJobJar",
                              |      "clientSparkVersion" : "2.0.1",
                              |      "environmentVariables" : {

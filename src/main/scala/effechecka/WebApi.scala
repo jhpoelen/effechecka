@@ -296,7 +296,7 @@ trait Service extends Protocols
 
 object WebApi extends App with Service with Configure
   with SelectorRegistryCassandra
-  with ChecklistFetcherHDFS
+  with ChecklistFetcherCassandra
   with OccurrenceCollectionFetcherCassandra {
   implicit val system = ActorSystem("effechecka")
   implicit val materializer = ActorMaterializer()

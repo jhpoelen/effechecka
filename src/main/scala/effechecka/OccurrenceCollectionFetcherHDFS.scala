@@ -65,7 +65,7 @@ trait OccurrenceCollectionFetcherHDFS extends OccurrenceCollectionFetcher
   def monitors(): List[OccurrenceMonitor] = {
     def includeSummariesOnly(path: Path) = FilePattern(path + "/*")
       .withFilter({ x => {
-        x.toUri.toString.contains("summary.parquet")
+        x.toUri.toString.contains("occurrence/summary.parquet")
       }
       })
 

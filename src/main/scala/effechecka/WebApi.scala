@@ -14,6 +14,8 @@ import akka.http.scaladsl.{Http, server}
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{Concat, Source}
 import akka.util.ByteString
+import org.apache.hadoop.conf.Configuration
+import org.apache.hadoop.fs.FileSystem
 import org.effechecka.selector.{DateTimeSelector, OccurrenceSelector, UuidUtils}
 import spray.json._
 
@@ -44,7 +46,6 @@ trait Service extends Protocols
       `Access-Control-Allow-Origin`.* +: headers
     }
   }
-
 
 
   val selectorValueParams: Directive1[OccurrenceSelector] = {
@@ -210,10 +211,11 @@ trait Service extends Protocols
                   encodeResponse {
                     complete {
                       val occurrenceSource = Source.fromIterator[ByteString]({
-                        () => occurrencesFor(ocRequest)
-                          .map(occurrence => {
-                            ByteString(CsvUtils.toOccurrenceRow(occurrence))
-                          })
+                        () =>
+                          occurrencesFor(ocRequest)
+                            .map(occurrence => {
+                              ByteString(CsvUtils.toOccurrenceRow(occurrence))
+                            })
                       })
                       val header = Source.single[ByteString](ByteString(Seq("taxonName", "taxonPath", "lat", "lng", "eventStartDate", "occurrenceId", "firstAddedDate", "source", "occurrenceUrl").mkString("\t")))
                       HttpEntity(contentType, Source.combine(header, occurrenceSource)(Concat[ByteString]))
@@ -241,10 +243,11 @@ trait Service extends Protocols
                   encodeResponse {
                     complete {
                       val monitoredOccurrenceSource = Source.fromIterator[ByteString]({
-                        () => monitoredOccurrencesFor(source, added, limit)
-                          .map(occurrenceId => {
-                            ByteString(s"\n$occurrenceId")
-                          })
+                        () =>
+                          monitoredOccurrencesFor(source, added, limit)
+                            .map(occurrenceId => {
+                              ByteString(s"\n$occurrenceId")
+                            })
                       })
                       val header = Source.single[ByteString](ByteString("occurrenceId"))
                       HttpEntity(contentType, Source.combine(header, monitoredOccurrenceSource)(Concat[ByteString]))
@@ -268,8 +271,21 @@ object WebApi extends App with Service with Configure
   implicit val system = ActorSystem("effechecka")
   implicit val materializer = ActorMaterializer()
   implicit val ec = system.dispatcher
+  implicit val configHadoop: Configuration = new Configuration()
+  implicit val fs: FileSystem = FileSystem.get(configHadoop)
 
   val logger = Logging(system, getClass)
+
+  println("--- environment variable start ---")
+  sys.env.foreach(println)
+  println("--- environment variable end ---")
+
+  val iterator = configHadoop.iterator
+  println("--- hadoop config start ---")
+  while (iterator.hasNext) {
+    println(iterator.next())
+  }
+  println("--- hadoop config end ---")
 
   Http().bindAndHandle(route, config.getString("effechecka.host"), config.getInt("effechecka.port"))
 }

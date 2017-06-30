@@ -62,4 +62,5 @@ class OccurrenceCollectionFetcherHDFSSpec extends TestKit(ActorSystem("Integrati
 
   }
 
+
 }

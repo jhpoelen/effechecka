@@ -7,10 +7,11 @@ import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{FileIO, Sink}
 import akka.testkit.TestKit
 import io.eels.FilePattern
-import org.apache.hadoop.fs.Path
+import org.apache.hadoop.fs.{FileSystem, Path}
 import org.scalatest.{Matchers, WordSpecLike}
 import io.eels.component.csv.CsvSource
 import io.eels.component.parquet.{ParquetSink, ParquetSource}
+import org.apache.hadoop.conf.Configuration
 import org.effechecka.selector.OccurrenceSelector
 
 class ChecklistFetcherHDFSSpec extends TestKit(ActorSystem("IntegrationTest"))
@@ -18,6 +19,8 @@ class ChecklistFetcherHDFSSpec extends TestKit(ActorSystem("IntegrationTest"))
 
   implicit val materializer = ActorMaterializer()(system)
   implicit val ec = system.dispatcher
+
+
 
   private val reqSelector = OccurrenceSelector("Animalia|Insecta", "ENVELOPE(-150,-50,40,10)", "")
   val req = ChecklistRequest(reqSelector, 2)

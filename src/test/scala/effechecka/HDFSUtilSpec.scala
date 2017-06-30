@@ -18,10 +18,6 @@ class HDFSUtilSpec extends TestKit(ActorSystem("IntegrationTest"))
   implicit val materializer = ActorMaterializer()(system)
   implicit val ec = system.dispatcher
 
-  protected implicit val configHadoop: Configuration = new Configuration()
-  protected implicit val fs: FileSystem = FileSystem.get(configHadoop)
-
-
   "path with filter" in {
     val request = OccurrenceRequest(OccurrenceSelector("Aves|Mammalia", "some wkt", "some trait"),
       added = DateTimeSelector(before = Some("2017-05-01"), after = Some("2016-02-03")))

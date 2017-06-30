@@ -11,6 +11,7 @@ trait ChecklistFetcherHDFS extends ChecklistFetcher with SparkSubmitter with HDF
 
   implicit def config: Config
 
+  protected implicit val configHadoop: Configuration
   protected implicit val fs: FileSystem
 
   def itemsFor(checklist: ChecklistRequest): Iterator[ChecklistItem] = {

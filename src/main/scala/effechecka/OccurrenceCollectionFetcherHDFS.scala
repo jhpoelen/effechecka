@@ -3,6 +3,7 @@ package effechecka
 import com.typesafe.config.Config
 import io.eels.{FilePattern, Row}
 import io.eels.component.parquet.ParquetSource
+import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FileSystem, Path}
 import org.effechecka.selector.{DateTimeSelector, OccurrenceSelector, UuidUtils}
 
@@ -11,6 +12,7 @@ trait OccurrenceCollectionFetcherHDFS extends OccurrenceCollectionFetcher
 
   implicit def config: Config
 
+  protected implicit val configHadoop: Configuration
   protected implicit val fs: FileSystem
 
   def occurrencesFor(ocRequest: OccurrenceRequest): Iterator[Occurrence] = {

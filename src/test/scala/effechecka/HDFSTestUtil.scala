@@ -12,7 +12,7 @@ trait HDFSTestUtil {
   val config: Config = ConfigFactory.parseString(s"""effechecka.monitor.dir = "$resourcePath"""")
 
 
-  private implicit val configHadoop: Configuration = new Configuration()
+  implicit val configHadoop: Configuration = new Configuration()
   implicit val fs: FileSystem = FileSystem.get(configHadoop)
 
 }

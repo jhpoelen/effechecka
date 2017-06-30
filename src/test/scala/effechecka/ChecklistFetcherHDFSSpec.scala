@@ -7,11 +7,10 @@ import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{FileIO, Sink}
 import akka.testkit.TestKit
 import io.eels.FilePattern
-import org.apache.hadoop.fs.{FileSystem, Path}
+import org.apache.hadoop.fs.Path
 import org.scalatest.{Matchers, WordSpecLike}
 import io.eels.component.csv.CsvSource
 import io.eels.component.parquet.{ParquetSink, ParquetSource}
-import org.apache.hadoop.conf.Configuration
 import org.effechecka.selector.OccurrenceSelector
 
 class ChecklistFetcherHDFSSpec extends TestKit(ActorSystem("IntegrationTest"))
@@ -62,7 +61,7 @@ class ChecklistFetcherHDFSSpec extends TestKit(ActorSystem("IntegrationTest"))
 
     "read parquet by spark" in {
       val pathForRequest = pathForChecklist(req.selector)
-      val pathFull = Paths.get(baseDir + "/" + pathForRequest + "/spark.parquet")
+      val pathFull = Paths.get(baseDir + "/checklist/" + pathForRequest + "/checklist.parquet")
       val pattern = FilePattern(pathFull + "/*").withFilter(_.getName.endsWith(".parquet"))
       val firstTaxonNameCombo = ParquetSource(pattern).toFrame().collect().map(_.values).head.head
       firstTaxonNameCombo shouldBe "Poecile atricapillus (Linnaeus, 1766)"
@@ -70,15 +69,15 @@ class ChecklistFetcherHDFSSpec extends TestKit(ActorSystem("IntegrationTest"))
 
     "create path for selector" in {
       val pathForRequest = pathForChecklist(req.selector)
-      pathForRequest shouldBe "occurrencesForMonitor/55/e4/b0/55e4b0a0-bcd9-566f-99bc-357439011d85/checklist"
+      pathForRequest shouldBe "u0=55/u1=e4/u2=b0/uuid=55e4b0a0-bcd9-566f-99bc-357439011d85"
 
-      val pathFull = Paths.get(baseDir + "/" + pathForRequest + "/20.tsv/checklist20.tsv")
+      val pathFull = Paths.get(baseDir + "/checklist/" + pathForRequest + "/checklist.parquet")
       FileIO.fromPath(pathFull)
         .to(Sink.ignore)
 
       val resourcesDir = pathFull.getParent
 
-      val source = CsvSource(pathFull).withDelimiter('\t')
+      val source = ParquetSource(pathFull)
 
       val output1 = new Path("target/pq/output1.pq")
       source.toFrame()

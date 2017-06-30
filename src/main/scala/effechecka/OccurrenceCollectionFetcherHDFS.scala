@@ -1,10 +1,10 @@
 package effechecka
 
 import com.typesafe.config.Config
-import io.eels.{FilePattern, Row}
+import io.eels.Row
 import io.eels.component.parquet.ParquetSource
 import org.apache.hadoop.conf.Configuration
-import org.apache.hadoop.fs.{FileSystem, Path}
+import org.apache.hadoop.fs.FileSystem
 import org.effechecka.selector.{DateTimeSelector, OccurrenceSelector, UuidUtils}
 
 trait OccurrenceCollectionFetcherHDFS extends OccurrenceCollectionFetcher
@@ -17,7 +17,7 @@ trait OccurrenceCollectionFetcherHDFS extends OccurrenceCollectionFetcher
 
   def occurrencesFor(ocRequest: OccurrenceRequest): Iterator[Occurrence] = {
     val selector = ocRequest.selector
-    val pathBase = s"${pathForSelector(selector)}/occurrence/spark.parquet"
+    val pathBase = s"occurrence/${pathForSelector(selector)}/occurrence.parquet"
     patternFor(pathBase) match {
       case Some(pathPattern) =>
         val source = ParquetSource(pathPattern.withFilter(pathFilterWithDateRange(ocRequest.added)))
@@ -46,7 +46,7 @@ trait OccurrenceCollectionFetcherHDFS extends OccurrenceCollectionFetcher
   }
 
   def monitoredOccurrencesFor(source: String, added: DateTimeSelector = DateTimeSelector(), occLimit: Option[Int] = None): Iterator[String] = {
-    patternFor(s"occurrencesForSource/source=$source/ids.parquet") match {
+    patternFor(s"source-of-monitored-occurrence/source=$source/ids.parquet") match {
       case Some(path) =>
         val source = ParquetSource(path)
           if (source.parts().isEmpty) Iterator() else {
@@ -63,13 +63,7 @@ trait OccurrenceCollectionFetcherHDFS extends OccurrenceCollectionFetcher
   val monitor = OccurrenceMonitor(selector = OccurrenceSelector("Animalia|Insecta", "ENVELOPE(-150,-50,40,10)", ""), status = None, recordCount = Some(123))
 
   def monitors(): List[OccurrenceMonitor] = {
-    def includeSummariesOnly(path: Path) = FilePattern(path + "/*")
-      .withFilter({ x => {
-        x.toUri.toString.contains("occurrence/summary.parquet")
-      }
-      })
-
-    patternFor(s"occurrencesForMonitor/", includeSummariesOnly) match {
+    patternFor(s"occurrence-summary") match {
       case Some(path) =>
         val source = ParquetSource(path)
         if (source.parts().isEmpty) List() else {
@@ -91,7 +85,7 @@ trait OccurrenceCollectionFetcherHDFS extends OccurrenceCollectionFetcher
   }
 
   def monitorOf(selector: OccurrenceSelector): Option[OccurrenceMonitor] = {
-    patternFor(s"${pathForSelector(selector)}/occurrence/summary.parquet") match {
+    patternFor(s"occurrence-summary/${pathForSelector(selector)}/summary.parquet") match {
       case Some(path) =>
         val source = ParquetSource(path)
         if (source.parts().isEmpty) None else {
@@ -110,7 +104,7 @@ trait OccurrenceCollectionFetcherHDFS extends OccurrenceCollectionFetcher
   }
 
   def monitorsFor(source: String, id: String): Iterator[OccurrenceSelector] = {
-    patternFor(s"monitorsForOccurrence/${pathForUUID(UuidUtils.generator.generate(id))}/source=$source") match {
+    patternFor(s"monitor-of-occurrence/${pathForUUID(UuidUtils.generator.generate(id))}/source=$source") match {
       case Some(path) =>
         val source = ParquetSource(path)
           if (source.parts().isEmpty) Iterator() else {
@@ -124,10 +118,9 @@ trait OccurrenceCollectionFetcherHDFS extends OccurrenceCollectionFetcher
   def request(selector: OccurrenceSelector): String = {
     statusOf(selector) match {
       case Some("ready") => "ready"
-      case _ => {
+      case _ =>
         submitOccurrenceCollectionRequest(selector, persistence = "hdfs")
         "requested"
-      }
     }
   }
 

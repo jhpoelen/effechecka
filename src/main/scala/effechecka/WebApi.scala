@@ -279,7 +279,7 @@ object WebApi extends App with Service with Configure
       println(s"attempting to override configuration in [$confDir]")
       val conf = new Configuration()
       conf.addResource(new URL(s"file:///$confDir/hdfs-site.xml"))
-      conf.addResource(new URL(s"file:///$confDir/code-site.xml"))
+      conf.addResource(new URL(s"file:///$confDir/core-site.xml"))
       conf
     case _ =>
       new Configuration()

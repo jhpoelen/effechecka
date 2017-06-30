@@ -6,8 +6,7 @@ import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import akka.testkit.TestKit
 import io.eels.FilePattern
-import org.apache.hadoop.conf.Configuration
-import org.apache.hadoop.fs.{FileSystem, Path}
+import org.apache.hadoop.fs.Path
 import org.effechecka.selector.{DateTimeSelector, OccurrenceSelector}
 import org.scalatest._
 

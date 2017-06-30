@@ -59,7 +59,7 @@ class ChecklistFetcherHDFSSpec extends TestKit(ActorSystem("IntegrationTest"))
 
     "read parquet by spark" in {
       val pathForRequest = pathForChecklist(req.selector)
-      val pathFull = Paths.get(baseDir + "/" + pathForRequest + "spark.parquet")
+      val pathFull = Paths.get(baseDir + "/" + pathForRequest + "/spark.parquet")
       val pattern = FilePattern(pathFull + "/*").withFilter(_.getName.endsWith(".parquet"))
       val firstTaxonNameCombo = ParquetSource(pattern).toFrame().collect().map(_.values).head.head
       firstTaxonNameCombo shouldBe "Poecile atricapillus (Linnaeus, 1766)"
@@ -67,9 +67,9 @@ class ChecklistFetcherHDFSSpec extends TestKit(ActorSystem("IntegrationTest"))
 
     "create path for selector" in {
       val pathForRequest = pathForChecklist(req.selector)
-      pathForRequest shouldBe "occurrencesForMonitor/55/e4/b0/55e4b0a0-bcd9-566f-99bc-357439011d85/checklist/"
+      pathForRequest shouldBe "occurrencesForMonitor/55/e4/b0/55e4b0a0-bcd9-566f-99bc-357439011d85/checklist"
 
-      val pathFull = Paths.get(baseDir + "/" + pathForRequest + "20.tsv/checklist20.tsv")
+      val pathFull = Paths.get(baseDir + "/" + pathForRequest + "/20.tsv/checklist20.tsv")
       FileIO.fromPath(pathFull)
         .to(Sink.ignore)
 

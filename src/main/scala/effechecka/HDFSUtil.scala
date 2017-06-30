@@ -33,6 +33,7 @@ trait HDFSUtil extends DateUtil {
 
   def patternFor(suffix: String, pattern: (Path => FilePattern) = includeAll): Option[FilePattern] = {
     val pathString = baseDir + "/" + suffix
+    println(s"looking for [$pathString]")
     val pathFull = Paths.get(pathString)
     val path = new Path(pathFull.toAbsolutePath.toString)
     if (fs.exists(path)) {

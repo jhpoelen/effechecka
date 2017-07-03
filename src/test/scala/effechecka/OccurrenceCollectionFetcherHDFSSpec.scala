@@ -18,6 +18,12 @@ class OccurrenceCollectionFetcherHDFSSpec extends TestKit(ActorSystem("Integrati
   val expectedMonitor = OccurrenceMonitor(expectedSelector, Some("ready"), Some(3997))
 
   "HDFS" should {
+
+    "have some expected test files" in {
+      getClass.getResource("/hdfs-layout/occurrence-summary/u0=55/u1=e4/u2=b0/uuid=55e4b0a0-bcd9-566f-99bc-357439011d85/summary.parquet") shouldNot be(null)
+      getClass.getResource("/hdfs-layout/occurrence-summary/u0=05/u1=2f/u2=ec/uuid=052fec64-d7d8-5266-a4cd-119e3614831e/summary.parquet") should be(null)
+    }
+
     "access an occurrence collection" in {
       val selector: OccurrenceSelector = OccurrenceSelector("Animalia|Insecta", "ENVELOPE(-150,-50,40,10)", "")
       val request = OccurrenceRequest(selector, Some(2))

@@ -3,6 +3,7 @@ organization := "effechecka"
 version := "0.2"
 
 scalaVersion := "2.11.11"
+ivyScala := ivyScala.value map { _.copy(overrideScalaVersion = true) }
 
 scalacOptions := Seq("-unchecked", "-deprecation", "-encoding", "utf8")
 
@@ -30,5 +31,4 @@ libraryDependencies ++= {
 }
 
 resolvers += "effechecka-snapshots" at "https://s3.amazonaws.com/effechecka/snapshots"
-
 

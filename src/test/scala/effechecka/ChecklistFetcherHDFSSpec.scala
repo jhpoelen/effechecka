@@ -9,7 +9,6 @@ import akka.testkit.TestKit
 import io.eels.FilePattern
 import org.apache.hadoop.fs.Path
 import org.scalatest.{Matchers, WordSpecLike}
-import io.eels.component.csv.CsvSource
 import io.eels.component.parquet.{ParquetSink, ParquetSource}
 import org.effechecka.selector.OccurrenceSelector
 
@@ -27,6 +26,11 @@ class ChecklistFetcherHDFSSpec extends TestKit(ActorSystem("IntegrationTest"))
   val reqNew = ChecklistRequest(OccurrenceSelector("Aves|Mammalia", "ENVELOPE(-150,-50,40,10)", ""), Some(2))
 
   "HDFS" should {
+    "have access to test resources" in {
+      getClass.getResource("/hdfs-layout/checklist-summary/u0=55/u1=e4/u2=b0/uuid=55e4b0a0-bcd9-566f-99bc-357439011d85/summary.parquet") shouldNot be(null)
+      getClass.getResource("/hdfs-layout/checklist/u0=55/u1=e4/u2=b0/uuid=55e4b0a0-bcd9-566f-99bc-357439011d85/checklist.parquet") shouldNot be(null)
+    }
+
     "status existing" in {
       statusOf(req) shouldBe Some("ready")
     }

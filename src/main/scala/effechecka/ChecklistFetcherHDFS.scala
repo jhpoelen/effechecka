@@ -15,7 +15,7 @@ trait ChecklistFetcherHDFS extends ChecklistFetcher with SparkSubmitter with HDF
   protected implicit val fs: FileSystem
 
   def itemsFor(checklist: ChecklistRequest): Iterator[ChecklistItem] = {
-    checklistPath(checklist, "checklist/", "/checklist.parquet") match {
+    checklistPath(checklist, "checklist/", "") match {
       case Some(path) =>
         val source = ParquetSource(path)
         if (source.parts().isEmpty) Iterator() else {
@@ -41,7 +41,7 @@ trait ChecklistFetcherHDFS extends ChecklistFetcher with SparkSubmitter with HDF
   }
 
   private def checklistExists(checklist: ChecklistRequest) = {
-    val pathChecklist = checklistPath(checklist, "checklist-summary/", "/summary.parquet")
+    val pathChecklist = checklistPath(checklist, "checklist-summary/", "")
     pathChecklist match {
       case Some(path) => path.toPaths().nonEmpty
       case None => false

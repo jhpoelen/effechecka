@@ -17,7 +17,7 @@ trait OccurrenceCollectionFetcherHDFS extends OccurrenceCollectionFetcher
 
   def occurrencesFor(ocRequest: OccurrenceRequest): Iterator[Occurrence] = {
     val selector = ocRequest.selector
-    val pathBase = s"occurrence/${pathForSelector(selector)}/occurrence.parquet"
+    val pathBase = s"occurrence/${pathForSelector(selector)}"
     patternFor(pathBase) match {
       case Some(pathPattern) =>
         val source = ParquetSource(pathPattern.withFilter(pathFilterWithDateRange(ocRequest.added)))
@@ -46,7 +46,7 @@ trait OccurrenceCollectionFetcherHDFS extends OccurrenceCollectionFetcher
   }
 
   def monitoredOccurrencesFor(source: String, added: DateTimeSelector = DateTimeSelector(), occLimit: Option[Int] = None): Iterator[String] = {
-    patternFor(s"source-of-monitored-occurrence/source=$source/ids.parquet") match {
+    patternFor(s"source-of-monitored-occurrence/source=$source") match {
       case Some(path) =>
         val source = ParquetSource(path)
           if (source.parts().isEmpty) Iterator() else {
@@ -85,7 +85,7 @@ trait OccurrenceCollectionFetcherHDFS extends OccurrenceCollectionFetcher
   }
 
   def monitorOf(selector: OccurrenceSelector): Option[OccurrenceMonitor] = {
-    patternFor(s"occurrence-summary/${pathForSelector(selector)}/summary.parquet") match {
+    patternFor(s"occurrence-summary/${pathForSelector(selector)}") match {
       case Some(path) =>
         val source = ParquetSource(path)
         if (source.parts().isEmpty) None else {

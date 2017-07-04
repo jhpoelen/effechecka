@@ -1,7 +1,5 @@
 package effechecka
 
-import java.util.{Date, UUID}
-
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import akka.testkit.TestKit

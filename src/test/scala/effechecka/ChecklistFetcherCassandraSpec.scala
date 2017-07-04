@@ -7,7 +7,7 @@ import org.effechecka.selector.OccurrenceSelector
 import org.scalatest.{Matchers, WordSpecLike}
 
 class ChecklistFetcherCassandraSpec extends TestKit(ActorSystem("SparkIntegrationTest"))
-  with WordSpecLike with Matchers with ChecklistFetcherCassandra with Configure {
+  with WordSpecLike with Matchers with ChecklistFetcherCassandra with ConfigureCassandra {
 
   implicit val materializer = ActorMaterializer()(system)
   implicit val ec = system.dispatcher

@@ -6,7 +6,7 @@ import com.datastax.driver.core.ResultSet
 import org.effechecka.selector.{OccurrenceSelector, UuidUtils}
 import org.scalatest.{Matchers, WordSpec}
 
-class SelectorRegistrySpec extends WordSpec with Matchers with SelectorRegistryCassandra with Configure {
+class SelectorRegistrySpec extends WordSpec with Matchers with SelectorRegistryCassandra with ConfigureCassandra {
 
   "cassandra selector registry" should {
     "register and find selector" in {

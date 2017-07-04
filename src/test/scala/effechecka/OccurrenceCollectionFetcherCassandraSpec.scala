@@ -8,7 +8,7 @@ import org.effechecka.selector.{DateTimeSelector, OccurrenceSelector}
 import org.scalatest.{Matchers, WordSpecLike}
 
 class OccurrenceCollectionFetcherCassandraSpec  extends TestKit(ActorSystem("SparkIntegrationTest"))
-  with WordSpecLike with Matchers with OccurrenceCollectionFetcherCassandra with Configure {
+  with WordSpecLike with Matchers with OccurrenceCollectionFetcherCassandra with ConfigureCassandra {
 
   implicit val materializer = ActorMaterializer()(system)
   implicit val ec = system.dispatcher

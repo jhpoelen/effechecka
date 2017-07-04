@@ -293,7 +293,8 @@ trait Service extends Protocols
 
 }
 
-object WebApi extends App with Service with ConfigureCassandra
+object WebApi extends App with Service
+  with ConfigureCassandra
   with SelectorRegistryCassandra
   with ChecklistFetcherHDFS
   with OccurrenceCollectionFetcherHDFS {

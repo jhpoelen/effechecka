@@ -1,7 +1,7 @@
 package effechecka
 
 import com.typesafe.config.Config
-import io.eels.Row
+import io.eels.{Frame, Row}
 import io.eels.component.parquet.ParquetSource
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.FileSystem
@@ -23,10 +23,7 @@ trait OccurrenceCollectionFetcherHDFS extends OccurrenceCollectionFetcher
         val source = ParquetSource(pathPattern.withFilter(pathFilterWithDateRange(ocRequest.added)))
         if (source.parts().isEmpty) Iterator() else {
           val frame = source.toFrame()
-          val iterator = ocRequest.limit match {
-            case Some(aLimit) => frame.rows().iterator.take(aLimit)
-            case _ => frame.rows.iterator
-          }
+          val iterator: Iterator[Row] = frameLimited(frame, ocRequest.limit)
           iterator
             .map(row => {
               val startDate = java.lang.Long.parseLong(row.get("start").toString)
@@ -45,12 +42,21 @@ trait OccurrenceCollectionFetcherHDFS extends OccurrenceCollectionFetcher
     }
   }
 
+  private def frameLimited(frame: Frame, limit: Option[Int]) = {
+    val iterator = limit match {
+      case Some(aLimit) => frame.rows().iterator.take(aLimit)
+      case _ => frame.rows.iterator
+    }
+    iterator
+  }
+
   def monitoredOccurrencesFor(source: String, added: DateTimeSelector = DateTimeSelector(), occLimit: Option[Int] = None): Iterator[String] = {
     patternFor(s"source-of-monitored-occurrence/source=$source") match {
       case Some(path) =>
         val source = ParquetSource(path)
           if (source.parts().isEmpty) Iterator() else {
-            source.toFrame().rows().iterator
+            val iterator: Iterator[Row] = frameLimited(source.toFrame(), occLimit)
+            iterator
               .map(row => {
                 row.get(0).toString
               })

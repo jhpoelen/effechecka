@@ -62,6 +62,11 @@ class OccurrenceCollectionFetcherHDFSSpec extends TestKit(ActorSystem("Integrati
       monitors.hasNext should be(false)
     }
 
+    "return monitored occurrences limit to 0" in {
+      monitoredOccurrencesFor("inaturalist", occLimit = Some(0)).hasNext should be(false)
+      monitoredOccurrencesFor("inaturalist", occLimit = Some(1)).hasNext should be(true)
+    }
+
     "return status of monitor" in {
       statusOf(ducksAndFrogs) should be(Some("ready"))
       statusOf(OccurrenceSelector("no|taxon", expectedWktString, "")) should be(None)

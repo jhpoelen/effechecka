@@ -29,14 +29,14 @@ trait OccurrenceCollectionFetcherHDFS extends OccurrenceCollectionFetcher
           }
           iterator
             .map(row => {
-              val startDate = java.lang.Long.parseLong(row.get("eventStartDate").toString)
-              Occurrence(taxon = row.get("taxonPath").toString,
+              val startDate = java.lang.Long.parseLong(row.get("start").toString)
+              Occurrence(taxon = row.get("taxon").toString,
                 lat = java.lang.Double.parseDouble(row.get("lat").toString),
                 lng = java.lang.Double.parseDouble(row.get("lng").toString),
                 start = startDate,
                 end = startDate,
-                id = row.get("occurrenceId").toString,
-                added = java.lang.Long.parseLong(row.get("firstAddedDate").toString),
+                id = row.get("id").toString,
+                added = java.lang.Long.parseLong(row.get("added").toString),
                 source = row.get("source").toString
               )
             })

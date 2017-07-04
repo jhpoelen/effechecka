@@ -17,6 +17,10 @@ class OccurrenceCollectionFetcherHDFSSpec extends TestKit(ActorSystem("Integrati
   val expectedSelector = OccurrenceSelector("Animalia|Insecta", expectedWktString, expectedTraitSelector, Some("55e4b0a0-bcd9-566f-99bc-357439011d85"))
   val expectedMonitor = OccurrenceMonitor(expectedSelector, Some("ready"), Some(3997))
 
+  val ducksAndFrogs = OccurrenceSelector("Anas|Anura", "POLYGON ((-72.147216796875 41.492120839687786, -72.147216796875 43.11702412135048, -69.949951171875 43.11702412135048, -69.949951171875 41.492120839687786, -72.147216796875 41.492120839687786))","")
+  val ducksAndFrogsMonitor = OccurrenceMonitor(ducksAndFrogs.withUUID, Some("ready"), Some(239543))
+
+
   "HDFS" should {
 
     "have some expected test files" in {
@@ -26,25 +30,22 @@ class OccurrenceCollectionFetcherHDFSSpec extends TestKit(ActorSystem("Integrati
     }
 
     "access an occurrence collection" in {
-      val selector: OccurrenceSelector = OccurrenceSelector("Animalia|Insecta", "ENVELOPE(-150,-50,40,10)", "")
-      val request = OccurrenceRequest(selector, Some(2))
+      val request = OccurrenceRequest(ducksAndFrogs, Some(2))
       val occurrenceCollection = occurrencesFor(request)
       occurrenceCollection.hasNext shouldBe true
       val occ = occurrenceCollection.next
-      occ.lat should be(37.72 +- 1e-2)
-      occ.lng should be(-122.42 +- 1e-2)
-      occ.taxon should be("Plantae|Magnoliophyta|Magnoliopsida|Apiales|Araliaceae|Hedera|Hedera helix")
-      occ.start should be(1415062695000L)
-      occ.end should be(1415062695000L)
-      occ.added should be(1433462400000L)
-      occ.id should be("http://www.inaturalist.org/observations/1053719")
-      occ.source should be("inaturalist")
+      occ.lat should be(42.37 +- 1e-2)
+      occ.lng should be(-71.11 +- 1e-2)
+      occ.taxon should be("Animalia|Chordata|Amphibia|Anura|Ranidae|Lithobates|palustris|Lithobates palustris")
+      occ.start should be(-3176841600000L)
+      occ.end should be(-3176841600000L)
+      occ.added should be(1433203200000L)
+      occ.id should be("MCZ:Herp:A-794")
+      occ.source should be("idigbio")
 
       occurrenceCollection.take(2).length shouldBe 1
     }
 
-    val ducksAndFrogs = OccurrenceSelector("Anas|Anura", "POLYGON ((-72.147216796875 41.492120839687786, -72.147216796875 43.11702412135048, -69.949951171875 43.11702412135048, -69.949951171875 41.492120839687786, -72.147216796875 41.492120839687786))","")
-    val ducksAndFrogsMonitor = OccurrenceMonitor(ducksAndFrogs.withUUID, Some("ready"), Some(239543))
 
     "occurrence selector with null status" in {
       monitors() should contain(ducksAndFrogsMonitor)

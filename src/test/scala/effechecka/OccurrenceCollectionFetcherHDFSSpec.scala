@@ -21,8 +21,8 @@ class OccurrenceCollectionFetcherHDFSSpec extends TestKit(ActorSystem("Integrati
 
     "have some expected test files" in {
       getClass.getResource("/hdfs-layout/occurrence/u0=55/u1=e4/u2=b0/uuid=55e4b0a0-bcd9-566f-99bc-357439011d85/occurrence.parquet") shouldNot be(null)
-      getClass.getResource("/hdfs-layout/occurrence-summary/u0=55/u1=e4/u2=b0/uuid=55e4b0a0-bcd9-566f-99bc-357439011d85/summary.parquet") shouldNot be(null)
-      getClass.getResource("/hdfs-layout/occurrence-summary/u0=05/u1=2f/u2=ec/uuid=052fec64-d7d8-5266-a4cd-119e3614831e/summary.parquet") should be(null)
+      getClass.getResource("/hdfs-layout/occurrence-summary/u0=06/u1=ac/u2=07/uuid=06ac07ec-7d99-521b-a768-04ab6013ab27") shouldNot be(null)
+      getClass.getResource("/hdfs-layout/occurrence-summary/u0=05/u1=2f/u2=ec/uuid=052fec64-d7d8-5266-a4cd-119e3614831e") should be(null)
     }
 
     "access an occurrence collection" in {
@@ -43,9 +43,12 @@ class OccurrenceCollectionFetcherHDFSSpec extends TestKit(ActorSystem("Integrati
       occurrenceCollection.take(2).length shouldBe 1
     }
 
+    val ducksAndFrogs = OccurrenceSelector("Anas|Anura", "POLYGON ((-72.147216796875 41.492120839687786, -72.147216796875 43.11702412135048, -69.949951171875 43.11702412135048, -69.949951171875 41.492120839687786, -72.147216796875 41.492120839687786))","")
+    val ducksAndFrogsMonitor = OccurrenceMonitor(ducksAndFrogs.withUUID, Some("ready"), Some(239543))
+
     "occurrence selector with null status" in {
-      monitors() should contain(expectedMonitor)
-      monitorOf(expectedSelector) should be(Some(expectedMonitor))
+      monitors() should contain(ducksAndFrogsMonitor)
+      monitorOf(ducksAndFrogs) should be(Some(ducksAndFrogsMonitor))
     }
 
     "return monitored occurrences by source and/or occurrence id" in {
@@ -59,12 +62,12 @@ class OccurrenceCollectionFetcherHDFSSpec extends TestKit(ActorSystem("Integrati
     }
 
     "return status of monitor" in {
-      statusOf(expectedSelector) should be(Some("ready"))
+      statusOf(ducksAndFrogs) should be(Some("ready"))
       statusOf(OccurrenceSelector("no|taxon", expectedWktString, "")) should be(None)
     }
 
     "already requested" in {
-      request(expectedSelector) should be("ready")
+      request(ducksAndFrogs) should be("ready")
     }
 
   }

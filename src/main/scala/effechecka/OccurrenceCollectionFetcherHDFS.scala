@@ -71,7 +71,7 @@ trait OccurrenceCollectionFetcherHDFS extends OccurrenceCollectionFetcher
             .toFrame().rows().iterator
           monitors.map(row => {
             val statusOpt = row.get("status").toString
-            val recordOpt = Some(Integer.parseInt(row.get("count").toString))
+            val recordOpt = Some(Integer.parseInt(row.get("itemCount").toString))
             OccurrenceMonitor(selectorFromRow(row), Some(statusOpt), recordOpt)
           }).toList
         }
@@ -81,7 +81,7 @@ trait OccurrenceCollectionFetcherHDFS extends OccurrenceCollectionFetcher
 
   private def selectorFromRow(row: Row): OccurrenceSelector = {
     val selector = OccurrenceSelector(taxonSelector = row.get("taxonSelector").toString, traitSelector = row.get("traitSelector").toString, wktString = row.get("wktString").toString)
-    selector.copy(uuid = Some(row.get("uuid").toString))
+    selector.withUUID
   }
 
   def monitorOf(selector: OccurrenceSelector): Option[OccurrenceMonitor] = {
@@ -93,8 +93,8 @@ trait OccurrenceCollectionFetcherHDFS extends OccurrenceCollectionFetcher
           if (monitors.isEmpty) None else {
             monitors.map(row => {
               val statusOpt = row.get("status").toString
-              val recordOpt = Some(Integer.parseInt(row.get("count").toString))
-              val selectorWithUUID = selector.copy(uuid = Some(row.get("uuid").toString))
+              val recordOpt = Some(Integer.parseInt(row.get("itemCount").toString))
+              val selectorWithUUID = selector.withUUID
               OccurrenceMonitor(selectorWithUUID, Some(statusOpt), recordOpt)
             }).take(1).toList.headOption
           }

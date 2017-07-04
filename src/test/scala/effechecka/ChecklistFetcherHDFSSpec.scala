@@ -17,7 +17,7 @@ class ChecklistFetcherHDFSSpec extends TestKit(ActorSystem("IntegrationTest"))
 
   implicit val materializer = ActorMaterializer()(system)
   implicit val ec = system.dispatcher
-  
+
   private val reqSelector = OccurrenceSelector("Animalia|Insecta", "ENVELOPE(-150,-50,40,10)", "")
   val req = ChecklistRequest(reqSelector, Some(2))
   val req5 = ChecklistRequest(reqSelector, Some(5))

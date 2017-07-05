@@ -64,8 +64,8 @@ class OccurrenceCollectionFetcherCassandraSpec  extends TestKit(ActorSystem("Spa
       val expectedWktString: String = "ENVELOPE(-150,-50,40,10)"
       val expectedTraitSelector: String = "bodyMass greaterThan 2.7 kg"
       val expectedTaxonSelector: String = "Insecta|Mammalia"
-      val occIter: Iterator[String] = monitoredOccurrencesFor("my source")
-      occIter.next() should be("some id")
+      val occIter: Iterator[(String, Option[String])] = monitoredOccurrencesFor("my source")
+      occIter.next() should be(("some id", None))
       occIter.hasNext should be(false)
 
       val monitors: Iterator[OccurrenceSelector] = monitorsFor(source = "my source", id = "some id")

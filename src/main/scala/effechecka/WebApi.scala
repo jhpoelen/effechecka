@@ -274,11 +274,11 @@ trait Service extends Protocols
                       val monitoredOccurrenceSource = Source.fromIterator[ByteString]({
                         () =>
                           monitoredOccurrencesFor(source, added, limit)
-                            .map(occurrenceId => {
-                              ByteString(s"\n$occurrenceId")
-                            })
+                            .map{ case (occurrenceId, uuidOption) => {
+                              ByteString(s"\n$occurrenceId\t${uuidOption.getOrElse("")}")
+                            }}
                       })
-                      val header = Source.single[ByteString](ByteString("occurrenceId"))
+                      val header = Source.single[ByteString](ByteString("occurrenceId\tmonitorUUID"))
                       HttpEntity(contentType, Source.combine(header, monitoredOccurrenceSource)(Concat[ByteString]))
                     }
                   }

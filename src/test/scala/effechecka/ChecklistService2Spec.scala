@@ -49,7 +49,7 @@ trait OccurrenceCollectionFetcherStatic extends OccurrenceCollectionFetcher {
 
   def occurrencesFor(checklist: OccurrenceRequest): Iterator[Occurrence] = List(anOccurrence).iterator
 
-  def monitoredOccurrencesFor(source: String, added: DateTimeSelector, occLimit: Option[Int]): Iterator[String] = List("some id", "another id").iterator
+  def monitoredOccurrencesFor(source: String, added: DateTimeSelector, occLimit: Option[Int]): Iterator[(String, Option[String])] = List(("some id", None), ("another id", Some("someUUID"))).iterator
 
   def statusOf(selector: OccurrenceSelector): Option[String] = Some("ready")
 
@@ -162,9 +162,9 @@ class ChecklistService2Spec extends WordSpec with Matchers with ScalatestRouteTe
     "return requested monitored occurrences tsv" in {
       Get("/monitoredOccurrences.tsv?source=someSource") ~> route ~> check {
         responseAs[String] should be(
-          """occurrenceId
-            |some id
-            |another id""".stripMargin)
+          "occurrenceId\tmonitorUUID\n" +
+            "some id\t\n" +
+            "another id\tsomeUUID")
       }
     }
 

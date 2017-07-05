@@ -53,7 +53,7 @@ class OccurrenceCollectionFetcherHDFSSpec extends TestKit(ActorSystem("Integrati
     }
 
     "return monitored occurrences by source and/or occurrence id" in {
-      val occIter: Iterator[String] = monitoredOccurrencesFor("inaturalist")
+      val occIter: Iterator[(String, Option[String])] = monitoredOccurrencesFor("inaturalist")
       occIter.next() should be("http://www.inaturalist.org/observations/1053719")
       occIter.hasNext should be(false)
 

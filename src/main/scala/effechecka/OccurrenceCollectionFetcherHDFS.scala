@@ -132,6 +132,7 @@ trait OccurrenceCollectionFetcherHDFS extends OccurrenceCollectionFetcher
   }
 
   def requestAll(): String = {
+    submitOccurrenceCollectionsRefreshRequest()
     "all requested"
   }
 

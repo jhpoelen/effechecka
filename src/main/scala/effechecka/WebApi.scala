@@ -12,7 +12,7 @@ import akka.http.scaladsl.model.headers._
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.{Directive0, Directive1, Route, ValidationRejection}
 import akka.http.scaladsl.{Http, server}
-import akka.stream.ActorMaterializer
+import akka.stream.{ActorMaterializer, ActorMaterializerSettings, Supervision}
 import akka.stream.scaladsl.{Concat, Source}
 import akka.util.ByteString
 import org.apache.hadoop.conf.Configuration
@@ -298,8 +298,17 @@ object WebApi extends App with Service
   with SelectorRegistryNOP
   with ChecklistFetcherHDFS
   with OccurrenceCollectionFetcherHDFS {
+
   implicit val system = ActorSystem("effechecka")
-  implicit val materializer = ActorMaterializer()
+  val logger = Logging(system, getClass)
+
+  val decider: Supervision.Decider = { e =>
+    logger.error("Unhandled exception in stream", e)
+    println(e.printStackTrace(System.err))
+    Supervision.Stop
+  }
+  implicit val materializerSettings = ActorMaterializerSettings(system).withSupervisionStrategy(decider)
+  implicit val materializer = ActorMaterializer(materializerSettings)
   implicit val ec = system.dispatcher
 
   implicit val configHadoop: Configuration =
@@ -316,7 +325,6 @@ object WebApi extends App with Service
 
   implicit val fs: FileSystem = FileSystem.get(configHadoop)
 
-  val logger = Logging(system, getClass)
 
   println("--- environment variable start ---")
   sys.env.foreach(println)

@@ -4,7 +4,6 @@ import java.net.URL
 import java.util.UUID
 
 import akka.actor.ActorSystem
-import akka.event.Logging
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import akka.http.scaladsl.model.ContentType.WithCharset
 import akka.http.scaladsl.model._
@@ -300,11 +299,9 @@ object WebApi extends App with Service
   with OccurrenceCollectionFetcherHDFS {
 
   implicit val system = ActorSystem("effechecka")
-  val logger = Logging(system, getClass)
 
   val decider: Supervision.Decider = { e =>
     logger.error("Unhandled exception in stream", e)
-    println(e.printStackTrace(System.err))
     Supervision.Stop
   }
   implicit val materializerSettings = ActorMaterializerSettings(system).withSupervisionStrategy(decider)
@@ -314,7 +311,7 @@ object WebApi extends App with Service
   implicit val configHadoop: Configuration =
     sys.env.get("HADOOP_CONF_DIR") match {
       case Some(confDir) =>
-        println(s"attempting to override configuration in [$confDir]")
+        logger.info(s"attempting to override configuration in [$confDir]")
         val conf = new Configuration()
         conf.addResource(new URL(s"file:///$confDir/hdfs-site.xml"))
         conf.addResource(new URL(s"file:///$confDir/core-site.xml"))
@@ -326,16 +323,16 @@ object WebApi extends App with Service
   implicit val fs: FileSystem = FileSystem.get(configHadoop)
 
 
-  println("--- environment variable start ---")
-  sys.env.foreach(println)
-  println("--- environment variable end ---")
+  logger.info("--- environment variable start ---")
+  sys.env.foreach(env => logger.info(env.toString()))
+  logger.info("--- environment variable end ---")
 
   val iterator = configHadoop.iterator
-  println("--- hadoop config start ---")
+  logger.info("--- hadoop config start ---")
   while (iterator.hasNext) {
-    println(iterator.next())
+    logger.info(iterator.next().toString)
   }
-  println("--- hadoop config end ---")
+  logger.info("--- hadoop config end ---")
 
   Http().bindAndHandle(route, config.getString("effechecka.host"), config.getInt("effechecka.port"))
 }

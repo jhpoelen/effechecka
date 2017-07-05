@@ -84,7 +84,6 @@ class ChecklistFetcherHDFSSpec extends TestKit(ActorSystem("IntegrationTest"))
       val output1 = new Path("target/pq/output1.pq")
       source.toFrame()
         .filter({ row =>
-          println(s"filter1 [${row.get("taxonName")}]")
           row.get("taxonName") == "Poecile atricapillus (Linnaeus, 1766)"
         })
         .save(ParquetSink(output1).withOverwrite(true))
@@ -92,7 +91,6 @@ class ChecklistFetcherHDFSSpec extends TestKit(ActorSystem("IntegrationTest"))
       val output2 = new Path("target/pq/output2.pq")
       source.toFrame()
         .filter({ row =>
-          println(s"filter2 [${row.get("taxonName")}]")
           row.get("taxonName") != "Poecile atricapillus (Linnaeus, 1766)"
         })
         .save(ParquetSink(output2).withOverwrite(true))
@@ -104,24 +102,16 @@ class ChecklistFetcherHDFSSpec extends TestKit(ActorSystem("IntegrationTest"))
           true
         }
       )
-      val firstTaxonNameCombo = ParquetSource(output1).toFrame().map(r => {
-        println(s"map1 [${r.get("taxonName")}]")
-        r
-      }).toSeq().map {
+      val firstTaxonNameCombo = ParquetSource(output1).toFrame().toSeq().map {
         row => {
-          println(s"map2 [${row.get("taxonName")}]")
           row.values
         }
       }.head.head
       firstTaxonNameCombo shouldBe "Poecile atricapillus (Linnaeus, 1766)"
       val firstTaxonName = ParquetSource(output2)
         .toFrame()
-        .map(r => {
-          println(s"map21 [${r.get("taxonName")}]")
-          r
-        }).rows().iterator.flatMap {
+        .rows().iterator.flatMap {
         row => {
-          println(s"map22 [${row.get("taxonName")}]")
           row.values.map(_.toString)
         }
       }.mkString(" ")

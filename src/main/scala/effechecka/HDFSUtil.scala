@@ -3,12 +3,13 @@ package effechecka
 import java.nio.file.Paths
 import java.util.UUID
 
+import com.sksamuel.exts.Logging
 import com.typesafe.config.Config
 import io.eels.FilePattern
 import org.apache.hadoop.fs.{FileSystem, Path}
 import org.effechecka.selector.{DateTimeSelector, OccurrenceSelector, UuidUtils}
 
-trait HDFSUtil extends DateUtil {
+trait HDFSUtil extends DateUtil with Logging {
 
   implicit def config: Config
 
@@ -33,7 +34,7 @@ trait HDFSUtil extends DateUtil {
 
   def patternFor(suffix: String, pattern: (Path => FilePattern) = includeAll): Option[FilePattern] = {
     val pathString = (baseDir + "/" + suffix).replaceFirst("hdfs://", "")
-    println(s"looking for [$pathString]")
+    logger.info(s"looking for [$pathString]")
     val path = new Path(pathString)
     if (fs.exists(path)) {
       val resourcePath = fs.resolvePath(path)

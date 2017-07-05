@@ -5,12 +5,13 @@ import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity, HttpMethods, HttpRequest}
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{Sink, Source}
+import com.sksamuel.exts.Logging
 import com.typesafe.config.Config
 import org.effechecka.selector.OccurrenceSelector
 
 import scala.concurrent.ExecutionContext
 
-trait SparkSubmitter {
+trait SparkSubmitter extends Logging {
 
   implicit def config: Config
 
@@ -33,7 +34,7 @@ trait SparkSubmitter {
   private def send(req: HttpRequest) = {
     Source(List(req))
       .runWith(Sink.foreach[HttpRequest](Http().singleRequest(_)))
-      .foreach(resp => println(resp))
+      .foreach(resp => logger.info(resp.toString))
   }
 
   def requestChecklist(selector: OccurrenceSelector, persistence: String = "cassandra"): HttpRequest = requestFor(argsFor(selector), "ChecklistGenerator", persistence)
@@ -81,7 +82,7 @@ trait SparkSubmitter {
                              |      }
                              |    }""".stripMargin
 
-    println(sparkJobRequest)
+    logger.info(sparkJobRequest)
     val payload = HttpEntity(contentType = ContentTypes.`application/json`, string = sparkJobRequest)
     val uri = s"""http://${config.getString("effechecka.spark.master.host")}:${config.getString("effechecka.spark.master.port")}/v1/submissions/create"""
     HttpRequest(uri = uri, method = HttpMethods.POST, entity = payload)

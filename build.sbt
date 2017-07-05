@@ -16,6 +16,7 @@ libraryDependencies ++= {
   Seq(
     "org.effechecka" %% "effechecka-selector" % "0.0.2-SNAPSHOT",
     "com.datastax.cassandra" % "cassandra-driver-core" % cassandraDriverV,
+    "org.slf4j" % "slf4j-log4j12" % "1.7.25",
     "io.eels" %% "eel-core" % eelV,
     "io.eels" %% "eel-components" % eelV,
     "com.typesafe.akka" %% "akka-actor" % akkaV,

@@ -308,7 +308,7 @@ object WebApi extends App with Service
     Supervision.Stop
   }
   implicit val materializerSettings = ActorMaterializerSettings(system).withSupervisionStrategy(decider)
-  implicit val materializer = ActorMaterializer(materializerSettings)
+  implicit val materializer = ActorMaterializer(materializerSettings)(system)
   implicit val ec = system.dispatcher
 
   implicit val configHadoop: Configuration =

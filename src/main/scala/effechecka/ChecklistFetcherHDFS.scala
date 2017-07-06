@@ -25,7 +25,7 @@ trait ChecklistFetcherHDFS
   protected implicit val configHadoop: Configuration
   protected implicit val fs: FileSystem
 
-  def tsvSourceFor(checklist: ChecklistRequest): Source[ByteString, NotUsed] = {
+  def tsvFor(checklist: ChecklistRequest): Source[ByteString, NotUsed] = {
     val checklistGraph = GraphDSL.create(toSourceShape(checklist = checklist)) { implicit builder =>
       (checklist) =>
         import GraphDSL.Implicits._

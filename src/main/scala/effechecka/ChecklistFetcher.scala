@@ -8,5 +8,5 @@ trait ChecklistFetcher {
   def itemsFor(checklist: ChecklistRequest): Iterator[ChecklistItem]
   def statusOf(checklist: ChecklistRequest): Option[String]
   def request(checklist: ChecklistRequest): String
-  def tsvSourceFor(checklist: ChecklistRequest): Source[ByteString, NotUsed]
+  def tsvFor(checklist: ChecklistRequest): Source[ByteString, NotUsed]
 }

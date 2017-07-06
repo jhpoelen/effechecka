@@ -56,7 +56,7 @@ class ChecklistFetcherHDFSSpec extends TestKit(ActorSystem("IntegrationTest"))
     "return source" in {
       println(ByteString(116, 97, 120, 111, 110, 78, 97, 109, 101, 9, 116, 97, 120, 111, 110, 80, 97, 116, 104, 9, 114, 101, 99, 111, 114, 100, 67, 111, 117, 110, 116).utf8String)
       println(ByteString.fromString("bla").utf8String)
-      val probe = tsvSourceFor(req)
+      val probe = tsvFor(req)
         .runWith(TestSink.probe[ByteString])
       probe
         .request(3)

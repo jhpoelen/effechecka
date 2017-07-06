@@ -12,13 +12,14 @@ import org.effechecka.selector.{DateTimeSelector, OccurrenceSelector}
 import org.scalatest.{Matchers, WordSpec}
 
 trait ChecklistFetcherStatic extends ChecklistFetcher {
-  def itemsFor(checklist: ChecklistRequest): Iterator[ChecklistItem] = Iterator()
+  def itemsFor(checklist: ChecklistRequest): Iterator[ChecklistItem] = Iterator(ChecklistItem("donald",1))
 
   def statusOf(checklist: ChecklistRequest): Option[String] = Some("ready")
 
   def request(checklist: ChecklistRequest): String = "requested"
 
-  def tsvSourceFor(checklist: ChecklistRequest): Source[ByteString, NotUsed] = Source.fromIterator(() => Iterator(ByteString("taxonName\ttaxonPath\trecordCount\ndonald\tdonald\t1")))
+  def tsvFor(checklist: ChecklistRequest): Source[ByteString, NotUsed]
+  = Source.fromIterator(() => Iterator(ByteString("taxonName\ttaxonPath\trecordCount\ndonald\tdonald\t1")))
 }
 
 trait ChecklistFetcherExploding extends ChecklistFetcher {
@@ -28,7 +29,7 @@ trait ChecklistFetcherExploding extends ChecklistFetcher {
 
   def request(checklist: ChecklistRequest): String = "requested"
 
-  def tsvSourceFor(checklist: ChecklistRequest): Source[ByteString, NotUsed] = Source.fromIterator(() => Iterator())
+  def tsvFor(checklist: ChecklistRequest): Source[ByteString, NotUsed] = Source.fromIterator(() => Iterator())
 
 }
 
@@ -61,11 +62,15 @@ trait OccurrenceCollectionFetcherStatic extends OccurrenceCollectionFetcher {
   val anotherMonitor = OccurrenceMonitor(OccurrenceSelector("Cartoona | donald", "some wkt string", "some trait selector"), None, Some(123))
 
   def occurrencesTsvFor(checklist: OccurrenceRequest): Source[ByteString, NotUsed]
-  = Source.fromIterator(() => Iterator(ByteString.fromString(CsvUtils.toOccurrenceRow(anOccurrence))))
+  = Source.fromIterator(() => Iterator(ByteString.fromString("taxonName\ttaxonPath\tlat\tlng\teventStartDate\toccurrenceId\tfirstAddedDate\tsource\toccurrenceUrl"),
+    ByteString.fromString(CsvUtils.toOccurrenceRow(anOccurrence))))
 
   def occurrencesFor(checklist: OccurrenceRequest): Iterator[Occurrence] = List(anOccurrence).iterator
 
-  def monitoredOccurrencesFor(source: String, added: DateTimeSelector, occLimit: Option[Int]): Source[ByteString, NotUsed] = Source.fromIterator(()=> Iterator(ByteString.fromString("\nsome id\t"), ByteString.fromString("\nanother id\tsomeUUID")))
+  def monitoredOccurrencesFor(source: String, added: DateTimeSelector, occLimit: Option[Int]): Source[ByteString, NotUsed]
+  = Source.fromIterator(()=>
+    Iterator(ByteString.fromString("occurrenceId\tmonitorUUID"), ByteString.fromString("\nsome id\t"),
+      ByteString.fromString("\nanother id\tsomeUUID")))
 
   def statusOf(selector: OccurrenceSelector): Option[String] = Some("ready")
 
@@ -232,12 +237,6 @@ class WebApiSpec extends WordSpec with Matchers with ScalatestRouteTest with Ser
     "return single monitor uuid" in {
       Get("/monitors?uuid=55e4b0a0-bcd9-566f-99bc-357439011d85") ~> route ~> check {
         responseAs[OccurrenceMonitor] should be(OccurrenceMonitor(OccurrenceSelector("Cartoona | mickey", "some wkt string", "some trait selector"), Some("some status"), Some(123)))
-      }
-    }
-
-    "return monitors for" in {
-      Get("/monitors?source=someSource&id=someId") ~> route ~> check {
-        responseAs[List[OccurrenceSelector]] should contain(OccurrenceSelector("Cartoona | mickey", "some wkt string", "some trait selector"))
       }
     }
 

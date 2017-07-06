@@ -153,7 +153,7 @@ trait Service extends Protocols
             case Some("ready") => {
               encodeResponse {
                 complete {
-                  HttpEntity(contentType, tsvSourceFor(checklist))
+                  HttpEntity(contentType, tsvFor(checklist))
                 }
               }
             }

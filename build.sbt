@@ -17,6 +17,7 @@ libraryDependencies ++= {
     "org.slf4j" % "slf4j-log4j12" % "1.7.25",
     "io.eels" %% "eel-core" % eelV,
     "io.eels" %% "eel-components" % eelV,
+    "com.google.guava" % "guava" % "22.0",
     "com.typesafe.akka" %% "akka-actor" % akkaV,
     "com.typesafe.akka" %% "akka-stream" % akkaV,
     "com.typesafe.akka" %% "akka-http-core" % akkaHttpV,

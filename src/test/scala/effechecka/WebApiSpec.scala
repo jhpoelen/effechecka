@@ -2,18 +2,23 @@ package effechecka
 
 import java.util.UUID
 
+import akka.NotUsed
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers.{Location, `Access-Control-Allow-Origin`}
 import akka.http.scaladsl.testkit.ScalatestRouteTest
+import akka.stream.scaladsl.Source
+import akka.util.ByteString
 import org.effechecka.selector.{DateTimeSelector, OccurrenceSelector}
 import org.scalatest.{Matchers, WordSpec}
 
 trait ChecklistFetcherStatic extends ChecklistFetcher {
-  def itemsFor(checklist: ChecklistRequest): Iterator[ChecklistItem] = Iterator(ChecklistItem("donald", 1))
+  def itemsFor(checklist: ChecklistRequest): Iterator[ChecklistItem] = Iterator()
 
   def statusOf(checklist: ChecklistRequest): Option[String] = Some("ready")
 
   def request(checklist: ChecklistRequest): String = "requested"
+
+  def tsvSourceFor(checklist: ChecklistRequest): Source[ByteString, NotUsed] = Source.fromIterator(() => Iterator(ByteString("taxonName\ttaxonPath\trecordCount\ndonald\tdonald\t1")))
 }
 
 trait ChecklistFetcherExploding extends ChecklistFetcher {
@@ -22,6 +27,9 @@ trait ChecklistFetcherExploding extends ChecklistFetcher {
   def statusOf(checklist: ChecklistRequest): Option[String] = Some("ready")
 
   def request(checklist: ChecklistRequest): String = "requested"
+
+  def tsvSourceFor(checklist: ChecklistRequest): Source[ByteString, NotUsed] = Source.fromIterator(() => Iterator())
+
 }
 
 trait SelectorRegistryStatic extends SelectorRegistry {
@@ -69,7 +77,8 @@ trait OccurrenceCollectionFetcherStatic extends OccurrenceCollectionFetcher {
   def monitorsFor(source: String, id: String): Iterator[OccurrenceSelector] = List(aSelector).iterator
 }
 
-class WebApiExplodingSpec extends WordSpec with Matchers with ScalatestRouteTest with Service
+class WebApiExplodingSpec extends WordSpec with Matchers with ScalatestRouteTest
+  with Service
   with SelectorRegistryStatic
   with ChecklistFetcherExploding
   with OccurrenceCollectionFetcherStatic {

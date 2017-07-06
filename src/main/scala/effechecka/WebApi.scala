@@ -11,9 +11,10 @@ import akka.http.scaladsl.model.headers._
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.{Directive0, Directive1, Route, ValidationRejection}
 import akka.http.scaladsl.{Http, server}
-import akka.stream.{ActorMaterializer, ActorMaterializerSettings, Supervision}
-import akka.stream.scaladsl.{Concat, Source}
+import akka.stream._
+import akka.stream.scaladsl.{Concat, Flow, GraphDSL, Source}
 import akka.util.ByteString
+import io.eels.{FilePattern, Row}
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.FileSystem
 import org.effechecka.selector.{DateTimeSelector, OccurrenceSelector, UuidUtils}
@@ -157,16 +158,7 @@ trait Service extends Protocols
             case Some("ready") => {
               encodeResponse {
                 complete {
-                  val occurrenceSource = Source.fromIterator[ByteString]({
-                    () =>
-                      itemsFor(checklist)
-                        .map(item => {
-                          val taxonName = item.taxon.split("""\|""").reverse.head
-                          ByteString(s"\n$taxonName\t${item.taxon}\t${item.recordcount}")
-                        })
-                  })
-                  val header = Source.single[ByteString](ByteString(Seq("taxonName", "taxonPath", "recordCount").mkString("\t")))
-                  HttpEntity(contentType, Source.combine(header, occurrenceSource)(Concat[ByteString]))
+                  HttpEntity(contentType, tsvSourceFor(checklist))
                 }
               }
             }
@@ -273,9 +265,10 @@ trait Service extends Protocols
                       val monitoredOccurrenceSource = Source.fromIterator[ByteString]({
                         () =>
                           monitoredOccurrencesFor(source, added, limit)
-                            .map{ case (occurrenceId, uuidOption) => {
+                            .map { case (occurrenceId, uuidOption) => {
                               ByteString(s"\n$occurrenceId\t${uuidOption.getOrElse("")}")
-                            }}
+                            }
+                            }
                       })
                       val header = Source.single[ByteString](ByteString("occurrenceId\tmonitorUUID"))
                       HttpEntity(contentType, Source.combine(header, monitoredOccurrenceSource)(Concat[ByteString]))

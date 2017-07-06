@@ -1,6 +1,10 @@
 package effechecka
 
+import akka.NotUsed
+import akka.stream.scaladsl.Source
+import akka.util.ByteString
 import com.datastax.driver.core._
+
 import scala.collection.JavaConversions._
 import com.typesafe.config.Config
 
@@ -11,6 +15,10 @@ trait ChecklistFetcherCassandra extends ChecklistFetcher
   with SparkSubmitter {
   implicit def session: Session
   implicit def config: Config
+
+  def tsvSourceFor(checklist: ChecklistRequest): Source[ByteString, NotUsed] = {
+    Source.fromIterator(() => Iterator())
+  }
 
   def itemsFor(checklist: ChecklistRequest): Iterator[ChecklistItem] = {
     val results: ResultSet = session.execute(checklistSelect(checklist.limit),

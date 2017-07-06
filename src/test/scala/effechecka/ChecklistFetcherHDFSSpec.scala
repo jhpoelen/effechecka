@@ -5,12 +5,14 @@ import java.nio.file.Paths
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{FileIO, Sink}
+import akka.stream.testkit.scaladsl.TestSink
 import akka.testkit.TestKit
+import akka.util.ByteString
 import io.eels.FilePattern
-import org.apache.hadoop.fs.Path
-import org.scalatest.{Matchers, WordSpecLike}
 import io.eels.component.parquet.{ParquetSink, ParquetSource}
+import org.apache.hadoop.fs.Path
 import org.effechecka.selector.OccurrenceSelector
+import org.scalatest.{Matchers, WordSpecLike}
 
 class ChecklistFetcherHDFSSpec extends TestKit(ActorSystem("IntegrationTest"))
   with WordSpecLike with Matchers with ChecklistFetcherHDFS with HDFSTestUtil {
@@ -41,14 +43,29 @@ class ChecklistFetcherHDFSSpec extends TestKit(ActorSystem("IntegrationTest"))
       request(req) shouldBe "ready"
     }
 
-//    "request a checklist new" in {
-//      request(reqNew) shouldBe "requested"
-//    }
+    //    "request a checklist new" in {
+    //      request(reqNew) shouldBe "requested"
+    //    }
 
     "return items" in {
       val checklist = itemsFor(req).toSeq
-      checklist should contain(ChecklistItem("Animalia|Chordata|Aves|Passeriformes|Paridae|Poecile|atricapillus|Poecile atricapillus (Linnaeus, 1766)",126643))
+      checklist should contain(ChecklistItem("Animalia|Chordata|Aves|Passeriformes|Paridae|Poecile|atricapillus|Poecile atricapillus (Linnaeus, 1766)", 126643))
       checklist.length shouldBe 2
+    }
+
+    "return source" in {
+      println(ByteString(116, 97, 120, 111, 110, 78, 97, 109, 101, 9, 116, 97, 120, 111, 110, 80, 97, 116, 104, 9, 114, 101, 99, 111, 114, 100, 67, 111, 117, 110, 116).utf8String)
+      println(ByteString.fromString("bla").utf8String)
+      val probe = tsvSourceFor(req)
+        .runWith(TestSink.probe[ByteString])
+      probe
+        .request(3)
+        .expectNext(ByteString.fromString("taxonName\ttaxonPath\trecordCount"))
+
+      val items = List(probe.expectNext().utf8String, probe.expectNext().utf8String)
+      items should contain ("\nPoecile atricapillus (Linnaeus, 1766)\tAnimalia|Chordata|Aves|Passeriformes|Paridae|Poecile|atricapillus|Poecile atricapillus (Linnaeus, 1766)\t126643")
+      items should contain ("\nTurdus migratorius Linnaeus, 1766\tAnimalia|Chordata|Aves|Passeriformes|Turdidae|Turdus|migratorius|Turdus migratorius Linnaeus, 1766\t114323")
+      probe.expectComplete()
     }
 
     "return 5 items" in {
@@ -58,7 +75,7 @@ class ChecklistFetcherHDFSSpec extends TestKit(ActorSystem("IntegrationTest"))
 
     "return no items" in {
       val checklist = itemsFor(reqNew).toSeq
-      checklist shouldNot contain(ChecklistItem("Animalia|Chordata|Aves|Passeriformes|Paridae|Poecile|atricapillus|Poecile atricapillus (Linnaeus, 1766)",126643))
+      checklist shouldNot contain(ChecklistItem("Animalia|Chordata|Aves|Passeriformes|Paridae|Poecile|atricapillus|Poecile atricapillus (Linnaeus, 1766)", 126643))
     }
 
     "read parquet by spark" in {

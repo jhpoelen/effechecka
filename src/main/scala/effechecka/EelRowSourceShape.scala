@@ -28,10 +28,11 @@ trait EelRowIterator {
   }
 }
 
-trait EelRowSource extends GraphStage[SourceShape[Row]] with EelRowIterator {
+class EelRowSourceShape
+  (filePattern: Option[FilePattern], limit: Option[Int])
+  (implicit val configHadoop: Configuration, implicit val fs: FileSystem)
 
-  implicit val filePattern: Option[FilePattern]
-  implicit val limit: Option[Int]
+  extends GraphStage[SourceShape[Row]] with EelRowIterator {
 
   // Define the (sole) output port of this stage
   val out: Outlet[Row] = Outlet("RowSource")
@@ -43,31 +44,30 @@ trait EelRowSource extends GraphStage[SourceShape[Row]] with EelRowIterator {
       private val items = getRows(filePattern, limit)
 
       setHandler(out, new OutHandler {
+        def close(): Unit = {
+          if (!items.isClosed()) {
+            items.close()
+          }
+        }
+
         override def onPull(): Unit = {
-          println("onPull")
           try {
             if (items.iterator.hasNext) {
               val line = items.iterator.next()
               push(out, line)
             } else {
-              if (!items.isClosed()) {
-                items.close()
-              }
+              close()
               complete(out)
             }
           } catch {
             case e: Throwable => {
-              if (!items.isClosed()) {
-                items.close()
-              }
+              close()
               fail(out, e)
             }
           }
         }
         override def onDownstreamFinish: Unit = {
-          if (!items.isClosed()) {
-            items.close()
-          }
+          close()
         }
       })
     }

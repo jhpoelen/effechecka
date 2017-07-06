@@ -7,7 +7,8 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.FileSystem
 import org.effechecka.selector.{DateTimeSelector, OccurrenceSelector, UuidUtils}
 
-trait OccurrenceCollectionFetcherHDFS extends OccurrenceCollectionFetcher
+trait OccurrenceCollectionFetcherHDFS
+  extends OccurrenceCollectionFetcher
   with SparkSubmitter with HDFSUtil {
 
   implicit def config: Config

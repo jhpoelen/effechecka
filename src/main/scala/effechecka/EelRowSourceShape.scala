@@ -2,6 +2,7 @@ package effechecka
 
 import akka.stream.stage.{GraphStage, GraphStageLogic, OutHandler}
 import akka.stream.{Attributes, Outlet, SourceShape}
+import com.sksamuel.exts.Logging
 import io.eels.component.parquet.ParquetSource
 import io.eels.{CloseableIterator, FilePattern, Row}
 import org.apache.hadoop.conf.Configuration
@@ -32,7 +33,8 @@ class EelRowSourceShape
   (filePattern: Option[FilePattern], limit: Option[Int])
   (implicit val configHadoop: Configuration, implicit val fs: FileSystem)
 
-  extends GraphStage[SourceShape[Row]] with EelRowIterator {
+  extends GraphStage[SourceShape[Row]]
+    with EelRowIterator with Logging {
 
   // Define the (sole) output port of this stage
   val out: Outlet[Row] = Outlet("RowSource")
@@ -45,6 +47,7 @@ class EelRowSourceShape
 
       setHandler(out, new OutHandler {
         def close(): Unit = {
+          logger.info("attempting to close stream")
           if (!items.isClosed()) {
             items.close()
           }

@@ -12,7 +12,7 @@ import org.effechecka.selector.{DateTimeSelector, OccurrenceSelector}
 import org.scalatest.{Matchers, WordSpec}
 
 trait ChecklistFetcherStatic extends ChecklistFetcher {
-  def itemsFor(checklist: ChecklistRequest): Iterator[ChecklistItem] = Iterator(ChecklistItem("donald",1))
+  def itemsFor(checklist: ChecklistRequest): Iterator[ChecklistItem] = Iterator(ChecklistItem("donald", 1))
 
   def statusOf(checklist: ChecklistRequest): Option[String] = Some("ready")
 
@@ -68,7 +68,7 @@ trait OccurrenceCollectionFetcherStatic extends OccurrenceCollectionFetcher {
   def occurrencesFor(checklist: OccurrenceRequest): Iterator[Occurrence] = List(anOccurrence).iterator
 
   def monitoredOccurrencesFor(source: String, added: DateTimeSelector, occLimit: Option[Int]): Source[ByteString, NotUsed]
-  = Source.fromIterator(()=>
+  = Source.fromIterator(() =>
     Iterator(ByteString.fromString("occurrenceId\tmonitorUUID"), ByteString.fromString("\nsome id\t"),
       ByteString.fromString("\nanother id\tsomeUUID")))
 

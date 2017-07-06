@@ -1,18 +1,23 @@
 package effechecka
 
-import java.net.URL
 import java.util.UUID
 
-import akka.http.scaladsl.model.TransferEncodings.{deflate, gzip}
-import akka.http.scaladsl.model.headers.{Location, `Accept-Encoding`, `Access-Control-Allow-Origin`}
-import akka.http.scaladsl.server.ValidationRejection
-import org.scalatest.{Matchers, WordSpec}
-import akka.http.scaladsl.testkit.ScalatestRouteTest
 import akka.http.scaladsl.model._
+import akka.http.scaladsl.model.headers.{Location, `Access-Control-Allow-Origin`}
+import akka.http.scaladsl.testkit.ScalatestRouteTest
 import org.effechecka.selector.{DateTimeSelector, OccurrenceSelector}
+import org.scalatest.{Matchers, WordSpec}
 
 trait ChecklistFetcherStatic extends ChecklistFetcher {
   def itemsFor(checklist: ChecklistRequest): Iterator[ChecklistItem] = Iterator(ChecklistItem("donald", 1))
+
+  def statusOf(checklist: ChecklistRequest): Option[String] = Some("ready")
+
+  def request(checklist: ChecklistRequest): String = "requested"
+}
+
+trait ChecklistFetcherExploding extends ChecklistFetcher {
+  def itemsFor(checklist: ChecklistRequest): Iterator[ChecklistItem] = throw new RuntimeException("kaboom!")
 
   def statusOf(checklist: ChecklistRequest): Option[String] = Some("ready")
 
@@ -64,7 +69,21 @@ trait OccurrenceCollectionFetcherStatic extends OccurrenceCollectionFetcher {
   def monitorsFor(source: String, id: String): Iterator[OccurrenceSelector] = List(aSelector).iterator
 }
 
-class ChecklistService2Spec extends WordSpec with Matchers with ScalatestRouteTest with Service
+class WebApiExplodingSpec extends WordSpec with Matchers with ScalatestRouteTest with Service
+  with SelectorRegistryStatic
+  with ChecklistFetcherExploding
+  with OccurrenceCollectionFetcherStatic {
+
+  "The service" should {
+    "close iterator on exploding" in {
+      Get("/checklist?taxonSelector=Animalia,Insecta&wktString=ENVELOPE(-150,-50,40,10)") ~> route ~> check {
+        status shouldEqual StatusCodes.InternalServerError
+      }
+    }
+  }
+}
+
+class WebApiSpec extends WordSpec with Matchers with ScalatestRouteTest with Service
   with SelectorRegistryStatic
   with ChecklistFetcherStatic
   with OccurrenceCollectionFetcherStatic {
@@ -103,6 +122,12 @@ class ChecklistService2Spec extends WordSpec with Matchers with ScalatestRouteTe
     "return requested checklist" in {
       Get("/checklist?taxonSelector=Animalia,Insecta&wktString=ENVELOPE(-150,-50,40,10)") ~> route ~> check {
         responseAs[Checklist] shouldEqual Checklist(OccurrenceSelector("Animalia|Insecta", "ENVELOPE(-150,-50,40,10)", ""), "ready", List(ChecklistItem("donald", 1)))
+      }
+    }
+
+    "return requested checklist.tsv" in {
+      Get("/checklist.tsv?taxonSelector=Animalia,Insecta&wktString=ENVELOPE(-150,-50,40,10)") ~> route ~> check {
+        responseAs[String] shouldEqual "taxonName\ttaxonPath\trecordCount\ndonald\tdonald\t1"
       }
     }
 

@@ -2,7 +2,9 @@ package effechecka
 
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
+import akka.stream.testkit.scaladsl.TestSink
 import akka.testkit.TestKit
+import akka.util.ByteString
 import org.effechecka.selector.OccurrenceSelector
 import org.scalatest.{Matchers, WordSpecLike}
 
@@ -17,7 +19,7 @@ class OccurrenceCollectionFetcherHDFSSpec extends TestKit(ActorSystem("Integrati
   val expectedSelector = OccurrenceSelector("Animalia|Insecta", expectedWktString, expectedTraitSelector, Some("55e4b0a0-bcd9-566f-99bc-357439011d85"))
   val expectedMonitor = OccurrenceMonitor(expectedSelector, Some("ready"), Some(3997))
 
-  val ducksAndFrogs = OccurrenceSelector("Anas|Anura", "POLYGON ((-72.147216796875 41.492120839687786, -72.147216796875 43.11702412135048, -69.949951171875 43.11702412135048, -69.949951171875 41.492120839687786, -72.147216796875 41.492120839687786))","")
+  val ducksAndFrogs = OccurrenceSelector("Anas|Anura", "POLYGON ((-72.147216796875 41.492120839687786, -72.147216796875 43.11702412135048, -69.949951171875 43.11702412135048, -69.949951171875 41.492120839687786, -72.147216796875 41.492120839687786))", "")
   val ducksAndFrogsMonitor = OccurrenceMonitor(ducksAndFrogs.withUUID, Some("ready"), Some(239543))
 
 
@@ -53,18 +55,34 @@ class OccurrenceCollectionFetcherHDFSSpec extends TestKit(ActorSystem("Integrati
     }
 
     "return monitored occurrences by source and/or occurrence id" in {
-      val occIter: Iterator[(String, Option[String])] = monitoredOccurrencesFor("inaturalist")
-      occIter.next() should be(("http://www.inaturalist.org/observations/1053719", None))
-      occIter.hasNext should be(false)
+      val probe = monitoredOccurrencesFor("inaturalist")
+        .runWith(TestSink.probe[ByteString])
+      probe
+        .request(3)
 
-      val monitors: Iterator[OccurrenceSelector] = monitorsFor(source = "inaturalist", id = "http://www.inaturalist.org/observations/1053719")
-      monitors.next() should be(expectedSelector)
-      monitors.hasNext should be(false)
+      probe.expectNext() should be(ByteString.fromString("occurrenceId\tmonitorUUID"))
+      val someNext = probe.expectNext()
+      println(someNext.utf8String)
+      someNext should be(ByteString.fromString("\nhttp://www.inaturalist.org/observations/1053719\t"))
+      probe.expectComplete()
     }
 
     "return monitored occurrences limit to 0" in {
-      monitoredOccurrencesFor("inaturalist", occLimit = Some(0)).hasNext should be(false)
-      monitoredOccurrencesFor("inaturalist", occLimit = Some(1)).hasNext should be(true)
+      val probe = monitoredOccurrencesFor("inaturalist", occLimit = Some(0))
+        .runWith(TestSink.probe[ByteString])
+      probe
+        .request(3)
+      probe.expectNext(ByteString.fromString("occurrenceId\tmonitorUUID"))
+      probe.expectComplete()
+
+      val probe2 = monitoredOccurrencesFor("inaturalist", occLimit = Some(1))
+        .runWith(TestSink.probe[ByteString])
+      probe2
+        .request(3)
+      probe2.expectNext(ByteString.fromString("occurrenceId\tmonitorUUID"))
+      probe2.expectNext()
+      probe2.expectComplete()
+
     }
 
     "return status of monitor" in {

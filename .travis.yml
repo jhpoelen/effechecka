@@ -3,8 +3,6 @@ jdk:
   - oraclejdk8
 scala:
   - 2.11.8
-services:
-  - cassandra
 cache:
   directories:
       - $HOME/.ivy2

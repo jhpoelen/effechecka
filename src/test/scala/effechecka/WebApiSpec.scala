@@ -60,9 +60,12 @@ trait OccurrenceCollectionFetcherStatic extends OccurrenceCollectionFetcher {
   val aMonitor = OccurrenceMonitor(aSelector, Some("some status"), Some(123))
   val anotherMonitor = OccurrenceMonitor(OccurrenceSelector("Cartoona | donald", "some wkt string", "some trait selector"), None, Some(123))
 
+  def occurrencesTsvFor(checklist: OccurrenceRequest): Source[ByteString, NotUsed]
+  = Source.fromIterator(() => Iterator(ByteString.fromString(CsvUtils.toOccurrenceRow(anOccurrence))))
+
   def occurrencesFor(checklist: OccurrenceRequest): Iterator[Occurrence] = List(anOccurrence).iterator
 
-  def monitoredOccurrencesFor(source: String, added: DateTimeSelector, occLimit: Option[Int]): Iterator[(String, Option[String])] = List(("some id", None), ("another id", Some("someUUID"))).iterator
+  def monitoredOccurrencesFor(source: String, added: DateTimeSelector, occLimit: Option[Int]): Source[ByteString, NotUsed] = Source.fromIterator(()=> Iterator(ByteString.fromString("\nsome id\t"), ByteString.fromString("\nanother id\tsomeUUID")))
 
   def statusOf(selector: OccurrenceSelector): Option[String] = Some("ready")
 

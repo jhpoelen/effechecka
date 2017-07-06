@@ -23,11 +23,11 @@ trait SparkSubmitter extends Logging {
     send(requestUpdateAll())
   }
 
-  def submitOccurrenceCollectionRequest(selector: OccurrenceSelector, persistence: String = "cassandra"): Unit = {
+  def submitOccurrenceCollectionRequest(selector: OccurrenceSelector, persistence: String = "hdfs"): Unit = {
     send(requestOccurrences(selector, persistence))
   }
 
-  def submitChecklistRequest(checklist: ChecklistRequest, persistence: String = "cassandra"): Unit = {
+  def submitChecklistRequest(checklist: ChecklistRequest, persistence: String = "hdfs"): Unit = {
     send(requestChecklist(checklist.selector, persistence))
   }
 
@@ -37,8 +37,8 @@ trait SparkSubmitter extends Logging {
       .foreach(resp => logger.info(resp.toString))
   }
 
-  def requestChecklist(selector: OccurrenceSelector, persistence: String = "cassandra"): HttpRequest = requestFor(argsFor(selector), "ChecklistGenerator", persistence)
-  def requestOccurrences(selector: OccurrenceSelector, persistence: String = "cassandra"): HttpRequest = requestFor(argsFor(selector), "OccurrenceCollectionGenerator", persistence)
+  def requestChecklist(selector: OccurrenceSelector, persistence: String = "hdfs"): HttpRequest = requestFor(argsFor(selector), "ChecklistGenerator", persistence)
+  def requestOccurrences(selector: OccurrenceSelector, persistence: String = "hdfs"): HttpRequest = requestFor(argsFor(selector), "OccurrenceCollectionGenerator", persistence)
   def requestUpdateAll(): HttpRequest = requestFor(""""-a", "true"""", "OccurrenceCollectionGenerator")
 
 
@@ -49,7 +49,7 @@ trait SparkSubmitter extends Logging {
     List(argSelectorTaxon, argSelectorWktString, argSelectorTrait).map(""""\"""" + _ + """\""""").mkString(", ")
   }
 
-  def requestFor(args: String, sparkJobMainClass: String, persistence: String = "cassandra") = {
+  def requestFor(args: String, sparkJobMainClass: String, persistence: String = "hdfs") = {
     val sparkJobJar = config.getString("effechecka.spark.job.jar")
     val dataPathOccurrences = config.getString("effechecka.data.dir") + "/gbif-idigbio.parquet"
     val dataPathTraits = config.getString("effechecka.data.dir") + "/traitbank/*.csv"
@@ -71,7 +71,6 @@ trait SparkSubmitter extends Logging {
                              |      "sparkProperties" : {
                              |        "spark.driver.supervise" : "false",
                              |        "spark.mesos.executor.home" : "${config.getString("effechecka.spark.mesos.executor.home")}",
-                             |        "spark.cassandra.connection.host" : "${config.getString("effechecka.cassandra.host")}",
                              |        "spark.app.name" : "$sparkJobMainClass",
                              |        "_spark.eventLog.enabled": "true",
                              |        "spark.submit.deployMode" : "cluster",

@@ -12,13 +12,16 @@ import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.{Directive0, Directive1, Route, ValidationRejection}
 import akka.http.scaladsl.{Http, server}
 import akka.stream._
-import akka.stream.scaladsl.{Concat, Flow, GraphDSL, Source}
+import akka.stream.scaladsl.{Concat, Flow, GraphDSL, Sink, Source}
 import akka.util.ByteString
 import io.eels.{FilePattern, Row}
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.FileSystem
 import org.effechecka.selector.{DateTimeSelector, OccurrenceSelector, UuidUtils}
 import spray.json._
+
+import scala.concurrent.Await
+import scala.concurrent.duration._
 
 trait Protocols extends SprayJsonSupport with DefaultJsonProtocol {
   implicit val occurrenceSelector = jsonFormat5(OccurrenceSelector)
@@ -118,14 +121,6 @@ trait Service extends Protocols
   def usageRoutes(source: String): Route = {
     path("monitoredOccurrences.tsv") {
       handleMonitoredOccurrencesTsv(source)
-    } ~ path("monitors" | " monitorsForOccurrence") {
-      parameters('id.as[String]) { id =>
-        get {
-          complete {
-            monitorsFor(source, id).toList
-          }
-        }
-      }
     }
   }
 
@@ -230,15 +225,7 @@ trait Service extends Protocols
                 case Some("ready") => {
                   encodeResponse {
                     complete {
-                      val occurrenceSource = Source.fromIterator[ByteString]({
-                        () =>
-                          occurrencesFor(ocRequest)
-                            .map(occurrence => {
-                              ByteString(CsvUtils.toOccurrenceRow(occurrence))
-                            })
-                      })
-                      val header = Source.single[ByteString](ByteString(Seq("taxonName", "taxonPath", "lat", "lng", "eventStartDate", "occurrenceId", "firstAddedDate", "source", "occurrenceUrl").mkString("\t")))
-                      HttpEntity(contentType, Source.combine(header, occurrenceSource)(Concat[ByteString]))
+                      HttpEntity(contentType, occurrencesTsvFor(ocRequest))
                     }
                   }
                 }
@@ -262,16 +249,7 @@ trait Service extends Protocols
                 limit =>
                   encodeResponse {
                     complete {
-                      val monitoredOccurrenceSource = Source.fromIterator[ByteString]({
-                        () =>
-                          monitoredOccurrencesFor(source, added, limit)
-                            .map { case (occurrenceId, uuidOption) => {
-                              ByteString(s"\n$occurrenceId\t${uuidOption.getOrElse("")}")
-                            }
-                            }
-                      })
-                      val header = Source.single[ByteString](ByteString("occurrenceId\tmonitorUUID"))
-                      HttpEntity(contentType, Source.combine(header, monitoredOccurrenceSource)(Concat[ByteString]))
+                      HttpEntity(contentType, monitoredOccurrencesFor(source, added, limit))
                     }
                   }
               }

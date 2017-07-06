@@ -1,5 +1,7 @@
 package effechecka
 
+import java.util.concurrent.CountDownLatch
+
 import akka.stream.stage.{GraphStage, GraphStageLogic, OutHandler}
 import akka.stream.{Attributes, Outlet, SourceShape}
 import com.sksamuel.exts.Logging
@@ -44,7 +46,7 @@ class EelRowSourceShape
   override def createLogic(inheritedAttributes: Attributes): GraphStageLogic =
     new GraphStageLogic(shape) {
       private val items = getRows(filePattern, limit)
-
+      private val countDownLatch = new CountDownLatch(limit.getOrElse(0))
       setHandler(out, new OutHandler {
         def close(): Unit = {
           logger.info("attempting to close stream")
@@ -62,15 +64,14 @@ class EelRowSourceShape
               close()
               complete(out)
             }
+            println(s"count [${countDownLatch.getCount}]")
+            countDownLatch.countDown()
           } catch {
             case e: Throwable => {
               close()
               fail(out, e)
             }
           }
-        }
-        override def onDownstreamFinish: Unit = {
-          close()
         }
       })
     }

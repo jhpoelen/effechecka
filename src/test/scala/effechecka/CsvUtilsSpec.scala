@@ -10,6 +10,26 @@ class CsvUtilsSpec extends WordSpec with Matchers {
     row should be("\na taxon\ta taxon\t12.2\t11.1\t1970-01-01T00:00:00.123Z\tsome id\t1970-01-01T00:00:00.333Z\ta source\t")
   }
 
+  "line for occurrence taxon empty last" in {
+    val row: String = CsvUtils.toOccurrenceRow(Occurrence(taxon = "bla|", start = 123L, end = 12345L, lat= 12.2, lng = 11.1, added = 333L, source = "a source", id="some id"))
+    row should be("\nbla\tbla|\t12.2\t11.1\t1970-01-01T00:00:00.123Z\tsome id\t1970-01-01T00:00:00.333Z\ta source\t")
+  }
+
+  "line for occurrence taxon empty elements" in {
+    val row: String = CsvUtils.toOccurrenceRow(Occurrence(taxon = "|", start = 123L, end = 12345L, lat= 12.2, lng = 11.1, added = 333L, source = "a source", id="some id"))
+    row should be("\n\t|\t12.2\t11.1\t1970-01-01T00:00:00.123Z\tsome id\t1970-01-01T00:00:00.333Z\ta source\t")
+  }
+
+  "line for occurrence taxon empty element last, but not all" in {
+    val row: String = CsvUtils.toOccurrenceRow(Occurrence(taxon = "a||", start = 123L, end = 12345L, lat= 12.2, lng = 11.1, added = 333L, source = "a source", id="some id"))
+    row should be("\na\ta||\t12.2\t11.1\t1970-01-01T00:00:00.123Z\tsome id\t1970-01-01T00:00:00.333Z\ta source\t")
+  }
+
+  "line for occurrence null taxon" in {
+    val row: String = CsvUtils.toOccurrenceRow(Occurrence(taxon = null, start = 123L, end = 12345L, lat= 12.2, lng = 11.1, added = 333L, source = "a source", id="some id"))
+    row should be("\n\t\t12.2\t11.1\t1970-01-01T00:00:00.123Z\tsome id\t1970-01-01T00:00:00.333Z\ta source\t")
+  }
+
   "url for id unknown source" in {
     val unknownSource = CsvUtils.urlForOccurrenceId(Occurrence(taxon = "a taxon", start = 123L, end = 12345L, lat = 12.2, lng = 11.1, added = 333L, source = "a source", id = "some id"))
     unknownSource should be(None)

@@ -10,13 +10,27 @@ import org.joda.time.format.ISODateTimeFormat
 object CsvUtils {
 
   def toOccurrenceRow(occurrence: Occurrence): String = {
-    val lastTaxon = occurrence.taxon.split('|').reverse.head.trim
-    val toISO: (Long) => String = ISODateTimeFormat.dateTime().withZoneUTC().print
-    val dateString = toISO(occurrence.start)
+    val taxonString = if (occurrence.taxon == null) "" else occurrence.taxon
+    val lastTaxon = taxonString.split('|').filter(_.nonEmpty).reverse.headOption match {
+      case Some(taxon) => taxon.trim
+      case _ => ""
+    }
 
     val occurrenceUrl = urlForOccurrenceId(occurrence).getOrElse("")
-    Seq(lastTaxon, occurrence.taxon,occurrence.lat,occurrence.lng,dateString,occurrence.id,toISO(occurrence.added),occurrence.source,occurrenceUrl)
+    Seq(lastTaxon, taxonString,
+      occurrence.lat, occurrence.lng,
+      dateOrEmpty(occurrence.start),
+      occurrence.id,
+      dateOrEmpty(occurrence.added),
+      occurrence.source,
+      occurrenceUrl)
+      .map(value => if (value == null) "" else value)
       .mkString("\n", "\t", "")
+  }
+
+  private def dateOrEmpty(timestamp: Long) = {
+    val toISO: (Long) => String = ISODateTimeFormat.dateTime().withZoneUTC().print
+    toISO(timestamp)
   }
 
   def urlForOccurrenceId(occurrence: Occurrence): Option[URI] = {

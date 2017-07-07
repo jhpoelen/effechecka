@@ -29,10 +29,6 @@ trait ParquetReaderIterator extends Logging {
           paths.iterator.map { pathElem =>
             def configuration(): Configuration = {
               val conf = new Configuration()
-              //          projectionSchema.foreach { it =>
-              //            conf.set(ReadSupport.PARQUET_READ_SCHEMA, it.toString)
-              //          }
-              //conf.set(ParquetInputFormat.DICTIONARY_FILTERING_ENABLED, "true")
               conf.set(org.apache.parquet.hadoop.ParquetFileReader.PARQUET_READ_PARALLELISM, "1")
               conf
             }
@@ -52,16 +48,12 @@ trait ParquetReaderIterator extends Logging {
 }
 
 
-class ParquetReaderSourceShape
-(filePattern: Option[FilePattern], limit: Option[Int])
+class ParquetReaderSourceShape (filePattern: Option[FilePattern], limit: Option[Int])
 (implicit val configHadoop: Configuration, implicit val fs: FileSystem)
-
   extends GraphStage[SourceShape[Row]]
     with ParquetReaderIterator with Logging {
 
-  // Define the (sole) output port of this stage
   val out: Outlet[Row] = Outlet("RowSource")
-  // Define the shape of this stage, which is SourceShape with the port we defined above
   override val shape: SourceShape[Row] = SourceShape(out)
 
   override def createLogic(inheritedAttributes: Attributes): GraphStageLogic =

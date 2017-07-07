@@ -48,7 +48,7 @@ class OccurrenceCollectionFetcherHDFSSpec extends TestKit(ActorSystem("Integrati
       occurrenceCollection.take(2).length shouldBe 1
     }
 
-    "access all occurrence collection" in {
+    "access entire occurrence collection" in {
       val request = OccurrenceRequest(ducksAndFrogs, None)
       val occurrenceCollection = occurrencesFor(request)
       occurrenceCollection.size shouldBe 222

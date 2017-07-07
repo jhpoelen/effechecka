@@ -150,13 +150,12 @@ trait Service extends Protocols
           val checklist = ChecklistRequest(ocSelector, limit)
           val statusOpt: Option[String] = statusOf(checklist)
           statusOpt match {
-            case Some("ready") => {
+            case Some("ready") =>
               encodeResponse {
                 complete {
                   HttpEntity(contentType, tsvFor(checklist))
                 }
               }
-            }
             case _ =>
               request(checklist)
               complete {
@@ -222,15 +221,15 @@ trait Service extends Protocols
               val ocRequest = OccurrenceRequest(selector = ocSelector, limit = limit, added)
               val statusOpt: Option[String] = statusOf(ocSelector)
               statusOpt match {
-                case Some("ready") => {
+                case Some("ready") =>
                   encodeResponse {
                     complete {
                       HttpEntity(contentType, occurrencesTsvFor(ocRequest))
                     }
                   }
-                }
                 case _ => complete {
-                  StatusCodes.NotFound
+                  request(ocSelector)
+                  StatusCodes.Processing
                 }
               }
 
@@ -271,7 +270,7 @@ object WebApi extends App with Service
 
   implicit val system = ActorSystem("effechecka")
 
-  val decider: Supervision.Decider = { e =>
+  val decider: Supervision.Decider = {  e =>
     logger.error("Unhandled exception in stream", e)
     Supervision.Stop
   }

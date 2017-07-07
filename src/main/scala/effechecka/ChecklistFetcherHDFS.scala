@@ -17,7 +17,7 @@ import scala.concurrent.duration._
 trait ChecklistFetcherHDFS
   extends ChecklistFetcher
     with SparkSubmitter
-    with ParquetIterator
+    with ParquetReaderIterator
     with HDFSUtil {
 
   implicit def config: Config
@@ -48,7 +48,7 @@ trait ChecklistFetcherHDFS
   }
 
   private def toSourceShape(checklist: ChecklistRequest) = {
-    GraphDSL.create(new ParquetSourceShape(checklistPath(checklist, "checklist/", ""), checklist.limit)) { implicit builder =>
+    GraphDSL.create(new ParquetReaderSourceShape(checklistPath(checklist, "checklist/", ""), checklist.limit)) { implicit builder =>
       (checklist) =>
         import GraphDSL.Implicits._
         val toItems = Flow[Row]

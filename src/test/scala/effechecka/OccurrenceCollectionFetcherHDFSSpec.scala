@@ -31,7 +31,7 @@ class OccurrenceCollectionFetcherHDFSSpec extends TestKit(ActorSystem("Integrati
       getClass.getResource("/hdfs-layout/occurrence-summary/u0=05/u1=2f/u2=ec/uuid=052fec64-d7d8-5266-a4cd-119e3614831e") should be(null)
     }
 
-    "access an occurrence collection" in {
+    "access two records from occurrence collection" in {
       val request = OccurrenceRequest(ducksAndFrogs, Some(2))
       val occurrenceCollection = occurrencesFor(request)
       occurrenceCollection.hasNext shouldBe true
@@ -46,6 +46,12 @@ class OccurrenceCollectionFetcherHDFSSpec extends TestKit(ActorSystem("Integrati
       occ.source should be("idigbio")
 
       occurrenceCollection.take(2).length shouldBe 1
+    }
+
+    "access all occurrence collection" in {
+      val request = OccurrenceRequest(ducksAndFrogs, None)
+      val occurrenceCollection = occurrencesFor(request)
+      occurrenceCollection.size shouldBe 222
     }
 
 

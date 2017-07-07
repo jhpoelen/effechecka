@@ -45,7 +45,7 @@ class ParquetSourceShapeSpec extends TestKit(ActorSystem("IntegrationTest"))
 
       println(path)
 
-      val graph = GraphDSL.create(new ParquetSourceShape(someFilePattern, Some(1))) { implicit builder =>
+      val graph = GraphDSL.create(new ParquetReaderSourceShape(someFilePattern, Some(1))) { implicit builder =>
         (parquetSource) =>
           import GraphDSL.Implicits._
           val toMonitoredOccurrences = Flow[Row].map(row => ByteString.fromString(row.get(0).toString))

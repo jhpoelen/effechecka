@@ -47,7 +47,7 @@ trait OccurrenceCollectionFetcherHDFS
       case _ => None
     }
 
-    GraphDSL.create(new ParquetSourceShape(patternFor1, ocRequest.limit)) { implicit builder =>
+    GraphDSL.create(new ParquetReaderSourceShape(patternFor1, ocRequest.limit)) { implicit builder =>
       (occurrenceCollection) =>
         import GraphDSL.Implicits._
         val toOccurrences = Flow[Row]
@@ -87,7 +87,7 @@ trait OccurrenceCollectionFetcherHDFS
   def monitoredOccurrencesFor(source: String,
                               added: DateTimeSelector = DateTimeSelector(),
                               occLimit: Option[Int] = None): Source[ByteString, NotUsed] = {
-    val aGraph = GraphDSL.create(new ParquetSourceShape(patternFor(s"source-of-monitored-occurrence/source=$source"), occLimit)) { implicit builder =>
+    val aGraph = GraphDSL.create(new ParquetReaderSourceShape(patternFor(s"source-of-monitored-occurrence/source=$source"), occLimit)) { implicit builder =>
       (rows) =>
         import GraphDSL.Implicits._
         val toMonitoredOccurrences = Flow[Row]
@@ -108,7 +108,7 @@ trait OccurrenceCollectionFetcherHDFS
   }
 
   def monitors(): List[OccurrenceMonitor] = {
-    val aGraph = GraphDSL.create(new ParquetSourceShape(patternFor(s"occurrence-summary"), None)) { implicit builder =>
+    val aGraph = GraphDSL.create(new ParquetReaderSourceShape(patternFor(s"occurrence-summary"), None)) { implicit builder =>
       (rows) =>
         import GraphDSL.Implicits._
         val toMonitors = Flow[Row]
@@ -130,7 +130,7 @@ trait OccurrenceCollectionFetcherHDFS
   }
 
   def monitorOf(selector: OccurrenceSelector): Option[OccurrenceMonitor] = {
-    val aGraph = GraphDSL.create(new ParquetSourceShape(patternFor(s"occurrence-summary/${pathForSelector(selector)}"), Some(1))) { implicit builder =>
+    val aGraph = GraphDSL.create(new ParquetReaderSourceShape(patternFor(s"occurrence-summary/${pathForSelector(selector)}"), Some(1))) { implicit builder =>
       (rows) =>
         import GraphDSL.Implicits._
         val toMonitors = Flow[Row]

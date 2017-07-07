@@ -6,11 +6,12 @@ import akka.stream.stage.{GraphStage, GraphStageLogic, OutHandler}
 import akka.stream.{Attributes, Outlet, SourceShape}
 import com.sksamuel.exts.Logging
 import io.eels.component.parquet.ParquetSource
+import io.eels.schema.StructType
 import io.eels.{CloseableIterator, FilePattern, Row}
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.FileSystem
 
-trait EelRowIterator {
+trait ParquetIterator {
 
   protected implicit val configHadoop: Configuration
   protected implicit val fs: FileSystem
@@ -31,12 +32,12 @@ trait EelRowIterator {
   }
 }
 
-class EelRowSourceShape
+class ParquetSourceShape
   (filePattern: Option[FilePattern], limit: Option[Int])
   (implicit val configHadoop: Configuration, implicit val fs: FileSystem)
 
   extends GraphStage[SourceShape[Row]]
-    with EelRowIterator with Logging {
+    with ParquetIterator with Logging {
 
   // Define the (sole) output port of this stage
   val out: Outlet[Row] = Outlet("RowSource")

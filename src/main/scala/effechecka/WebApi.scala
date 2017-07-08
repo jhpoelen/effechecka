@@ -131,7 +131,9 @@ trait Service extends Protocols
           val statusOpt: Option[String] = statusOf(checklist)
           val (items, status) = statusOpt match {
             case Some("ready") => (itemsFor(checklist), "ready")
-            case None => (Iterator(), request(checklist))
+            case None => {
+              (Iterator(), request(checklist))
+            }
             case _ => (Iterator(), statusOpt.get)
           }
           complete {

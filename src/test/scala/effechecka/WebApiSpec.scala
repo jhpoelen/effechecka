@@ -114,7 +114,7 @@ class WebApiSpec extends WordSpec with Matchers with ScalatestRouteTest with Ser
 
     "return requested checklist" in {
       Get("/checklist?taxonSelector=Animalia,Insecta&wktString=ENVELOPE(-150,-50,40,10)") ~> route ~> check {
-        responseAs[Checklist] shouldEqual Checklist(OccurrenceSelector("Animalia|Insecta", "ENVELOPE(-150,-50,40,10)", ""), "ready", List(ChecklistItem("donald", 1)))
+        responseAs[Checklist] shouldEqual Checklist(OccurrenceSelector("Animalia|Insecta", "ENVELOPE(-150,-50,40,10)", "", Some("55e4b0a0-bcd9-566f-99bc-357439011d85")), "ready", List(ChecklistItem("donald", 1)))
       }
     }
 
@@ -126,13 +126,13 @@ class WebApiSpec extends WordSpec with Matchers with ScalatestRouteTest with Ser
 
     "return requested checklist uuid" in {
       Get("/checklist?uuid=55e4b0a0-bcd9-566f-99bc-357439011d85") ~> route ~> check {
-        responseAs[Checklist] shouldEqual Checklist(OccurrenceSelector("Animalia|Insecta", "ENVELOPE(-150,-50,40,10)", ""), "ready", List(ChecklistItem("donald", 1)))
+        responseAs[Checklist] shouldEqual Checklist(OccurrenceSelector("Animalia|Insecta", "ENVELOPE(-150,-50,40,10)", "",Some("55e4b0a0-bcd9-566f-99bc-357439011d85")), "ready", List(ChecklistItem("donald", 1)))
       }
     }
 
     "return requested occurrenceCollection" in {
       Get("/occurrences?taxonSelector=Animalia,Insecta&wktString=ENVELOPE(-150,-50,40,10)") ~> route ~> check {
-        responseAs[OccurrenceCollection] shouldEqual OccurrenceCollection(OccurrenceSelector("Animalia|Insecta", "ENVELOPE(-150,-50,40,10)", ""), Some("ready"), List(anOccurrence))
+        responseAs[OccurrenceCollection] shouldEqual OccurrenceCollection(OccurrenceSelector("Animalia|Insecta", "ENVELOPE(-150,-50,40,10)", "",Some("55e4b0a0-bcd9-566f-99bc-357439011d85")), Some("ready"), List(anOccurrence))
       }
     }
 
@@ -150,13 +150,13 @@ class WebApiSpec extends WordSpec with Matchers with ScalatestRouteTest with Ser
 
     "return requested occurrenceCollection error" in {
       Get("/occurrences?limit=20&taxonSelector=Animalia%2CInsecta&wktString=POLYGON%20((-150%2010%2C%20-150%2040%2C%20-50%2040%2C%20-50%2010%2C%20-150%2010))") ~> route ~> check {
-        responseAs[OccurrenceCollection] shouldEqual OccurrenceCollection(OccurrenceSelector("Animalia|Insecta", "POLYGON ((-150 10, -150 40, -50 40, -50 10, -150 10))", ""), Some("ready"), List(anOccurrence))
+        responseAs[OccurrenceCollection] shouldEqual OccurrenceCollection(OccurrenceSelector("Animalia|Insecta", "POLYGON ((-150 10, -150 40, -50 40, -50 10, -150 10))", "",Some("5ffd7bae-5fe0-5692-b914-bf90e921fa1b")), Some("ready"), List(anOccurrence))
       }
     }
 
     "return requested occurrenceCollection uuid" in {
       Get("/occurrences?uuid=55e4b0a0-bcd9-566f-99bc-357439011d85") ~> route ~> check {
-        responseAs[OccurrenceCollection] shouldEqual OccurrenceCollection(OccurrenceSelector("Animalia|Insecta", "ENVELOPE(-150,-50,40,10)", ""), Some("ready"), List(anOccurrence))
+        responseAs[OccurrenceCollection] shouldEqual OccurrenceCollection(OccurrenceSelector("Animalia|Insecta", "ENVELOPE(-150,-50,40,10)", "",Some("55e4b0a0-bcd9-566f-99bc-357439011d85")), Some("ready"), List(anOccurrence))
       }
     }
 

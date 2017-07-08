@@ -135,7 +135,7 @@ trait Service extends Protocols
             case _ => (Iterator(), statusOpt.get)
           }
           complete {
-            Checklist(ocSelector, status, items.toList)
+            Checklist(ocSelector.withUUID, status, items.toList)
           }
       }
     } ~ path("checklist.tsv") {
@@ -189,12 +189,12 @@ trait Service extends Protocols
           complete {
             statusOpt match {
               case Some("ready") => {
-                OccurrenceCollection(ocSelector, Some("ready"), occurrencesFor(ocRequest).toList)
+                OccurrenceCollection(ocSelector.withUUID, Some("ready"), occurrencesFor(ocRequest).toList)
               }
               case None =>
-                OccurrenceCollection(ocSelector, Some(request(ocSelector)))
+                OccurrenceCollection(ocSelector.withUUID, Some(request(ocSelector)))
               case _ =>
-                OccurrenceCollection(ocSelector, statusOpt)
+                OccurrenceCollection(ocSelector.withUUID, statusOpt)
             }
           }
       }

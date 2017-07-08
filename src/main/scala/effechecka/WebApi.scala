@@ -125,11 +125,7 @@ trait Service extends Protocols
   }
 
   def selectorRoutes(ocSelector: OccurrenceSelector): Route = {
-    path("view") {
-      addedParams.as(DateTimeSelector) { added =>
-        redirect("http://gimmefreshdata.github.io/?" + UuidUtils.queryParamsFor(ocSelector, added), StatusCodes.TemporaryRedirect)
-      }
-    } ~ path("checklist") {
+    path("checklist") {
       get {
           val checklist = ChecklistRequest(ocSelector, Some(20))
           val statusOpt: Option[String] = statusOf(checklist)

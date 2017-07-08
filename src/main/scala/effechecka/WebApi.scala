@@ -131,8 +131,7 @@ trait Service extends Protocols
       }
     } ~ path("checklist") {
       get {
-        parameters('limit.as[Int] ? 20) { limit =>
-          val checklist = ChecklistRequest(ocSelector, Some(limit))
+          val checklist = ChecklistRequest(ocSelector, Some(20))
           val statusOpt: Option[String] = statusOf(checklist)
           val (items, status) = statusOpt match {
             case Some("ready") => (itemsFor(checklist), "ready")
@@ -142,7 +141,6 @@ trait Service extends Protocols
           complete {
             Checklist(ocSelector, status, items.toList)
           }
-        }
       }
     } ~ path("checklist.tsv") {
       get {
@@ -190,21 +188,18 @@ trait Service extends Protocols
     get {
       addedParams.as(DateTimeSelector) {
         added =>
-          parameters('limit.as[Int] ? 20) {
-            limit =>
-              val ocRequest = OccurrenceRequest(ocSelector, Some(limit), added)
-              val statusOpt: Option[String] = statusOf(ocSelector)
-              complete {
-                statusOpt match {
-                  case Some("ready") => {
-                    OccurrenceCollection(ocSelector, Some("ready"), occurrencesFor(ocRequest).toList)
-                  }
-                  case None =>
-                    OccurrenceCollection(ocSelector, Some(request(ocSelector)))
-                  case _ =>
-                    OccurrenceCollection(ocSelector, statusOpt)
-                }
+          val ocRequest = OccurrenceRequest(ocSelector, Some(20), added)
+          val statusOpt: Option[String] = statusOf(ocSelector)
+          complete {
+            statusOpt match {
+              case Some("ready") => {
+                OccurrenceCollection(ocSelector, Some("ready"), occurrencesFor(ocRequest).toList)
               }
+              case None =>
+                OccurrenceCollection(ocSelector, Some(request(ocSelector)))
+              case _ =>
+                OccurrenceCollection(ocSelector, statusOpt)
+            }
           }
       }
     }
@@ -270,7 +265,7 @@ object WebApi extends App with Service
 
   implicit val system = ActorSystem("effechecka")
 
-  val decider: Supervision.Decider = {  e =>
+  val decider: Supervision.Decider = { e =>
     logger.error("Unhandled exception in stream", e)
     Supervision.Stop
   }

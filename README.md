@@ -1,9 +1,11 @@
 [![Build Status](https://travis-ci.org/jhpoelen/effechecka.svg?branch=master)](https://travis-ci.org/jhpoelen/effechecka)
 
 # effechecka
-Generates taxonomic checklist and monitors biodiversity data access.
+Web API to generate taxonomic checklist, occurrence lists and to help monitor biodiversity data access.
 
-See http://effechecka.org or http://gimmefreshdata.github.io for prototypes using this service.
+For more information, please visit [our wiki](../../wiki).
+
+For projects/prototypes using this api, please see http://effechecka.org or http://gimmefreshdata.github.io.
 
 # running
 ## standalone

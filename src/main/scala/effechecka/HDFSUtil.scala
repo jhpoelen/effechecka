@@ -54,24 +54,27 @@ trait HDFSUtil extends DateUtil with Logging {
   }
 
   def pathFilterWithDateRange(added: DateTimeSelector): (Path) => Boolean = {
-    val datePathPattern = ".*/y=([0-9]{4})/m=([0-9]{2})/d=([0-9]{2}).*".r
     x => {
-      x.toUri.toString match {
-        case datePathPattern(year, month, day) => {
-          val pathDate = parseDate(s"$year-$month-$day")
-          val upper = added.before match {
-            case Some(end) => Some(com.google.common.collect.Range.lessThan(parseDate(end)))
-            case None => None
+      if (added.after.isEmpty && added.before.isEmpty) {
+        true
+      } else {
+        val datePathPattern = ".*/y=([0-9]{4})/m=([0-9]{2})/d=([0-9]{2}).*".r
+        x.toUri.toString match {
+          case datePathPattern(year, month, day) => {
+            val pathDate = parseDate(s"$year-$month-$day")
+            val upper = added.before match {
+              case Some(end) => Some(com.google.common.collect.Range.lessThan(parseDate(end)))
+              case None => None
+            }
+            val lower = added.after match {
+              case Some(start) => Some(com.google.common.collect.Range.greaterThan(parseDate(start)))
+              case None => None
+            }
+            !Seq(upper, lower).flatten.exists(!_.contains(pathDate))
           }
-          val lower = added.after match {
-            case Some(start) => Some(com.google.common.collect.Range.greaterThan(parseDate(start)))
-            case None => None
-          }
-          !Seq(upper, lower).flatten.exists(!_.contains(pathDate))
+          case _ => false
         }
-        case _ => false
       }
     }
-
   }
 }

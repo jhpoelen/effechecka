@@ -68,7 +68,6 @@ class OccurrenceCollectionFetcherHDFSSpec extends TestKit(ActorSystem("Integrati
 
       probe.expectNext() should be(ByteString.fromString("occurrenceId\tmonitorUUID"))
       val someNext = probe.expectNext()
-      println(someNext.utf8String)
       someNext should be(ByteString.fromString("\nhttp://www.inaturalist.org/observations/1053719\t"))
       probe.expectComplete()
     }

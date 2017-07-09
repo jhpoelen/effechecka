@@ -87,7 +87,13 @@ trait OccurrenceCollectionFetcherHDFS
   def monitoredOccurrencesFor(source: String,
                               added: DateTimeSelector = DateTimeSelector(),
                               occLimit: Option[Int] = None): Source[ByteString, NotUsed] = {
-    val aGraph = GraphDSL.create(new ParquetReaderSourceShape(patternFor(s"source-of-monitored-occurrence/source=$source"), occLimit)) { implicit builder =>
+
+    val patternFor1 = patternFor(s"source-of-monitored-occurrence/source=$source") match {
+      case Some(pattern) => Some(pattern.withFilter(pathFilterWithDateRange(added)))
+      case _ => None
+    }
+
+    val aGraph = GraphDSL.create(new ParquetReaderSourceShape(patternFor1, occLimit)) { implicit builder =>
       (rows) =>
         import GraphDSL.Implicits._
         val toMonitoredOccurrences = Flow[Row]

@@ -12,10 +12,7 @@ digraph G {
   }
 
   subgraph cluster1 {
-		"job" -> "iDigBio"[label= " (6a) get /data/occurrences.csv"];
-		"job" -> "GBIF"[label= " (6a) get /data/occurrences.csv"];
-		"job" -> "iNaturalist"[label= " (6a) get /data/occurrences.csv"];
-		"job" -> "[...]"[label= " (6a) get /data/occurrences.csv"];
+		"job" -> "iDigBio\nGBIF\niNaturalist\n..."[label= " (6a) get /data/occurrences.csv"];
 		"job" -> "checklists"[label=" (7) save checklist"];
     		"effechecka api" -> "checklists"[label=" (2) add request"];
 		"job" -> "EOL\nTraitBank"[label= " (6b) get /data/body_mass.csv"];

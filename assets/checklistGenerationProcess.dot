@@ -5,19 +5,19 @@ digraph G {
   fontname="bold";
   "effechecka.org" -> "effechecka api"[label=" (1) request checklist"]
   subgraph cluster0 {
-    "effechecka api" -> "hdfs"[label=" (2) add request"];
 	"effechecka api" -> "apache spark"[label=" (3) schedule job"];
   "apache spark" -> "job"[label= " (5) execute job"];
-	"job" -> "hdfs"[label=" (7) save checklist"];
-    label = "Mesos/Marathon\n(single node cluster currently)";
+    label = "Mesos/Marathon\n12-node GUODA cluster";
     color = "green";
   }
 
   subgraph cluster1 {
 		"job" -> "iDigBio"[label= " (6a) get /data/occurrences.csv"];
+		"job" -> "checklists"[label=" (7) save checklist"];
+    		"effechecka api" -> "checklists"[label=" (2) add request"];
 		"job" -> "EOL\nTraitBank"[label= " (6b) get /data/body_mass.csv"];
-		"apache spark" -> "Checklist Generator\nSpark Job"[label= " (4) get /jobs/checklist_job.jar"];
-		label = "File Repository\n(local ~100GB disk currently)"
+		"apache spark" -> "Checklist Generator\nSpark Job\nhttps://github/bio-guoda/idigbio-spark"[label= " (4) get /jobs/checklist_job.jar"];
+		label = "Hadoop Distributed File System\nHDFS"
 		color = "blue"
   }
 

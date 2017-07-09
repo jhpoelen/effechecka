@@ -1,14 +1,14 @@
 digraph G {
   labelloc="t";
-  label="Effechecka Checklist Generation Process (Feb 2016)";
+  label="Effechecka Checklist Generation Process (July 2017)";
   compound=true;
   fontname="bold";
   "effechecka.org" -> "effechecka api"[label=" (1) request checklist"]
   subgraph cluster0 {
-    "effechecka api" -> "cassandra"[label=" (2) add request"];
+    "effechecka api" -> "hdfs"[label=" (2) add request"];
 	"effechecka api" -> "apache spark"[label=" (3) schedule job"];
   "apache spark" -> "job"[label= " (5) execute job"];
-	"job" -> "cassandra"[label=" (7) save checklist"];
+	"job" -> "hdfs"[label=" (7) save checklist"];
     label = "Mesos/Marathon\n(single node cluster currently)";
     color = "green";
   }

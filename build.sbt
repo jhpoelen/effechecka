@@ -30,5 +30,5 @@ libraryDependencies ++= {
   )
 }
 
-resolvers += "effechecka-snapshots" at "https://s3.amazonaws.com/effechecka/snapshots"
+resolvers += "effechecka-releases" at "https://s3.amazonaws.com/effechecka/releases"
 

@@ -13,10 +13,13 @@ digraph G {
 
   subgraph cluster1 {
 		"job" -> "iDigBio"[label= " (6a) get /data/occurrences.csv"];
+		"job" -> "GBIF"[label= " (6a) get /data/occurrences.csv"];
+		"job" -> "iNaturalist"[label= " (6a) get /data/occurrences.csv"];
+		"job" -> "[...]"[label= " (6a) get /data/occurrences.csv"];
 		"job" -> "checklists"[label=" (7) save checklist"];
     		"effechecka api" -> "checklists"[label=" (2) add request"];
 		"job" -> "EOL\nTraitBank"[label= " (6b) get /data/body_mass.csv"];
-		"apache spark" -> "Checklist Generator\nSpark Job\nhttps://github/bio-guoda/idigbio-spark"[label= " (4) get /jobs/checklist_job.jar"];
+		"apache spark" -> "Checklist Generator\nSpark Job\nhttps://github.com/bio-guoda/idigbio-spark"[label= " (4) get /jobs/checklist_job.jar"];
 		label = "Hadoop Distributed File System\nHDFS"
 		color = "blue"
   }

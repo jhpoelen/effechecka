@@ -3,9 +3,9 @@ digraph G {
   label="Effechecka Checklist Generation Process (July 2017)";
   compound=true;
   fontname="bold";
-  "effechecka.org" -> "effechecka api"[label=" (1) request checklist"]
+  "effechecka.org\ngithub.com/effechecka/effechecka.github.io" -> "effechecka api\ngithub.com/jhpoelen/effechecka"[label=" (1) request checklist"]
   subgraph cluster0 {
-	"effechecka api" -> "apache spark"[label=" (3) schedule job"];
+	"effechecka api\ngithub.com/jhpoelen/effechecka" -> "apache spark"[label=" (3) schedule job"];
   "apache spark" -> "job"[label= " (5) execute job"];
     label = "Mesos/Marathon\n12-node GUODA cluster";
     color = "green";
@@ -14,9 +14,10 @@ digraph G {
   subgraph cluster1 {
 		"job" -> "iDigBio\nGBIF\niNaturalist\n..."[label= " (6a) get /data/occurrences.csv"];
 		"job" -> "checklists"[label=" (7) save checklist"];
-    		"effechecka api" -> "checklists"[label=" (2) add request"];
+    		"effechecka api\ngithub.com/jhpoelen/effechecka" -> "checklists"[label=" (2) add request"];
+    		"effechecka api\ngithub.com/jhpoelen/effechecka" -> "checklists"[label=" (8) retrieve checklist"];
 		"job" -> "EOL\nTraitBank"[label= " (6b) get /data/body_mass.csv"];
-		"apache spark" -> "Checklist Generator\nSpark Job\nhttps://github.com/bio-guoda/idigbio-spark"[label= " (4) get /jobs/checklist_job.jar"];
+		"apache spark" -> "Checklist Generator\nSpark Job\ngithub.com/bio-guoda/idigbio-spark"[label= " (4) get /jobs/checklist_job.jar"];
 		label = "Hadoop Distributed File System\nHDFS"
 		color = "blue"
   }

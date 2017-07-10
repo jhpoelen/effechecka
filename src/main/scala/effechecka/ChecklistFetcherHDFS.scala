@@ -43,7 +43,7 @@ trait ChecklistFetcherHDFS
     Source.combine(header, occurrenceSource)(Concat[ByteString])
   }
 
-  private def itemsFor2(checklist: ChecklistRequest): Source[ChecklistItem, NotUsed] = {
+  private def sourceForItems(checklist: ChecklistRequest): Source[ChecklistItem, NotUsed] = {
     Source.fromGraph(toSourceShape(checklist))
   }
 
@@ -60,7 +60,7 @@ trait ChecklistFetcherHDFS
   }
 
   def itemsFor(checklist: ChecklistRequest): Iterator[ChecklistItem] = {
-    val runWith = itemsFor2(checklist).runWith(Sink.seq)
+    val runWith = sourceForItems(checklist).runWith(Sink.seq)
     Await.result(runWith, 30.second).iterator
   }
 
@@ -74,7 +74,7 @@ trait ChecklistFetcherHDFS
   }
 
   private def checklistExists(checklist: ChecklistRequest) = {
-    val runWith = itemsFor2(checklist).runWith(Sink.seq)
+    val runWith = sourceForItems(checklist).runWith(Sink.seq)
     Await.result(runWith, 30.second).iterator.nonEmpty
   }
 

@@ -16,7 +16,17 @@ trait HDFSUtil extends DateUtil with Logging {
   protected implicit val fs: FileSystem
 
   def pathForSelector(occurrenceSelector: OccurrenceSelector): String = {
-    UuidUtils.pathForSelector(occurrenceSelector)
+    occurrenceSelector.uuid match {
+      case Some(uuidString) => UuidUtils.pathForUUID(UUID.fromString(uuidString))
+      case _ => UuidUtils.pathForSelector(occurrenceSelector)
+    }
+  }
+
+  def addUUIDIfNeeded(selector: OccurrenceSelector): OccurrenceSelector = {
+    selector.uuid match {
+      case Some(_) => selector
+      case _ => selector.withUUID
+    }
   }
 
   def absolutePathForSelector(occurrenceSelector: OccurrenceSelector): String = {

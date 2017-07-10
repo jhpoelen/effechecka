@@ -1,16 +1,14 @@
 package effechecka
 
 import akka.NotUsed
-import akka.http.scaladsl.model.HttpEntity
 import akka.stream.SourceShape
 import akka.stream.scaladsl.{Concat, Flow, GraphDSL, Sink, Source}
 import akka.util.ByteString
 import com.typesafe.config.Config
-import io.eels.{Frame, Row}
-import io.eels.component.parquet.ParquetSource
+import io.eels.Row
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.FileSystem
-import org.effechecka.selector.{DateTimeSelector, OccurrenceSelector, UuidUtils}
+import org.effechecka.selector.{DateTimeSelector, OccurrenceSelector}
 
 import scala.concurrent.Await
 import scala.concurrent.duration._
@@ -76,14 +74,6 @@ trait OccurrenceCollectionFetcherHDFS
       .iterator
   }
 
-  private def frameLimited(frame: Frame, limit: Option[Int]) = {
-    val iterator = limit match {
-      case Some(aLimit) => frame.rows().iterator.take(aLimit)
-      case _ => frame.rows.iterator
-    }
-    iterator
-  }
-
   def monitoredOccurrencesFor(source: String,
                               added: DateTimeSelector = DateTimeSelector(),
                               occLimit: Option[Int] = None): Source[ByteString, NotUsed] = {
@@ -121,7 +111,9 @@ trait OccurrenceCollectionFetcherHDFS
           .map(row => {
             val statusOpt = row.get("status").toString
             val recordOpt = Some(Integer.parseInt(row.get("itemCount").toString))
-            OccurrenceMonitor(selectorFromRow(row), Some(statusOpt), recordOpt)
+            OccurrenceMonitor(OccurrenceSelectorUtil.addUUIDIfNeeded(selectorFromRow(row)),
+              Some(statusOpt),
+              recordOpt)
           })
         val monitors = builder.add(toMonitors)
         rows ~> monitors
@@ -131,8 +123,11 @@ trait OccurrenceCollectionFetcherHDFS
   }
 
   private def selectorFromRow(row: Row): OccurrenceSelector = {
-    val selector = OccurrenceSelector(taxonSelector = row.get("taxonSelector").toString, traitSelector = row.get("traitSelector").toString, wktString = row.get("wktString").toString)
-    selector.withUUID
+    val uuidOption = if (row.schema.contains("uuid")) Some(row.get("uuid").toString) else None
+    OccurrenceSelector(taxonSelector = row.get("taxonSelector").toString,
+      traitSelector = row.get("traitSelector").toString,
+      wktString = row.get("wktString").toString,
+      uuid = uuidOption)
   }
 
   def monitorOf(selector: OccurrenceSelector): Option[OccurrenceMonitor] = {
@@ -143,8 +138,7 @@ trait OccurrenceCollectionFetcherHDFS
           .map(row => {
             val statusOpt = row.get("status").toString
             val recordOpt = Some(Integer.parseInt(row.get("itemCount").toString))
-            val selectorWithUUID = selector.withUUID
-            OccurrenceMonitor(selectorWithUUID, Some(statusOpt), recordOpt)
+            OccurrenceMonitor(OccurrenceSelectorUtil.addUUIDIfNeeded(selector), Some(statusOpt), recordOpt)
           })
         val monitors = builder.add(toMonitors)
         rows ~> monitors
@@ -157,7 +151,7 @@ trait OccurrenceCollectionFetcherHDFS
     statusOf(selector) match {
       case Some("ready") => "ready"
       case _ =>
-        submitOccurrenceCollectionRequest(selector, persistence = "hdfs")
+        submitOccurrenceCollectionRequest(selector)
         "requested"
     }
   }

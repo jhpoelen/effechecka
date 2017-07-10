@@ -12,16 +12,12 @@ import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.{Directive0, Directive1, Route, ValidationRejection}
 import akka.http.scaladsl.{Http, server}
 import akka.stream._
-import akka.stream.scaladsl.{Concat, Flow, GraphDSL, Sink, Source}
-import akka.util.ByteString
-import io.eels.{FilePattern, Row}
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.FileSystem
-import org.effechecka.selector.{DateTimeSelector, OccurrenceSelector, UuidUtils}
+import org.effechecka.selector.{DateTimeSelector, OccurrenceSelector}
 import spray.json._
 
-import scala.concurrent.Await
-import scala.concurrent.duration._
+case class OccurrenceSelectorUUID(uuid: String)
 
 trait Protocols extends SprayJsonSupport with DefaultJsonProtocol {
   implicit val occurrenceSelector = jsonFormat5(OccurrenceSelector)
@@ -41,7 +37,6 @@ trait Protocols extends SprayJsonSupport with DefaultJsonProtocol {
 trait Service extends Protocols
   with ChecklistFetcher
   with Fetcher
-  with SelectorRegistry
   with SelectorValidator
   with OccurrenceCollectionFetcher {
 
@@ -70,14 +65,10 @@ trait Service extends Protocols
 
   val uuidParams: Directive1[OccurrenceSelector] = {
     parameters('uuid.as[String]).flatMap {
-      case (uuid: String) => selectorFor(UUID.fromString(uuid)) match {
-        case Some(selector) => provide(selector)
-        case None => reject
-      }
+      case (uuid: String) => provide(OccurrenceSelector(uuid = Some(UUID.fromString(uuid).toString)))
       case _ => reject
     }
   }
-
 
   val selectorParameters: Directive1[OccurrenceSelector] = {
     uuidParams | selectorValueParams
@@ -88,10 +79,7 @@ trait Service extends Protocols
     logRequestResult("checklist-service") {
       addAccessControlHeaders {
         selectorParameters { ocSelector =>
-          parameters('ttlSeconds.as[Int] ?) { ttlSeconds =>
-            registerSelector(ocSelector, ttlSeconds)
-            selectorRoutes(ocSelector)
-          }
+          selectorRoutes(ocSelector)
         } ~ path("updateAll") {
           get {
             complete {
@@ -108,9 +96,6 @@ trait Service extends Protocols
           }
         } ~ path("ping") {
           complete("pong")
-        } ~ path("scrub") {
-          val unregisteredSelectors = unregisterSelectors((selector: OccurrenceSelector) => invalid(selector)).mkString("unregistered invalid selectors: [", ",", "]")
-          complete(unregisteredSelectors)
         } ~ get {
           complete(HttpResponse(status = StatusCodes.BadRequest))
         }
@@ -124,21 +109,22 @@ trait Service extends Protocols
     }
   }
 
+
   def selectorRoutes(ocSelector: OccurrenceSelector): Route = {
     path("checklist") {
       get {
-          val checklist = ChecklistRequest(ocSelector, Some(20))
-          val statusOpt: Option[String] = statusOf(checklist)
-          val (items, status) = statusOpt match {
-            case Some("ready") => (itemsFor(checklist), "ready")
-            case None => {
-              (Iterator(), request(checklist))
-            }
-            case _ => (Iterator(), statusOpt.get)
+        val checklist = ChecklistRequest(ocSelector, Some(20))
+        val statusOpt: Option[String] = statusOf(checklist)
+        val (items, status) = statusOpt match {
+          case Some("ready") => (itemsFor(checklist), "ready")
+          case None => {
+            (Iterator(), request(checklist))
           }
-          complete {
-            Checklist(ocSelector.withUUID, status, items.toList)
-          }
+          case _ => (Iterator(), statusOpt.get)
+        }
+        complete {
+          Checklist(OccurrenceSelectorUtil.addUUIDIfNeeded(ocSelector), status, items.toList)
+        }
       }
     } ~ path("checklist.tsv") {
       get {
@@ -189,14 +175,15 @@ trait Service extends Protocols
           val ocRequest = OccurrenceRequest(ocSelector, Some(20), added)
           val statusOpt: Option[String] = statusOf(ocSelector)
           complete {
+            val sel = OccurrenceSelectorUtil.addUUIDIfNeeded(ocSelector)
             statusOpt match {
               case Some("ready") => {
-                OccurrenceCollection(ocSelector.withUUID, Some("ready"), occurrencesFor(ocRequest).toList)
+                OccurrenceCollection(sel, Some("ready"), occurrencesFor(ocRequest).toList)
               }
               case None =>
-                OccurrenceCollection(ocSelector.withUUID, Some(request(ocSelector)))
+                OccurrenceCollection(sel, Some(request(ocSelector)))
               case _ =>
-                OccurrenceCollection(ocSelector.withUUID, statusOpt)
+                OccurrenceCollection(sel, statusOpt)
             }
           }
       }
@@ -257,7 +244,6 @@ trait Service extends Protocols
 
 object WebApi extends App with Service
   with Configure
-  with SelectorRegistryNOP
   with ChecklistFetcherHDFS
   with OccurrenceCollectionFetcherHDFS {
 

@@ -15,6 +15,21 @@ class HDFSUtilSpec extends TestKit(ActorSystem("IntegrationTest"))
   implicit val materializer = ActorMaterializer()(system)
   implicit val ec = system.dispatcher
 
+  "path for selector" in {
+    val selector = OccurrenceSelector("Aves|Mammalia", "some wkt", "some trait")
+
+    val expectedPath = "u0=16/u1=c6/u2=29/uuid=16c62920-81fa-5216-aab1-bfda5cdfacde"
+    pathForSelector(selector) should be(expectedPath)
+
+    val selectorWithUUID = OccurrenceSelector(uuid = Some("16c62920-81fa-5216-aab1-bfda5cdfacde"))
+    pathForSelector(selectorWithUUID) should be(expectedPath)
+
+    val selectorWithUUIDAndMismatchingSelector = OccurrenceSelector(
+      taxonSelector = "Aves|Mammalia",
+      uuid = Some("16c62920-81fa-5216-aab1-bfda5cdfacde"))
+    pathForSelector(selectorWithUUIDAndMismatchingSelector) should be(expectedPath)
+  }
+
   "path with filter" in {
     val request = OccurrenceRequest(OccurrenceSelector("Aves|Mammalia", "some wkt", "some trait"),
       added = DateTimeSelector(before = Some("2017-05-01"), after = Some("2016-02-03")))
@@ -38,7 +53,7 @@ class HDFSUtilSpec extends TestKit(ActorSystem("IntegrationTest"))
 
   "path with before date filter" in {
     val request = OccurrenceRequest(OccurrenceSelector("Aves|Mammalia", "some wkt", "some trait"),
-    added = DateTimeSelector(before = Some("2017-06-01")))
+      added = DateTimeSelector(before = Some("2017-06-01")))
 
     val pattern: FilePattern = selectPathByDateRange(request, "some/path")
 
@@ -49,7 +64,7 @@ class HDFSUtilSpec extends TestKit(ActorSystem("IntegrationTest"))
 
   "path with after date filter" in {
     val request = OccurrenceRequest(OccurrenceSelector("Aves|Mammalia", "some wkt", "some trait"),
-    added = DateTimeSelector(after = Some("2016-06-01")))
+      added = DateTimeSelector(after = Some("2016-06-01")))
 
     val pattern: FilePattern = selectPathByDateRange(request, "some/path")
 

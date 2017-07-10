@@ -1,10 +1,7 @@
 package effechecka
 
-import java.util.UUID
-
 import akka.NotUsed
 import akka.http.scaladsl.model._
-import akka.http.scaladsl.model.headers.{Location, `Access-Control-Allow-Origin`}
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
@@ -31,28 +28,6 @@ trait ChecklistFetcherExploding extends ChecklistFetcher {
 
   def tsvFor(checklist: ChecklistRequest): Source[ByteString, NotUsed] = Source.fromIterator(() => Iterator())
 
-}
-
-trait SelectorRegistryStatic extends SelectorRegistry {
-  val selector = OccurrenceSelector("Animalia|Insecta", "ENVELOPE(-150,-50,40,10)", "")
-
-
-  def registerSelector(selector: OccurrenceSelector, ttlSeconds: Option[Int] = None): UUID = {
-    UUID.fromString("55e4b0a0-bcd9-566f-99bc-357439011d85")
-  }
-
-  def unregisterSelectors(filter: (OccurrenceSelector) => Boolean): List[OccurrenceSelector] = {
-    List(selector)
-  }
-
-  def selectorFor(uuid: UUID): Option[OccurrenceSelector] = {
-    uuid.toString match {
-      case "55e4b0a0-bcd9-566f-99bc-357439011d85" =>
-        Some(selector)
-      case _ =>
-        None
-    }
-  }
 }
 
 trait OccurrenceCollectionFetcherStatic extends OccurrenceCollectionFetcher {
@@ -87,7 +62,6 @@ trait OccurrenceCollectionFetcherStatic extends OccurrenceCollectionFetcher {
 
 class WebApiExplodingSpec extends WordSpec with Matchers with ScalatestRouteTest
   with Service
-  with SelectorRegistryStatic
   with ChecklistFetcherExploding
   with OccurrenceCollectionFetcherStatic {
 
@@ -101,7 +75,6 @@ class WebApiExplodingSpec extends WordSpec with Matchers with ScalatestRouteTest
 }
 
 class WebApiSpec extends WordSpec with Matchers with ScalatestRouteTest with Service
-  with SelectorRegistryStatic
   with ChecklistFetcherStatic
   with OccurrenceCollectionFetcherStatic {
 
@@ -126,7 +99,7 @@ class WebApiSpec extends WordSpec with Matchers with ScalatestRouteTest with Ser
 
     "return requested checklist uuid" in {
       Get("/checklist?uuid=55e4b0a0-bcd9-566f-99bc-357439011d85") ~> route ~> check {
-        responseAs[Checklist] shouldEqual Checklist(OccurrenceSelector("Animalia|Insecta", "ENVELOPE(-150,-50,40,10)", "",Some("55e4b0a0-bcd9-566f-99bc-357439011d85")), "ready", List(ChecklistItem("donald", 1)))
+        responseAs[Checklist] shouldEqual Checklist(OccurrenceSelector("", "", "",Some("55e4b0a0-bcd9-566f-99bc-357439011d85")), "ready", List(ChecklistItem("donald", 1)))
       }
     }
 
@@ -156,7 +129,7 @@ class WebApiSpec extends WordSpec with Matchers with ScalatestRouteTest with Ser
 
     "return requested occurrenceCollection uuid" in {
       Get("/occurrences?uuid=55e4b0a0-bcd9-566f-99bc-357439011d85") ~> route ~> check {
-        responseAs[OccurrenceCollection] shouldEqual OccurrenceCollection(OccurrenceSelector("Animalia|Insecta", "ENVELOPE(-150,-50,40,10)", "",Some("55e4b0a0-bcd9-566f-99bc-357439011d85")), Some("ready"), List(anOccurrence))
+        responseAs[OccurrenceCollection] shouldEqual OccurrenceCollection(OccurrenceSelector("", "", "",Some("55e4b0a0-bcd9-566f-99bc-357439011d85")), Some("ready"), List(anOccurrence))
       }
     }
 
@@ -194,7 +167,7 @@ class WebApiSpec extends WordSpec with Matchers with ScalatestRouteTest with Ser
 
     "refresh monitor uuid" in {
       Get("/update?uuid=55e4b0a0-bcd9-566f-99bc-357439011d85") ~> route ~> check {
-        responseAs[OccurrenceCollection] shouldEqual OccurrenceCollection(OccurrenceSelector("Animalia|Insecta", "ENVELOPE(-150,-50,40,10)", ""), Some("requested"), List())
+        responseAs[OccurrenceCollection] shouldEqual OccurrenceCollection(OccurrenceSelector("", "", "", Some("55e4b0a0-bcd9-566f-99bc-357439011d85")), Some("requested"), List())
       }
     }
 

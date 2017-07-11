@@ -10,7 +10,6 @@ import akka.testkit.TestKit
 import akka.util.ByteString
 import io.eels.{FilePattern, Row}
 import org.apache.hadoop.fs.Path
-import org.effechecka.selector.OccurrenceSelector
 import org.scalatest.{Matchers, WordSpecLike}
 
 class ParquetSourceShapeSpec extends TestKit(ActorSystem("IntegrationTest"))
@@ -31,8 +30,6 @@ class ParquetSourceShapeSpec extends TestKit(ActorSystem("IntegrationTest"))
     }
 
     "return rows" in {
-      val ducksAndFrogs = OccurrenceSelector("Anas|Anura", "POLYGON ((-72.147216796875 41.492120839687786, -72.147216796875 43.11702412135048, -69.949951171875 43.11702412135048, -69.949951171875 41.492120839687786, -72.147216796875 41.492120839687786))", "")
-      val pathString = ducksAndFrogsResource.toURI.toString
       val baseDir = new File(getClass.getResource("/hdfs-layout/base.txt").toURI).getParentFile.getParentFile.toURI.toString
       val path = new Path(baseDir + ducksAndFrogsResourceString)
       println(path.toUri.toString)

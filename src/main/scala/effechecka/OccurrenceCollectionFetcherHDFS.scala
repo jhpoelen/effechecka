@@ -1,26 +1,28 @@
 package effechecka
 
 import akka.NotUsed
-import akka.stream.SourceShape
 import akka.stream.scaladsl.{Concat, Flow, GraphDSL, Sink, Source}
+import akka.stream.{ActorMaterializer, SourceShape}
 import akka.util.ByteString
 import com.typesafe.config.Config
 import io.eels.Row
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.FileSystem
-import org.effechecka.selector.{DateTimeSelector, OccurrenceSelector}
+import org.effechecka.selector.DateTimeSelector
 
 import scala.concurrent.Await
 import scala.concurrent.duration._
 
 trait OccurrenceCollectionFetcherHDFS
   extends OccurrenceCollectionFetcher
-    with SparkSubmitter with HDFSUtil {
+    with HDFSUtil {
 
   implicit def config: Config
 
   protected implicit val configHadoop: Configuration
   protected implicit val fs: FileSystem
+
+  implicit val materializer: ActorMaterializer
 
   def occurrencesTsvFor(ocRequest: OccurrenceRequest): Source[ByteString, NotUsed] = {
     val occurrenceSource = Source.fromGraph(graphForOccurrences(ocRequest))
@@ -91,9 +93,8 @@ trait OccurrenceCollectionFetcherHDFS
             val values = row.values
             (values.head.toString, if (values.size > 1) Some(values(1).toString) else None)
           })
-          .map { case (occurrenceId, uuidOption) => {
+          .map { case (occurrenceId, uuidOption) =>
             ByteString(s"\n$occurrenceId\t${uuidOption.getOrElse("")}")
-          }
           }
         val out = builder.add(toMonitoredOccurrences)
         rows ~> out
@@ -111,7 +112,7 @@ trait OccurrenceCollectionFetcherHDFS
           .map(row => {
             val statusOpt = row.get("status").toString
             val recordOpt = Some(Integer.parseInt(row.get("itemCount").toString))
-            OccurrenceMonitor(OccurrenceSelectorUtil.addUUIDIfNeeded(selectorFromRow(row)),
+            OccurrenceMonitor(selectorFromRow(row),
               Some(statusOpt),
               recordOpt)
           })
@@ -122,15 +123,13 @@ trait OccurrenceCollectionFetcherHDFS
     Await.result(Source.fromGraph(aGraph).runWith(Sink.seq), 30.second).toList
   }
 
-  private def selectorFromRow(row: Row): OccurrenceSelector = {
-    val uuidOption = if (row.schema.contains("uuid")) Some(row.get("uuid").toString) else None
-    OccurrenceSelector(taxonSelector = row.get("taxonSelector").toString,
+  private def selectorFromRow(row: Row): Selector = {
+    SelectorParams(taxonSelector = row.get("taxonSelector").toString,
       traitSelector = row.get("traitSelector").toString,
-      wktString = row.get("wktString").toString,
-      uuid = uuidOption)
+      wktString = row.get("wktString").toString).withUUID()
   }
 
-  def monitorOf(selector: OccurrenceSelector): Option[OccurrenceMonitor] = {
+  def monitorOf(selector: Selector): Option[OccurrenceMonitor] = {
     val aGraph = GraphDSL.create(new ParquetReaderSourceShape(patternFor(s"occurrence-summary/${pathForSelector(selector)}"), Some(1))) { implicit builder =>
       (rows) =>
         import GraphDSL.Implicits._
@@ -138,7 +137,7 @@ trait OccurrenceCollectionFetcherHDFS
           .map(row => {
             val statusOpt = row.get("status").toString
             val recordOpt = Some(Integer.parseInt(row.get("itemCount").toString))
-            OccurrenceMonitor(OccurrenceSelectorUtil.addUUIDIfNeeded(selector), Some(statusOpt), recordOpt)
+            OccurrenceMonitor(selector.withUUID(), Some(statusOpt), recordOpt)
           })
         val monitors = builder.add(toMonitors)
         rows ~> monitors
@@ -147,21 +146,7 @@ trait OccurrenceCollectionFetcherHDFS
     Await.result(Source.fromGraph(aGraph).runWith(Sink.seq), 30.second).toList.headOption
   }
 
-  def request(selector: OccurrenceSelector): String = {
-    statusOf(selector) match {
-      case Some("ready") => "ready"
-      case _ =>
-        submitOccurrenceCollectionRequest(selector)
-        "requested"
-    }
-  }
-
-  def requestAll(): String = {
-    submitOccurrenceCollectionsRefreshRequest()
-    "all requested"
-  }
-
-  def statusOf(selector: OccurrenceSelector): Option[String] = {
+  def statusOf(selector: Selector): Option[String] = {
     monitorOf(selector) match {
       case Some(aMonitor) => aMonitor.status
       case None => None

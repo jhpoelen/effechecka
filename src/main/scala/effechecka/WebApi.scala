@@ -5,7 +5,6 @@ import java.util.UUID
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
-import akka.http.scaladsl.model.ContentType.WithCharset
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers._
 import akka.http.scaladsl.server.Directives._
@@ -14,13 +13,25 @@ import akka.http.scaladsl.{Http, server}
 import akka.stream._
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.FileSystem
-import org.effechecka.selector.{DateTimeSelector, OccurrenceSelector}
+import org.effechecka.selector.DateTimeSelector
 import spray.json._
 
-case class OccurrenceSelectorUUID(uuid: String)
-
 trait Protocols extends SprayJsonSupport with DefaultJsonProtocol {
-  implicit val occurrenceSelector = jsonFormat5(OccurrenceSelector)
+  implicit val selectorParams = jsonFormat3(SelectorParams)
+  implicit val selectorParamsUUID = jsonFormat4(SelectorUUID)
+
+  implicit object selectorJsonFormat extends RootJsonFormat[Selector] {
+    def write(a: Selector) = a match {
+      case p: SelectorParams => p.toJson
+      case p: SelectorUUID => p.toJson
+    }
+
+    override def read(json: JsValue): Selector = {
+      if (json.asJsObject.fields.contains("uuid")) {
+        json.convertTo[SelectorUUID]
+      } else json.convertTo[SelectorParams]
+    }
+  }
 
   implicit val checklistFormat = jsonFormat2(ChecklistRequest)
   implicit val itemFormat = jsonFormat2(ChecklistItem)
@@ -36,7 +47,7 @@ trait Protocols extends SprayJsonSupport with DefaultJsonProtocol {
 
 trait Service extends Protocols
   with ChecklistFetcher
-  with Fetcher
+  with JobSubmitter
   with SelectorValidator
   with OccurrenceCollectionFetcher {
 
@@ -47,10 +58,13 @@ trait Service extends Protocols
   }
 
 
-  val selectorValueParams: Directive1[OccurrenceSelector] = {
+  val selectorValueParams: Directive1[Selector] = {
+    def normalizeSelector(taxonSelector: String) = {
+      taxonSelector.replace(',', '|')
+    }
     parameters('taxonSelector.as[String] ? "", 'wktString.as[String], 'traitSelector.as[String] ? "").tflatMap {
       case (taxon: String, wkt: String, traits: String) => {
-        val selector = OccurrenceSelector(taxonSelector = normalizeSelector(taxon),
+        val selector = SelectorParams(taxonSelector = normalizeSelector(taxon),
           wktString = wkt,
           traitSelector = normalizeSelector(traits))
         if (valid(selector)) {
@@ -63,14 +77,14 @@ trait Service extends Protocols
     }
   }
 
-  val uuidParams: Directive1[OccurrenceSelector] = {
+  val uuidParams: Directive1[Selector] = {
     parameters('uuid.as[String]).flatMap {
-      case (uuid: String) => provide(OccurrenceSelector(uuid = Some(UUID.fromString(uuid).toString)))
+      case (uuid: String) => provide(SelectorUUID(uuid = UUID.fromString(uuid).toString))
       case _ => reject
     }
   }
 
-  val selectorParameters: Directive1[OccurrenceSelector] = {
+  val selectorParameters: Directive1[Selector] = {
     uuidParams | selectorValueParams
   }
 
@@ -80,12 +94,6 @@ trait Service extends Protocols
       addAccessControlHeaders {
         selectorParameters { ocSelector =>
           selectorRoutes(ocSelector)
-        } ~ path("updateAll") {
-          get {
-            complete {
-              requestAll()
-            }
-          }
         } ~ parameters('source.as[String]) { source =>
           usageRoutes(source)
         } ~ path("monitors") {
@@ -109,54 +117,18 @@ trait Service extends Protocols
     }
   }
 
+  private val occurrencecollectiongenerator = "OccurrenceCollectionGenerator"
+  private val checklistgenerator = "ChecklistGenerator"
 
-  def selectorRoutes(ocSelector: OccurrenceSelector): Route = {
+  def selectorRoutes(ocSelector: Selector): Route = {
     path("checklist") {
-      get {
-        val checklist = ChecklistRequest(ocSelector, Some(20))
-        val statusOpt: Option[String] = statusOf(checklist)
-        val (items, status) = statusOpt match {
-          case Some("ready") => (itemsFor(checklist), "ready")
-          case None => {
-            (Iterator(), request(checklist))
-          }
-          case _ => (Iterator(), statusOpt.get)
-        }
-        complete {
-          Checklist(OccurrenceSelectorUtil.addUUIDIfNeeded(ocSelector), status, items.toList)
-        }
-      }
+      handleChecklistSummary(ocSelector)
     } ~ path("checklist.tsv") {
-      get {
-        parameters('limit.as[Int] ?) { limit =>
-          val checklist = ChecklistRequest(ocSelector, limit)
-          val statusOpt: Option[String] = statusOf(checklist)
-          statusOpt match {
-            case Some("ready") =>
-              encodeResponse {
-                complete {
-                  HttpEntity(contentType, tsvFor(checklist))
-                }
-              }
-            case _ =>
-              request(checklist)
-              complete {
-                StatusCodes.Processing
-              }
-          }
-        }
-      }
-    } ~ path("occurrences.tsv") {
-      handleOccurrencesTsv(ocSelector)
+      handleChecklistTsv(ocSelector)
     } ~ path("occurrences") {
       handleOccurrences(ocSelector)
-    } ~ path("update") {
-      get {
-        complete {
-          val status = request(ocSelector)
-          OccurrenceCollection(ocSelector, Option(status), List())
-        }
-      }
+    } ~ path("occurrences.tsv") {
+      handleOccurrencesTsv(ocSelector)
     } ~ path("monitors") {
       get {
         complete {
@@ -164,35 +136,93 @@ trait Service extends Protocols
         }
       }
     }
+
+  }
+
+  private def handleChecklistTsv(ocSelector: Selector) = {
+    get {
+      parameters('limit.as[Int] ?) { limit =>
+        val checklist = ChecklistRequest(ocSelector, limit)
+        val statusOpt: Option[String] = statusOf(checklist)
+        statusOpt match {
+          case Some("ready") =>
+            encodeResponse {
+              complete {
+                HttpEntity(tsvContentType, tsvFor(checklist))
+              }
+            }
+          case _ =>
+            submitIfPossible(checklist.selector, checklistgenerator)
+        }
+      }
+    }
+  }
+
+  private def submitIfPossible(selector: Selector, sparkJobMainClass: String) = {
+    complete {
+      selector match {
+        case s: SelectorParams => {
+          submit(s, sparkJobMainClass)
+          StatusCodes.Processing
+        }
+        case _ =>
+          StatusCodes.BadRequest
+      }
+    }
+  }
+
+  private def handleChecklistSummary(ocSelector: Selector) = {
+    get {
+      val checklist = ChecklistRequest(ocSelector, Some(20))
+      val statusOpt: Option[String] = statusOf(checklist)
+      complete {
+        statusOpt match {
+          case Some("ready") =>
+            Checklist(ocSelector.withUUID(), "ready", itemsFor(checklist).toList)
+          case _ =>
+            checklist.selector match {
+              case s: SelectorParams =>
+                submit(s, checklistgenerator)
+                Checklist(s.withUUID(), "requested", List.empty)
+              case _ => StatusCodes.BadRequest
+            }
+        }
+      }
+    }
   }
 
   val addedParams = parameters('addedBefore.as[String] ?, 'addedAfter.as[String] ?)
 
-  def handleOccurrences(ocSelector: OccurrenceSelector): server.Route = {
+
+  def handleOccurrences(ocSelector: Selector): server.Route = {
     get {
       addedParams.as(DateTimeSelector) {
         added =>
           val ocRequest = OccurrenceRequest(ocSelector, Some(20), added)
           val statusOpt: Option[String] = statusOf(ocSelector)
           complete {
-            val sel = OccurrenceSelectorUtil.addUUIDIfNeeded(ocSelector)
             statusOpt match {
-              case Some("ready") => {
-                OccurrenceCollection(sel, Some("ready"), occurrencesFor(ocRequest).toList)
-              }
+              case Some("ready") =>
+                OccurrenceCollection(ocSelector.withUUID(), Some("ready"), occurrencesFor(ocRequest).toList)
               case None =>
-                OccurrenceCollection(sel, Some(request(ocSelector)))
+                ocSelector match {
+                  case s: SelectorParams => {
+                    submit(s, occurrencecollectiongenerator)
+                    OccurrenceCollection(ocSelector.withUUID(), Some("processing"))
+                  }
+                  case _ => StatusCodes.BadRequest
+                }
               case _ =>
-                OccurrenceCollection(sel, statusOpt)
+                OccurrenceCollection(ocSelector.withUUID(), statusOpt)
             }
           }
       }
     }
   }
 
-  private val contentType: WithCharset = MediaTypes.`text/tab-separated-values` withCharset HttpCharsets.`UTF-8`
+  private val tsvContentType = MediaTypes.`text/tab-separated-values`.withCharset(HttpCharsets.`UTF-8`)
 
-  def handleOccurrencesTsv(ocSelector: OccurrenceSelector): server.Route = {
+  def handleOccurrencesTsv(ocSelector: Selector): server.Route = {
     get {
       addedParams.as(DateTimeSelector) {
         added =>
@@ -204,13 +234,11 @@ trait Service extends Protocols
                 case Some("ready") =>
                   encodeResponse {
                     complete {
-                      HttpEntity(contentType, occurrencesTsvFor(ocRequest))
+                      HttpEntity(tsvContentType, occurrencesTsvFor(ocRequest))
                     }
                   }
-                case _ => complete {
-                  request(ocSelector)
-                  StatusCodes.Processing
-                }
+                case _ =>
+                  submitIfPossible(ocSelector, occurrencecollectiongenerator)
               }
 
           }
@@ -228,22 +256,22 @@ trait Service extends Protocols
                 limit =>
                   encodeResponse {
                     complete {
-                      HttpEntity(contentType, monitoredOccurrencesFor(source, added, limit))
+                      HttpEntity(tsvContentType, monitoredOccurrencesFor(source, added, limit))
                     }
                   }
               }
           }
-
         }
       }
     }
   }
 
-
 }
+
 
 object WebApi extends App with Service
   with Configure
+  with SparkSubmitter
   with ChecklistFetcherHDFS
   with OccurrenceCollectionFetcherHDFS {
 

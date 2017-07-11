@@ -1,12 +1,10 @@
 package effechecka
 
 import akka.actor.ActorSystem
-import akka.http.scaladsl.Http
 import akka.http.scaladsl.model._
 import akka.stream.ActorMaterializer
 import akka.testkit.TestKit
 import com.typesafe.config.ConfigFactory
-import org.effechecka.selector.OccurrenceSelector
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.time.{Millis, Seconds, Span}
 import org.scalatest.{Matchers, WordSpecLike}
@@ -27,8 +25,8 @@ class SparkSubmitterSpec extends TestKit(ActorSystem("SparkIntegrationTest"))
   implicit val defaultPatience = PatienceConfig(timeout = Span(10, Seconds), interval = Span(500, Millis))
 
   "checklist job request" in {
-    val selector: OccurrenceSelector = OccurrenceSelector("Animalia|Insecta", "ENVELOPE(-150,-50,40,10)", "")
-    val someRequest = requestChecklist(selector, "hdfs")
+    val selector = SelectorParams("Animalia|Insecta", "ENVELOPE(-150,-50,40,10)", "")
+    val someRequest = requestChecklist(selector)
     val expectedRequestBody =
       """{
         |      "action" : "CreateSubmissionRequest",
@@ -61,7 +59,7 @@ class SparkSubmitterSpec extends TestKit(ActorSystem("SparkIntegrationTest"))
   }
 
   "occurrence job request" in {
-    val selector: OccurrenceSelector = OccurrenceSelector("Animalia|Insecta", "ENVELOPE(-150,-50,40,10)", "")
+    val selector = SelectorParams("Animalia|Insecta", "ENVELOPE(-150,-50,40,10)", "")
     val someRequest = requestOccurrences(selector)
     val expectedRequestBody =
       """{

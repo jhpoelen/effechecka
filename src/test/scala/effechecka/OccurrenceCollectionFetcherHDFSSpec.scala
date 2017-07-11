@@ -5,7 +5,6 @@ import akka.stream.ActorMaterializer
 import akka.stream.testkit.scaladsl.TestSink
 import akka.testkit.TestKit
 import akka.util.ByteString
-import org.effechecka.selector.OccurrenceSelector
 import org.scalatest.{Matchers, WordSpecLike}
 
 class OccurrenceCollectionFetcherHDFSSpec extends TestKit(ActorSystem("IntegrationTest"))
@@ -16,11 +15,12 @@ class OccurrenceCollectionFetcherHDFSSpec extends TestKit(ActorSystem("Integrati
 
   val expectedWktString: String = "ENVELOPE(-150,-50,40,10)"
   val expectedTraitSelector: String = ""
-  val expectedSelector = OccurrenceSelector("Animalia|Insecta", expectedWktString, expectedTraitSelector, Some("55e4b0a0-bcd9-566f-99bc-357439011d85"))
+  val expectedSelector = SelectorParams("Animalia|Insecta", expectedWktString, expectedTraitSelector)
+  val expectedSelectorUUID = SelectorUUID("55e4b0a0-bcd9-566f-99bc-357439011d85")
   val expectedMonitor = OccurrenceMonitor(expectedSelector, Some("ready"), Some(3997))
 
-  val ducksAndFrogs = OccurrenceSelector("Anas|Anura", "POLYGON ((-72.147216796875 41.492120839687786, -72.147216796875 43.11702412135048, -69.949951171875 43.11702412135048, -69.949951171875 41.492120839687786, -72.147216796875 41.492120839687786))", "")
-  val ducksAndFrogsMonitor = OccurrenceMonitor(ducksAndFrogs.withUUID, Some("ready"), Some(239543))
+  val ducksAndFrogs = SelectorParams("Anas|Anura", "POLYGON ((-72.147216796875 41.492120839687786, -72.147216796875 43.11702412135048, -69.949951171875 43.11702412135048, -69.949951171875 41.492120839687786, -72.147216796875 41.492120839687786))").withUUID()
+  val ducksAndFrogsMonitor = OccurrenceMonitor(ducksAndFrogs, Some("ready"), Some(239543))
 
 
   "HDFS" should {
@@ -92,11 +92,7 @@ class OccurrenceCollectionFetcherHDFSSpec extends TestKit(ActorSystem("Integrati
 
     "return status of monitor" in {
       statusOf(ducksAndFrogs) should be(Some("ready"))
-      statusOf(OccurrenceSelector("no|taxon", expectedWktString, "")) should be(None)
-    }
-
-    "already requested" in {
-      request(ducksAndFrogs) should be("ready")
+      statusOf(SelectorParams("no|taxon", expectedWktString, "")) should be(None)
     }
 
   }

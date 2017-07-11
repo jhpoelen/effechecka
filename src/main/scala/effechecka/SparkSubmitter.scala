@@ -7,11 +7,14 @@ import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{Sink, Source}
 import com.sksamuel.exts.Logging
 import com.typesafe.config.Config
-import org.effechecka.selector.OccurrenceSelector
 
 import scala.concurrent.ExecutionContext
 
-trait SparkSubmitter extends Logging {
+trait JobSubmitter {
+  def submit(selector: SelectorParams, jobMainClass: String)
+}
+
+trait SparkSubmitter extends JobSubmitter with Logging {
 
   implicit def config: Config
 
@@ -23,12 +26,12 @@ trait SparkSubmitter extends Logging {
     send(requestUpdateAll())
   }
 
-  def submitOccurrenceCollectionRequest(selector: OccurrenceSelector, persistence: String = "hdfs"): Unit = {
+  def submitOccurrenceCollectionRequest(selector: SelectorParams, persistence: String = "hdfs"): Unit = {
     send(requestOccurrences(selector, persistence))
   }
 
-  def submitChecklistRequest(checklist: ChecklistRequest, persistence: String = "hdfs"): Unit = {
-    send(requestChecklist(checklist.selector, persistence))
+  def submitChecklistRequest(selector: SelectorParams, persistence: String = "hdfs"): Unit = {
+    send(requestChecklist(selector, persistence))
   }
 
   private def send(req: HttpRequest) = {
@@ -37,12 +40,14 @@ trait SparkSubmitter extends Logging {
       .foreach(resp => logger.info(resp.toString))
   }
 
-  def requestChecklist(selector: OccurrenceSelector, persistence: String = "hdfs"): HttpRequest = requestFor(argsFor(selector), "ChecklistGenerator", persistence)
-  def requestOccurrences(selector: OccurrenceSelector, persistence: String = "hdfs"): HttpRequest = requestFor(argsFor(selector), "OccurrenceCollectionGenerator", persistence)
+  override def submit(selector: SelectorParams, jobMainClass: String): Unit = requestFor(args = argsFor(selector), sparkJobMainClass = jobMainClass)
+
+  def requestChecklist(selector: SelectorParams, persistence: String = "hdfs"): HttpRequest = requestFor(argsFor(selector), "ChecklistGenerator", persistence)
+  def requestOccurrences(selector: SelectorParams, persistence: String = "hdfs"): HttpRequest = requestFor(argsFor(selector), "OccurrenceCollectionGenerator", persistence)
   def requestUpdateAll(): HttpRequest = requestFor(""""-a", "true"""", "OccurrenceCollectionGenerator")
 
 
-  private def argsFor(selector: OccurrenceSelector) = {
+  private def argsFor(selector: SelectorParams) = {
     val argSelectorTaxon = selector.taxonSelector.replace(',', '|')
     val argSelectorWktString = selector.wktString
     val argSelectorTrait = selector.traitSelector.replace(',', '|')

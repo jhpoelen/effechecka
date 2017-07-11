@@ -7,7 +7,7 @@ import com.sksamuel.exts.Logging
 import com.typesafe.config.Config
 import io.eels.FilePattern
 import org.apache.hadoop.fs.{FileSystem, Path}
-import org.effechecka.selector.{DateTimeSelector, OccurrenceSelector, UuidUtils}
+import org.effechecka.selector.{DateTimeSelector, UuidUtils}
 
 trait HDFSUtil extends DateUtil with Logging {
 
@@ -15,22 +15,12 @@ trait HDFSUtil extends DateUtil with Logging {
 
   protected implicit val fs: FileSystem
 
-  def pathForSelector(occurrenceSelector: OccurrenceSelector): String = {
-    occurrenceSelector.uuid match {
-      case Some(uuidString) => UuidUtils.pathForUUID(UUID.fromString(uuidString))
-      case _ => UuidUtils.pathForSelector(occurrenceSelector)
-    }
+  def pathForSelector(selector: Selector): String = {
+    UuidUtils.pathForUUID(UUID.fromString(selector.withUUID().uuid))
   }
 
-  def addUUIDIfNeeded(selector: OccurrenceSelector): OccurrenceSelector = {
-    selector.uuid match {
-      case Some(_) => selector
-      case _ => selector.withUUID
-    }
-  }
-
-  def absolutePathForSelector(occurrenceSelector: OccurrenceSelector): String = {
-    val suffix: String = pathForSelector(occurrenceSelector)
+  def absolutePathForSelector(selector: Selector): String = {
+    val suffix: String = pathForSelector(selector)
     val pathString = baseDir + "/" + suffix
     val pathFull = Paths.get(pathString)
     new Path(pathFull.toAbsolutePath.toString).toUri.toString

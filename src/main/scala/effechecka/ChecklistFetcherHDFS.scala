@@ -1,22 +1,21 @@
 package effechecka
 
 import akka.NotUsed
-import akka.stream.SourceShape
+import akka.actor.ActorSystem
+import akka.stream.{ActorMaterializer, SourceShape}
 import akka.stream.scaladsl.{Concat, Flow, GraphDSL, Sink, Source}
 import akka.util.ByteString
 import com.typesafe.config.Config
 import io.eels.Row
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.FileSystem
-import org.effechecka.selector.OccurrenceSelector
 
-import scala.concurrent.Await
+import scala.concurrent.{Await, ExecutionContext}
 import scala.concurrent.duration._
 
 
 trait ChecklistFetcherHDFS
   extends ChecklistFetcher
-    with SparkSubmitter
     with ParquetReaderIterator
     with HDFSUtil {
 
@@ -24,6 +23,9 @@ trait ChecklistFetcherHDFS
 
   protected implicit val configHadoop: Configuration
   protected implicit val fs: FileSystem
+
+  implicit val materializer: ActorMaterializer
+
 
   def tsvFor(checklist: ChecklistRequest): Source[ByteString, NotUsed] = {
     val checklistGraph = GraphDSL.create(toSourceShape(checklist = checklist)) { implicit builder =>
@@ -64,15 +66,6 @@ trait ChecklistFetcherHDFS
     Await.result(runWith, 30.second).iterator
   }
 
-  def request(checklist: ChecklistRequest): String = {
-    if (checklistExists(checklist)) {
-      "ready"
-    } else {
-      submitChecklistRequest(checklist, "hdfs")
-      "requested"
-    }
-  }
-
   private def checklistExists(checklist: ChecklistRequest) = {
     val runWith = sourceForItems(checklist).runWith(Sink.seq)
     Await.result(runWith, 30.second).iterator.nonEmpty
@@ -82,7 +75,7 @@ trait ChecklistFetcherHDFS
     patternFor(prefix + pathForChecklist(checklist.selector) + suffix)
   }
 
-  def pathForChecklist(occurrenceSelector: OccurrenceSelector): String = {
+  def pathForChecklist(occurrenceSelector: Selector): String = {
     pathForSelector(occurrenceSelector)
   }
 

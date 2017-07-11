@@ -5,7 +5,7 @@ import akka.http.scaladsl.model._
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
-import org.effechecka.selector.{DateTimeSelector, OccurrenceSelector}
+import org.effechecka.selector.DateTimeSelector
 import org.scalatest.{Matchers, WordSpec}
 
 trait ChecklistFetcherStatic extends ChecklistFetcher {
@@ -32,9 +32,9 @@ trait ChecklistFetcherExploding extends ChecklistFetcher {
 
 trait OccurrenceCollectionFetcherStatic extends OccurrenceCollectionFetcher {
   val anOccurrence = Occurrence("Cartoona | mickey", 12.1, 32.1, 123L, 124L, "recordId", 456L, "archiveId")
-  val aSelector: OccurrenceSelector = OccurrenceSelector("Cartoona | mickey", "some wkt string", "some trait selector")
+  val aSelector = SelectorParams("Cartoona | mickey", "some wkt string", "some trait selector").withUUID()
   val aMonitor = OccurrenceMonitor(aSelector, Some("some status"), Some(123))
-  val anotherMonitor = OccurrenceMonitor(OccurrenceSelector("Cartoona | donald", "some wkt string", "some trait selector"), None, Some(123))
+  val anotherMonitor = OccurrenceMonitor(SelectorParams("Cartoona | donald", "some wkt string", "some trait selector").withUUID(), None, Some(123))
 
   def occurrencesTsvFor(checklist: OccurrenceRequest): Source[ByteString, NotUsed]
   = Source.fromIterator(() => Iterator(ByteString.fromString("taxonName\ttaxonPath\tlat\tlng\teventStartDate\toccurrenceId\tfirstAddedDate\tsource\toccurrenceUrl"),
@@ -47,21 +47,24 @@ trait OccurrenceCollectionFetcherStatic extends OccurrenceCollectionFetcher {
     Iterator(ByteString.fromString("occurrenceId\tmonitorUUID"), ByteString.fromString("\nsome id\t"),
       ByteString.fromString("\nanother id\tsomeUUID")))
 
-  def statusOf(selector: OccurrenceSelector): Option[String] = Some("ready")
-
-  def request(selector: OccurrenceSelector): String = "requested"
-
-  def requestAll(): String = "all requested"
+  def statusOf(selector: Selector): Option[String] = Some("ready")
 
   def monitors(): List[OccurrenceMonitor] = List(aMonitor, anotherMonitor)
 
-  def monitorOf(selector: OccurrenceSelector): Option[OccurrenceMonitor] = Some(aMonitor)
+  def monitorOf(selector: Selector): Option[OccurrenceMonitor] = Some(aMonitor)
 
-  def monitorsFor(source: String, id: String): Iterator[OccurrenceSelector] = List(aSelector).iterator
+}
+
+trait JobSubmitterStatic extends JobSubmitter {
+
+  override def submit(selector: SelectorParams, jobMainClass: String): Unit = {
+
+  }
 }
 
 class WebApiExplodingSpec extends WordSpec with Matchers with ScalatestRouteTest
   with Service
+  with JobSubmitterStatic
   with ChecklistFetcherExploding
   with OccurrenceCollectionFetcherStatic {
 
@@ -74,7 +77,10 @@ class WebApiExplodingSpec extends WordSpec with Matchers with ScalatestRouteTest
   }
 }
 
-class WebApiSpec extends WordSpec with Matchers with ScalatestRouteTest with Service
+class WebApiSpec extends WordSpec with Matchers
+  with ScalatestRouteTest
+  with Service
+  with JobSubmitterStatic
   with ChecklistFetcherStatic
   with OccurrenceCollectionFetcherStatic {
 
@@ -85,9 +91,11 @@ class WebApiSpec extends WordSpec with Matchers with ScalatestRouteTest with Ser
       }
     }
 
+    val selectorAnimaliaInsecta = SelectorUUID("55e4b0a0-bcd9-566f-99bc-357439011d85", Some("Animalia|Insecta"), Some("ENVELOPE(-150,-50,40,10)"), Some(""))
+
     "return requested checklist" in {
       Get("/checklist?taxonSelector=Animalia,Insecta&wktString=ENVELOPE(-150,-50,40,10)") ~> route ~> check {
-        responseAs[Checklist] shouldEqual Checklist(OccurrenceSelector("Animalia|Insecta", "ENVELOPE(-150,-50,40,10)", "", Some("55e4b0a0-bcd9-566f-99bc-357439011d85")), "ready", List(ChecklistItem("donald", 1)))
+        responseAs[Checklist] shouldEqual Checklist(selectorAnimaliaInsecta, "ready", List(ChecklistItem("donald", 1)))
       }
     }
 
@@ -99,13 +107,13 @@ class WebApiSpec extends WordSpec with Matchers with ScalatestRouteTest with Ser
 
     "return requested checklist uuid" in {
       Get("/checklist?uuid=55e4b0a0-bcd9-566f-99bc-357439011d85") ~> route ~> check {
-        responseAs[Checklist] shouldEqual Checklist(OccurrenceSelector("", "", "",Some("55e4b0a0-bcd9-566f-99bc-357439011d85")), "ready", List(ChecklistItem("donald", 1)))
+        responseAs[Checklist] shouldEqual Checklist(SelectorUUID("55e4b0a0-bcd9-566f-99bc-357439011d85"), "ready", List(ChecklistItem("donald", 1)))
       }
     }
 
     "return requested occurrenceCollection" in {
       Get("/occurrences?taxonSelector=Animalia,Insecta&wktString=ENVELOPE(-150,-50,40,10)") ~> route ~> check {
-        responseAs[OccurrenceCollection] shouldEqual OccurrenceCollection(OccurrenceSelector("Animalia|Insecta", "ENVELOPE(-150,-50,40,10)", "",Some("55e4b0a0-bcd9-566f-99bc-357439011d85")), Some("ready"), List(anOccurrence))
+        responseAs[OccurrenceCollection] shouldEqual OccurrenceCollection(selectorAnimaliaInsecta, Some("ready"), List(anOccurrence))
       }
     }
 
@@ -123,13 +131,13 @@ class WebApiSpec extends WordSpec with Matchers with ScalatestRouteTest with Ser
 
     "return requested occurrenceCollection error" in {
       Get("/occurrences?limit=20&taxonSelector=Animalia%2CInsecta&wktString=POLYGON%20((-150%2010%2C%20-150%2040%2C%20-50%2040%2C%20-50%2010%2C%20-150%2010))") ~> route ~> check {
-        responseAs[OccurrenceCollection] shouldEqual OccurrenceCollection(OccurrenceSelector("Animalia|Insecta", "POLYGON ((-150 10, -150 40, -50 40, -50 10, -150 10))", "",Some("5ffd7bae-5fe0-5692-b914-bf90e921fa1b")), Some("ready"), List(anOccurrence))
+        responseAs[OccurrenceCollection] shouldEqual OccurrenceCollection(SelectorUUID("5ffd7bae-5fe0-5692-b914-bf90e921fa1b", Some("Animalia|Insecta"), Some("POLYGON ((-150 10, -150 40, -50 40, -50 10, -150 10))"), Some("")), Some("ready"), List(anOccurrence))
       }
     }
 
     "return requested occurrenceCollection uuid" in {
       Get("/occurrences?uuid=55e4b0a0-bcd9-566f-99bc-357439011d85") ~> route ~> check {
-        responseAs[OccurrenceCollection] shouldEqual OccurrenceCollection(OccurrenceSelector("", "", "",Some("55e4b0a0-bcd9-566f-99bc-357439011d85")), Some("ready"), List(anOccurrence))
+        responseAs[OccurrenceCollection] shouldEqual OccurrenceCollection(SelectorUUID("55e4b0a0-bcd9-566f-99bc-357439011d85"), Some("ready"), List(anOccurrence))
       }
     }
 
@@ -158,34 +166,23 @@ class WebApiSpec extends WordSpec with Matchers with ScalatestRouteTest with Ser
             "another id\tsomeUUID")
       }
     }
-
-    "refresh all monitors" in {
-      Get("/updateAll") ~> route ~> check {
-        responseAs[String] shouldEqual "all requested"
-      }
-    }
-
-    "refresh monitor uuid" in {
-      Get("/update?uuid=55e4b0a0-bcd9-566f-99bc-357439011d85") ~> route ~> check {
-        responseAs[OccurrenceCollection] shouldEqual OccurrenceCollection(OccurrenceSelector("", "", "", Some("55e4b0a0-bcd9-566f-99bc-357439011d85")), Some("requested"), List())
-      }
-    }
+    val expectedCartoon = SelectorUUID("cd459078-feb1-5b84-b21e-fead00792c7d", Some("Cartoona | mickey"), Some("some wkt string"), Some("some trait selector"))
 
     "return requested monitors" in {
       Get("/monitors") ~> route ~> check {
-        responseAs[List[OccurrenceMonitor]] should contain(OccurrenceMonitor(OccurrenceSelector("Cartoona | mickey", "some wkt string", "some trait selector"), Some("some status"), Some(123)))
+        responseAs[List[OccurrenceMonitor]] should contain(OccurrenceMonitor(expectedCartoon, Some("some status"), Some(123)))
       }
     }
 
     "return single monitor" in {
       Get("/monitors?taxonSelector=Animalia,Insecta&wktString=ENVELOPE(-150,-50,40,10)") ~> route ~> check {
-        responseAs[OccurrenceMonitor] should be(OccurrenceMonitor(OccurrenceSelector("Cartoona | mickey", "some wkt string", "some trait selector"), Some("some status"), Some(123)))
+        responseAs[OccurrenceMonitor] should be(OccurrenceMonitor(expectedCartoon, Some("some status"), Some(123)))
       }
     }
 
     "return single monitor uuid" in {
       Get("/monitors?uuid=55e4b0a0-bcd9-566f-99bc-357439011d85") ~> route ~> check {
-        responseAs[OccurrenceMonitor] should be(OccurrenceMonitor(OccurrenceSelector("Cartoona | mickey", "some wkt string", "some trait selector"), Some("some status"), Some(123)))
+        responseAs[OccurrenceMonitor] should be(OccurrenceMonitor(expectedCartoon, Some("some status"), Some(123)))
       }
     }
 

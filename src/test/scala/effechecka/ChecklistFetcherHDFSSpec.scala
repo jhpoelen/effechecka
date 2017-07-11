@@ -11,7 +11,6 @@ import akka.util.ByteString
 import io.eels.FilePattern
 import io.eels.component.parquet.{ParquetSink, ParquetSource}
 import org.apache.hadoop.fs.Path
-import org.effechecka.selector.OccurrenceSelector
 import org.scalatest.{Matchers, WordSpecLike}
 
 class ChecklistFetcherHDFSSpec extends TestKit(ActorSystem("IntegrationTest"))
@@ -20,10 +19,10 @@ class ChecklistFetcherHDFSSpec extends TestKit(ActorSystem("IntegrationTest"))
   implicit val materializer = ActorMaterializer()(system)
   implicit val ec = system.dispatcher
 
-  private val reqSelector = OccurrenceSelector("Animalia|Insecta", "ENVELOPE(-150,-50,40,10)", "")
+  private val reqSelector = SelectorParams("Animalia|Insecta", "ENVELOPE(-150,-50,40,10)", "")
   val req = ChecklistRequest(reqSelector, Some(2))
   val req5 = ChecklistRequest(reqSelector, Some(5))
-  val reqNew = ChecklistRequest(OccurrenceSelector("Aves|Mammalia", "ENVELOPE(-150,-50,40,10)", ""), Some(2))
+  val reqNew = ChecklistRequest(SelectorParams("Aves|Mammalia", "ENVELOPE(-150,-50,40,10)", ""), Some(2))
 
   "HDFS" should {
     "have access to test resources" in {
@@ -37,10 +36,6 @@ class ChecklistFetcherHDFSSpec extends TestKit(ActorSystem("IntegrationTest"))
 
     "status non-existing" in {
       statusOf(reqNew) shouldBe None
-    }
-
-    "request a checklist already exists" in {
-      request(req) shouldBe "ready"
     }
 
     //    "request a checklist new" in {

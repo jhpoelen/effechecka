@@ -48,8 +48,8 @@ trait ParquetReaderIterator extends Logging {
 }
 
 
-class ParquetReaderSourceShape (filePattern: Option[FilePattern], limit: Option[Int])
-(implicit val configHadoop: Configuration, implicit val fs: FileSystem)
+class ParquetReaderSourceShape(filePattern: Option[FilePattern], limit: Option[Int])
+                              (implicit val configHadoop: Configuration, implicit val fs: FileSystem)
   extends GraphStage[SourceShape[Row]]
     with ParquetReaderIterator with Logging {
 

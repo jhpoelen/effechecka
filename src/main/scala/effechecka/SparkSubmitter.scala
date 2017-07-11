@@ -40,7 +40,7 @@ trait SparkSubmitter extends JobSubmitter with Logging {
       .foreach(resp => logger.info(resp.toString))
   }
 
-  override def submit(selector: SelectorParams, jobMainClass: String): Unit = requestFor(args = argsFor(selector), sparkJobMainClass = jobMainClass)
+  override def submit(selector: SelectorParams, jobMainClass: String): Unit = send(requestFor(args = argsFor(selector), sparkJobMainClass = jobMainClass))
 
   def requestChecklist(selector: SelectorParams, persistence: String = "hdfs"): HttpRequest = requestFor(argsFor(selector), "ChecklistGenerator", persistence)
   def requestOccurrences(selector: SelectorParams, persistence: String = "hdfs"): HttpRequest = requestFor(argsFor(selector), "OccurrenceCollectionGenerator", persistence)

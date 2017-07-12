@@ -8,8 +8,8 @@ ivyScala := ivyScala.value map { _.copy(overrideScalaVersion = true) }
 scalacOptions := Seq("-unchecked", "-deprecation", "-encoding", "utf8")
 
 libraryDependencies ++= {
-  val akkaV = "2.4.18"
-  val akkaHttpV = "10.0.7"
+  val akkaV = "2.4.19"
+  val akkaHttpV = "10.0.9"
   val eelV = "1.2.0-M5"
   val scalaTestV = "3.0.1"
   Seq(

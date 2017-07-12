@@ -18,8 +18,6 @@ libraryDependencies ++= {
     "io.eels" %% "eel-core" % eelV,
     "io.eels" %% "eel-components" % eelV,
     "com.google.guava" % "guava" % "22.0",
-    "com.typesafe.akka" %% "akka-actor" % akkaV,
-    "com.typesafe.akka" %% "akka-stream" % akkaV,
     "com.typesafe.akka" %% "akka-http-core" % akkaHttpV,
     "com.typesafe.akka" %% "akka-http" % akkaHttpV,
     "com.typesafe.akka" %% "akka-http-xml" % akkaHttpV,

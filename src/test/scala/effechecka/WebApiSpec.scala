@@ -13,8 +13,6 @@ trait ChecklistFetcherStatic extends ChecklistFetcher {
 
   def statusOf(checklist: ChecklistRequest): Option[String] = Some("ready")
 
-  def request(checklist: ChecklistRequest): String = "requested"
-
   def tsvFor(checklist: ChecklistRequest): Source[ByteString, NotUsed]
   = Source.fromIterator(() => Iterator(ByteString("taxonName\ttaxonPath\trecordCount\ndonald\tdonald\t1")))
 }
@@ -24,9 +22,32 @@ trait ChecklistFetcherExploding extends ChecklistFetcher {
 
   def statusOf(checklist: ChecklistRequest): Option[String] = Some("ready")
 
-  def request(checklist: ChecklistRequest): String = "requested"
+  def tsvFor(checklist: ChecklistRequest): Source[ByteString, NotUsed] = Source.fromIterator(() => Iterator())
+
+}
+
+trait ChecklistFetcherEmpty extends ChecklistFetcher {
+  def itemsFor(checklist: ChecklistRequest): Iterator[ChecklistItem] = throw new RuntimeException("kaboom!")
+
+  def statusOf(checklist: ChecklistRequest): Option[String] = None
 
   def tsvFor(checklist: ChecklistRequest): Source[ByteString, NotUsed] = Source.fromIterator(() => Iterator())
+
+}
+
+trait OccurrenceCollectionFetcherEmpty extends OccurrenceCollectionFetcher {
+  def occurrencesTsvFor(checklist: OccurrenceRequest): Source[ByteString, NotUsed] = throw new IllegalArgumentException()
+
+  def occurrencesFor(checklist: OccurrenceRequest): Iterator[Occurrence] = throw new IllegalArgumentException()
+
+  def monitoredOccurrencesFor(source: String, added: DateTimeSelector, occLimit: Option[Int]): Source[ByteString, NotUsed]
+   = throw new IllegalArgumentException()
+
+  def statusOf(selector: Selector): Option[String] = None
+
+  def monitors(): List[OccurrenceMonitor] = throw new IllegalArgumentException()
+
+  def monitorOf(selector: Selector): Option[OccurrenceMonitor] = throw new IllegalArgumentException()
 
 }
 
@@ -57,8 +78,8 @@ trait OccurrenceCollectionFetcherStatic extends OccurrenceCollectionFetcher {
 
 trait JobSubmitterStatic extends JobSubmitter {
 
-  override def submit(selector: SelectorParams, jobMainClass: String): Unit = {
-
+  override def submit(selector: SelectorParams, jobMainClass: String): SparkDispatchResponse = {
+    SparkDispatchResponse(action = "SomeTestAction", message = Some("some message"))
   }
 }
 
@@ -72,6 +93,41 @@ class WebApiExplodingSpec extends WordSpec with Matchers with ScalatestRouteTest
     "close iterator on exploding" in {
       Get("/checklist?taxonSelector=Animalia,Insecta&wktString=ENVELOPE(-150,-50,40,10)") ~> route ~> check {
         status shouldEqual StatusCodes.InternalServerError
+      }
+    }
+  }
+}
+
+class WebApiSubmitSpec extends WordSpec with Matchers with ScalatestRouteTest
+  with Service
+  with JobSubmitterStatic
+  with ChecklistFetcherEmpty
+  with OccurrenceCollectionFetcherEmpty {
+
+  "checklist service" should {
+    "provide a submission message" in {
+      Get("/checklist?taxonSelector=Animalia,Insecta&wktString=ENVELOPE(-150,-50,40,10)") ~> route ~> check {
+        val selector = SelectorUUID("55e4b0a0-bcd9-566f-99bc-357439011d85", Some("Animalia|Insecta"), Some("ENVELOPE(-150,-50,40,10)"), Some(""))
+        responseAs[Checklist] shouldBe Checklist(selector, "some message", List())
+      }
+    }
+    "provide an appropriate status code" in {
+      Get("/checklist.tsv?taxonSelector=Animalia,Insecta&wktString=ENVELOPE(-150,-50,40,10)") ~> route ~> check {
+        status shouldBe StatusCodes.BadRequest
+      }
+    }
+  }
+
+  "occurrence service" should {
+    "provide a submission message" in {
+      Get("/occurrences?taxonSelector=Animalia,Insecta&wktString=ENVELOPE(-150,-50,40,10)") ~> route ~> check {
+        val selector = SelectorUUID("55e4b0a0-bcd9-566f-99bc-357439011d85", Some("Animalia|Insecta"), Some("ENVELOPE(-150,-50,40,10)"), Some(""))
+        responseAs[OccurrenceCollection] shouldBe OccurrenceCollection(selector, Some("some message"), List())
+      }
+    }
+    "provide an appropriate status code" in {
+      Get("/occurrences.tsv?taxonSelector=Animalia,Insecta&wktString=ENVELOPE(-150,-50,40,10)") ~> route ~> check {
+        status shouldBe StatusCodes.BadRequest
       }
     }
   }

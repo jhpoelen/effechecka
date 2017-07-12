@@ -1,6 +1,9 @@
 package effechecka
 
+import java.nio.file.Paths
+
 import akka.actor.ActorSystem
+import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import akka.http.scaladsl.model._
 import akka.stream.ActorMaterializer
 import akka.testkit.TestKit
@@ -8,6 +11,11 @@ import com.typesafe.config.ConfigFactory
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.time.{Millis, Seconds, Span}
 import org.scalatest.{Matchers, WordSpecLike}
+import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
+import akka.http.scaladsl.unmarshalling.Unmarshal
+import spray.json._
+
+
 
 trait ConfigureTest {
   def config = ConfigFactory.load("effechecka/spark-submit-test.conf")
@@ -23,6 +31,33 @@ class SparkSubmitterSpec extends TestKit(ActorSystem("SparkIntegrationTest"))
   implicit val materializer = ActorMaterializer()(system)
   implicit val ec = system.dispatcher
   implicit val defaultPatience = PatienceConfig(timeout = Span(10, Seconds), interval = Span(500, Millis))
+
+  "parse response success" in {
+    val resource = getClass.getResource("sparkDispatchResponseSuccess.json")
+    val resourcePath = Paths.get(resource.toURI)
+    val resp = HttpResponse(entity = HttpEntity.fromPath(ContentTypes.`application/json`, resourcePath))
+    whenReady(parse(resp)) { res =>
+      res shouldBe SparkDispatchResponse(action = "CreateSubmissionResponse", success = Some(true))
+    }
+  }
+
+  "parse response no success" in {
+    val resource = getClass.getResource("sparkDispatchResponseNoSuccess.json")
+    val resourcePath = Paths.get(resource.toURI)
+    val resp = HttpResponse(entity = HttpEntity.fromPath(ContentTypes.`application/json`, resourcePath))
+    whenReady(parse(resp)) { res =>
+      res shouldBe SparkDispatchResponse(action = "CreateSubmissionResponse", message = Some("Already reached maximum submission size"))
+    }
+  }
+
+  "parse response error" in {
+    val resource = getClass.getResource("sparkDispatchResponseError.json")
+    val resourcePath = Paths.get(resource.toURI)
+    val resp = HttpResponse(entity = HttpEntity.fromPath(ContentTypes.`application/json`, resourcePath))
+    whenReady(parse(resp)) { res =>
+      res shouldBe SparkDispatchResponse(action = "ErrorResponse", success = None, message = Some("some massive long error message"))
+    }
+  }
 
   "checklist job request" in {
     val selector = SelectorParams("Animalia|Insecta", "ENVELOPE(-150,-50,40,10)", "")

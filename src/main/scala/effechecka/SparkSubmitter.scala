@@ -2,19 +2,22 @@ package effechecka
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
-import akka.http.scaladsl.model.{ContentTypes, HttpEntity, HttpMethods, HttpRequest}
+import akka.http.scaladsl.model._
+import akka.http.scaladsl.unmarshalling.Unmarshal
 import akka.stream.ActorMaterializer
-import akka.stream.scaladsl.{Sink, Source}
 import com.sksamuel.exts.Logging
 import com.typesafe.config.Config
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.duration._
+import scala.concurrent.{Await, ExecutionContext, Future}
 
 trait JobSubmitter {
-  def submit(selector: SelectorParams, jobMainClass: String)
+  def submit(selector: SelectorParams, jobMainClass: String): SparkDispatchResponse
 }
 
-trait SparkSubmitter extends JobSubmitter with Logging {
+trait SparkSubmitter extends JobSubmitter
+  with Protocols
+  with Logging {
 
   implicit def config: Config
 
@@ -34,16 +37,23 @@ trait SparkSubmitter extends JobSubmitter with Logging {
     send(requestChecklist(selector, persistence))
   }
 
-  private def send(req: HttpRequest) = {
-    Source(List(req))
-      .runWith(Sink.foreach[HttpRequest](Http().singleRequest(_)))
-      .foreach(resp => logger.info(resp.toString))
+  protected def parse(response: HttpResponse): Future[SparkDispatchResponse] = {
+    Unmarshal(response.entity).to[SparkDispatchResponse]
   }
 
-  override def submit(selector: SelectorParams, jobMainClass: String): Unit = send(requestFor(args = argsFor(selector), sparkJobMainClass = jobMainClass))
+
+  private def send(req: HttpRequest): SparkDispatchResponse = {
+    val resp = Http().singleRequest(req).flatMap(response => parse(response))
+    Await.result(resp, 10.seconds)
+  }
+
+
+  override def submit(selector: SelectorParams, jobMainClass: String): SparkDispatchResponse = send(requestFor(args = argsFor(selector), sparkJobMainClass = jobMainClass))
 
   def requestChecklist(selector: SelectorParams, persistence: String = "hdfs"): HttpRequest = requestFor(argsFor(selector), "ChecklistGenerator", persistence)
+
   def requestOccurrences(selector: SelectorParams, persistence: String = "hdfs"): HttpRequest = requestFor(argsFor(selector), "OccurrenceCollectionGenerator", persistence)
+
   def requestUpdateAll(): HttpRequest = requestFor(""""-a", "true"""", "OccurrenceCollectionGenerator")
 
 
@@ -59,32 +69,33 @@ trait SparkSubmitter extends JobSubmitter with Logging {
     val dataPathOccurrences = config.getString("effechecka.data.dir") + "/gbif-idigbio.parquet"
     val dataPathTraits = config.getString("effechecka.data.dir") + "/traitbank/*.csv"
     val outputPath = config.getString("effechecka.monitor.dir")
-    val sparkJobRequest = s"""{
-                             |      "action" : "CreateSubmissionRequest",
-                             |      "appArgs" : [ "-f", "$persistence","-o", "\\"$outputPath\\"","-c","\\"$dataPathOccurrences\\"","-t", "\\"$dataPathTraits\\"", $args],
-                             |      "appResource" : "$sparkJobJar",
-                             |      "clientSparkVersion" : "2.0.1",
-                             |      "environmentVariables" : {
-                             |        "SPARK_ENV_LOADED" : "1",
-                             |        "HADOOP_HOME" : "/usr/lib/hadoop",
-                             |        "HADOOP_PREFIX" : "/usr/lib/hadoop",
-                             |        "HADOOP_LIBEXEC_DIR" : "/usr/lib/hadoop/libexec",
-                             |        "HADOOP_CONF_DIR" : "/etc/hadoop/conf",
-                             |        "HADOOP_USER_NAME" : "hdfs"
-                             |      },
-                             |      "mainClass" : "$sparkJobMainClass",
-                             |      "sparkProperties" : {
-                             |        "spark.driver.supervise" : "false",
-                             |        "spark.mesos.executor.home" : "${config.getString("effechecka.spark.mesos.executor.home")}",
-                             |        "spark.app.name" : "$sparkJobMainClass",
-                             |        "_spark.eventLog.enabled": "true",
-                             |        "spark.submit.deployMode" : "cluster",
-                             |        "spark.master" : "${config.getString("effechecka.spark.master.url")}",
-                             |        "spark.executor.memory" : "${config.getString("effechecka.spark.executor.memory")}",
-                             |        "spark.driver.memory" : "${config.getString("effechecka.spark.driver.memory")}",
-                             |        "spark.task.maxFailures" : 1
-                             |      }
-                             |    }""".stripMargin
+    val sparkJobRequest =
+      s"""{
+         |      "action" : "CreateSubmissionRequest",
+         |      "appArgs" : [ "-f", "$persistence","-o", "\\"$outputPath\\"","-c","\\"$dataPathOccurrences\\"","-t", "\\"$dataPathTraits\\"", $args],
+         |      "appResource" : "$sparkJobJar",
+         |      "clientSparkVersion" : "2.0.1",
+         |      "environmentVariables" : {
+         |        "SPARK_ENV_LOADED" : "1",
+         |        "HADOOP_HOME" : "/usr/lib/hadoop",
+         |        "HADOOP_PREFIX" : "/usr/lib/hadoop",
+         |        "HADOOP_LIBEXEC_DIR" : "/usr/lib/hadoop/libexec",
+         |        "HADOOP_CONF_DIR" : "/etc/hadoop/conf",
+         |        "HADOOP_USER_NAME" : "hdfs"
+         |      },
+         |      "mainClass" : "$sparkJobMainClass",
+         |      "sparkProperties" : {
+         |        "spark.driver.supervise" : "false",
+         |        "spark.mesos.executor.home" : "${config.getString("effechecka.spark.mesos.executor.home")}",
+         |        "spark.app.name" : "$sparkJobMainClass",
+         |        "_spark.eventLog.enabled": "true",
+         |        "spark.submit.deployMode" : "cluster",
+         |        "spark.master" : "${config.getString("effechecka.spark.master.url")}",
+         |        "spark.executor.memory" : "${config.getString("effechecka.spark.executor.memory")}",
+         |        "spark.driver.memory" : "${config.getString("effechecka.spark.driver.memory")}",
+         |        "spark.task.maxFailures" : 1
+         |      }
+         |    }""".stripMargin
 
     logger.info(sparkJobRequest)
     val payload = HttpEntity(contentType = ContentTypes.`application/json`, string = sparkJobRequest)

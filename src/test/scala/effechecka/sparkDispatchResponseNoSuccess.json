@@ -1,0 +1,6 @@
+{
+  "action": "CreateSubmissionResponse",
+  "serverSparkVersion": "2.1.1",
+  "message": "Already reached maximum submission size",
+  "success": false
+}

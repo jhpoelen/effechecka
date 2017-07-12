@@ -16,7 +16,13 @@ import org.apache.hadoop.fs.FileSystem
 import org.effechecka.selector.DateTimeSelector
 import spray.json._
 
+case class SparkDispatchResponse(action: String,
+                                 sparkServerVersion: Option[String] = None,
+                                 success: Option[Boolean] = Some(false),
+                                 message: Option[String] = None)
+
 trait Protocols extends SprayJsonSupport with DefaultJsonProtocol {
+  implicit val responseParams = jsonFormat4(SparkDispatchResponse)
   implicit val selectorParams = jsonFormat3(SelectorParams)
   implicit val selectorParamsUUID = jsonFormat4(SelectorUUID)
 
@@ -162,8 +168,12 @@ trait Service extends Protocols
     complete {
       selector match {
         case s: SelectorParams => {
-          submit(s, sparkJobMainClass)
-          StatusCodes.Processing
+          val response = submit(s, sparkJobMainClass)
+          if (response.success.getOrElse(false)) {
+            StatusCodes.Processing
+          } else {
+            StatusCodes.BadRequest
+          }
         }
         case _ =>
           StatusCodes.BadRequest
@@ -182,13 +192,18 @@ trait Service extends Protocols
           case _ =>
             checklist.selector match {
               case s: SelectorParams =>
-                submit(s, checklistgenerator)
-                Checklist(s.withUUID(), "requested", List.empty)
+                val msg = replyForSubmission(s, checklistgenerator)
+                Checklist(s.withUUID(), msg, List.empty)
               case _ => StatusCodes.BadRequest
             }
         }
       }
     }
+  }
+
+  private def replyForSubmission(s: SelectorParams, jobName: String) = {
+    val resp = submit(s, jobName)
+    resp.message.getOrElse("processing")
   }
 
   val addedParams = parameters('addedBefore.as[String] ?, 'addedAfter.as[String] ?)
@@ -207,8 +222,8 @@ trait Service extends Protocols
               case None =>
                 ocSelector match {
                   case s: SelectorParams => {
-                    submit(s, occurrencecollectiongenerator)
-                    OccurrenceCollection(ocSelector.withUUID(), Some("processing"))
+                    val msg = replyForSubmission(s, occurrencecollectiongenerator)
+                    OccurrenceCollection(ocSelector.withUUID(), Some(msg))
                   }
                   case _ => StatusCodes.BadRequest
                 }

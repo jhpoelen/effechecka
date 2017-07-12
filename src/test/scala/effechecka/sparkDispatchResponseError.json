@@ -1,0 +1,5 @@
+{
+  "action": "ErrorResponse",
+  "serverSparkVersion": "2.1.1",
+  "message": "some massive long error message"
+}

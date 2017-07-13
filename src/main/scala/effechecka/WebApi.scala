@@ -201,9 +201,13 @@ trait Service extends Protocols
     }
   }
 
-  private def replyForSubmission(s: SelectorParams, jobName: String) = {
+  private def replyForSubmission(s: SelectorParams, jobName: String): String = {
     val resp = submit(s, jobName)
-    resp.message.getOrElse("processing")
+    resp.message match {
+      case Some("Already reached maximum submission size") => "busy"
+      case Some(msg) => msg
+      case _ => "request submitted"
+    }
   }
 
   val addedParams = parameters('addedBefore.as[String] ?, 'addedAfter.as[String] ?)

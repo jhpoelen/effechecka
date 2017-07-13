@@ -203,10 +203,11 @@ trait Service extends Protocols
 
   private def replyForSubmission(s: SelectorParams, jobName: String): String = {
     val resp = submit(s, jobName)
-    resp.message match {
-      case Some("Already reached maximum submission size") => "busy"
-      case Some(msg) => msg
-      case _ => "request submitted"
+    (resp.success, resp.message) match {
+      case (Some(false), Some("Already reached maximum submission size")) => "busy"
+      case (Some(true), _) => "submitted"
+      case (_, Some(msg)) => msg
+      case (_, _) => "unknown"
     }
   }
 

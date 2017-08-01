@@ -27,3 +27,4 @@ libraryDependencies ++= {
 
 resolvers += "effechecka-releases" at "https://s3.amazonaws.com/effechecka/releases"
 
+mainClass in Compile := Some("effechecka.WebApi")

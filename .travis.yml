@@ -23,5 +23,5 @@ deploy:
       all_branches: true
 env:
   global:
-  - DOCKER_IMAGE=bio-guoda/effechecka
+  - DOCKER_IMAGE=bioguoda/effechecka
   - BUILDING=$DOCKER_IMAGE:$TRAVIS_COMMIT

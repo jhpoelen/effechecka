@@ -1,6 +1,6 @@
 FROM openjdk:8-jre-alpine
 
-RUN apk add --update bash
+RUN apk add --update bash libc6-compat
 
 ENV sbt_version=0.13.15
 

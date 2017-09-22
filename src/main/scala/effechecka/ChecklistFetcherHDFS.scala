@@ -33,7 +33,7 @@ trait ChecklistFetcherHDFS
         import GraphDSL.Implicits._
         val toByteString = Flow[ChecklistItem]
           .map(item => {
-            val taxonName = item.taxon.split("""\|""").reverse.head
+            val taxonName = taxonNameFor(item)
             ByteString(s"\n$taxonName\t${item.taxon}\t${item.recordcount}")
           })
         val out = builder.add(toByteString)
@@ -43,6 +43,10 @@ trait ChecklistFetcherHDFS
     val occurrenceSource = Source.fromGraph(checklistGraph)
     val header = Source.single[ByteString](ByteString(Seq("taxonName", "taxonPath", "recordCount").mkString("\t")))
     Source.combine(header, occurrenceSource)(Concat[ByteString])
+  }
+
+  protected def taxonNameFor(item: ChecklistItem): String = {
+    item.taxon.split("""\|""").filter(_.trim.nonEmpty).reverse.headOption.getOrElse("")
   }
 
   private def sourceForItems(checklist: ChecklistRequest): Source[ChecklistItem, NotUsed] = {

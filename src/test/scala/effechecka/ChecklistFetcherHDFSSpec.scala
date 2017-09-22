@@ -38,9 +38,14 @@ class ChecklistFetcherHDFSSpec extends TestKit(ActorSystem("IntegrationTest"))
       statusOf(reqNew) shouldBe None
     }
 
-    //    "request a checklist new" in {
-    //      request(reqNew) shouldBe "requested"
-    //    }
+
+    "taxon name of empty taxon path" in {
+      taxonNameFor(ChecklistItem("||||", 123)) shouldBe ""
+    }
+
+    "taxon name of non-empty taxon path" in {
+      taxonNameFor(ChecklistItem("|some|none|empty|", 123)) shouldBe "empty"
+    }
 
     "return items" in {
       val checklist = itemsFor(req).toSeq

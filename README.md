@@ -1,3 +1,5 @@
+**for a more active effechecka repository, please visit https://github.com/bio-guoda/effechecka**
+
 [![Build Status](https://travis-ci.org/jhpoelen/effechecka.svg?branch=master)](https://travis-ci.org/jhpoelen/effechecka)
 
 # effechecka
